@@ -150,7 +150,7 @@ const Account = () => {
     },
   ]);
 
-  const handleTabChange = (tab) => {
+  const handleTabChange = (tab: any) => {
     setActiveTab(tab);
     // In a real application, you would fetch data based on the selected tab
   };
