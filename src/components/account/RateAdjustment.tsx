@@ -25,23 +25,23 @@ const RateAdjustment = () => {
   const [tellerNo, setTellerNo] = useState("");
 
   // Handler functions
-  const handleFromDateChange = (e) => setFromDate(e.target.value);
-  const handleToDateChange = (e) => setToDate(e.target.value);
-  const handleCurrencyChange = (e) => setCurrency(e.target.value);
-  const handleFromRateChange = (e) => setFromRate(e.target.value);
-  const handleToRateChange = (e) => setToRate(e.target.value);
-  const handleFromChangeLimitChange = (e) => setFromChangeLimit(e.target.value);
-  const handleToChangeLimitChange = (e) => setToChangeLimit(e.target.value);
-  const handleOverDraftLimitChange = (e) => setOverDraftLimit(e.target.value);
-  const handleDebitInterestRateChange = (e) => setDebitInterestRate(e.target.value);
-  const handleCreditInterestRateChange = (e) => setCreditInterestRate(e.target.value);
-  const handleAccountClassTypeChange = (e) => setAccountClassType(e.target.value);
-  const handleAccountNameChange = (e) => setAccountName(e.target.value);
-  const handleCreditOrDebitChange = (e) => setCreditOrDebit(e.target.value);
-  const handleVoucherOrChequeChange = (e) => setVoucherOrCheque(e.target.value);
-  const handleVoucherNoChange = (e) => setVoucherNo(e.target.value);
-  const handleChequeNoChange = (e) => setChequeNo(e.target.value);
-  const handleTellerNoChange = (e) => setTellerNo(e.target.value);
+  const handleFromDateChange = (e :any) => setFromDate(e.target.value);
+  const handleToDateChange = (e :any) => setToDate(e.target.value);
+  const handleCurrencyChange = (e :any) => setCurrency(e.target.value);
+  const handleFromRateChange = (e :any) => setFromRate(e.target.value);
+  const handleToRateChange = (e :any) => setToRate(e.target.value);
+  const handleFromChangeLimitChange = (e :any) => setFromChangeLimit(e.target.value);
+  const handleToChangeLimitChange = (e :any) => setToChangeLimit(e.target.value);
+  const handleOverDraftLimitChange = (e :any) => setOverDraftLimit(e.target.value);
+  const handleDebitInterestRateChange = (e :any) => setDebitInterestRate(e.target.value);
+  const handleCreditInterestRateChange = (e :any) => setCreditInterestRate(e.target.value);
+  const handleAccountClassTypeChange = (e :any) => setAccountClassType(e.target.value);
+  const handleAccountNameChange = (e :any) => setAccountName(e.target.value);
+  const handleCreditOrDebitChange = (e :any) => setCreditOrDebit(e.target.value);
+  const handleVoucherOrChequeChange = (e :any) => setVoucherOrCheque(e.target.value);
+  const handleVoucherNoChange = (e :any) => setVoucherNo(e.target.value);
+  const handleChequeNoChange = (e :any) => setChequeNo(e.target.value);
+  const handleTellerNoChange = (e :any) => setTellerNo(e.target.value);
 
   return (
     <div className="flex min-h-screen bg-gray-100">
