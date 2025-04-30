@@ -1,9 +1,10 @@
-import Login from "@/components/auth/Login";
+import OTP from "@/components/auth/OTP";
+
 
 export default function Home() {
   return (
     <div>
-    <Login />
+    <OTP />
     </div>
   );
 }
