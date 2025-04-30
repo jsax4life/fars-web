@@ -19,7 +19,7 @@ const data = [
   { name: 'Dec', earnings: 6500 },
 ];
 
-const ActivityItem = ({ name, email, description, time }) => (
+const ActivityItem = ({ name, email, description, time }: any) => (
   <li className="bg-white rounded-md p-3 shadow-sm">
     <div className="flex items-start space-x-3">
       <div className="w-8 h-8 rounded-full bg-blue-200 flex items-center justify-center">
