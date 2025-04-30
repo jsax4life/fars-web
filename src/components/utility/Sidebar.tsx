@@ -27,7 +27,7 @@ const Sidebar = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const router = useRouter();
 
-  const handleNavigation = (path) => {
+  const handleNavigation = (path :any) => {
     router.push(path);
   };
 
@@ -37,7 +37,7 @@ const Sidebar = () => {
     setIsEditOpen(false);
   };
 
-  const toggleExternalData = (e) => {
+  const toggleExternalData = (e:any) => {
     e.stopPropagation(); // Prevent File dropdown from closing
     setIsExternalDataOpen(!isExternalDataOpen);
   };
