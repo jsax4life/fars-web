@@ -70,8 +70,8 @@ const SavedFiles = () => {
     },
   ];
 
-  const pdfFiles = fileData.filter((file) => file.type === "PDF");
-  const csvFiles = fileData.filter((file) => file.type === "CSV");
+  const pdfFiles = fileData.filter((file : any) => file.type === "PDF");
+  const csvFiles = fileData.filter((file : any) => file.type === "CSV");
 
   return (
     <div className="flex min-h-screen bg-gray-100">
