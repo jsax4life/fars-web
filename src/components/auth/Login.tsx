@@ -22,7 +22,7 @@ const Login = () => {
     e.preventDefault();
     setTimeout(() => {
       setLoading(false);
-      router.push("/AccountTable");
+      router.push("/UserList");
     }, 3000);
     console.log("Login submitted with:", { email, password });
   };
@@ -45,11 +45,11 @@ const Login = () => {
 
       <div className="absolute inset-0 z-10 bg-gradient-to-br from-[#2E2D2D]/90 to-[#2E2D2D]/50"></div>
 
-
       <div className="relative z-20 w-full max-w-md">
         <h1 className="text-3xl sm:text-4xl font-bold text-white">Login</h1>
         <p className="mt-2 text-sm sm:text-base font-light text-[#f3f3f3]">
-          t amet consectetur. tellus pulvinar con sed posuere duis. Velit euismod quis quid ut quis.
+          t amet consectetur. tellus pulvinar con sed posuere duis. Velit
+          euismod quis quid ut quis.
         </p>
 
         <form className="mt-8 space-y-4" onSubmit={handleSubmit}>

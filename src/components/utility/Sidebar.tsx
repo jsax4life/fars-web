@@ -1,157 +1,116 @@
 "use client";
-
+import Image from "next/image";
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
 import {
-  FaFile as FileIcon,
-  FaPencilAlt as EditIcon,
-  FaSlidersH as MaintenanceIcon,
-  FaQuestionCircle as HelpIcon,
-  FaPlus as PlusIcon,
-  FaCopy as CopyIcon,
-  FaObjectGroup as MergeIcon,
-  FaExternalLinkAlt as ExternalDataIcon,
-  FaFileImport as ImportIcon,
-  FaListAlt as ClassifyIcon,
-  FaArrowDown as PostIcon,
-  FaExchangeAlt as InsertIcon,
-  FaCheckSquare as ReconcileIcon,
-  FaTimes as UnmatchIcon,
-  FaEye as ViewIcon,
-  FaHistory as LogIcon,
-} from "react-icons/fa";
-
+  FiFile,
+  FiEdit2,
+  FiTool,
+  FiUsers,
+  FiShield,
+  FiUser,
+  FiFileText,
+  FiTag,
+  FiCreditCard,
+  FiHelpCircle,
+  FiMenu,
+  FiX,
+  FiChevronDown,
+  FiChevronRight,
+} from "react-icons/fi";
+import { MenuItem } from '../../types/menu';
 const Sidebar = () => {
-  const [isFileOpen, setIsFileOpen] = useState(false);
-  const [isExternalDataOpen, setIsExternalDataOpen] = useState(false);
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const router = useRouter();
+  const [isOpen, setIsOpen] = useState(false);
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>(
+    {}
+  );
 
-  const handleNavigation = (path :any) => {
-    router.push(path);
-  };
+  const menuItems : MenuItem[] = [
+    { name: "File", icon: '/sidebar/1.svg' },
+    { name: "Edit", icon: '/sidebar/2.svg' },
+    { name: "Maintenance", icon: '/sidebar/3.svg' },
+    { name: "Client Management", icon: '/sidebar/4.svg' },
+    { name: "Role Management", icon: '/sidebar/5.svg' },
+    { name: "Staff", icon: '/sidebar/6.svg' },
+    { name: "Report", icon: '/sidebar/7.svg' },
+    { name: "Classification", icon: '/sidebar/8.svg' },
+    { name: "Bank Account", icon: '/sidebar/9.svg' },
+    { name: "Help", icon: '/sidebar/10.svg' },
+  ];
 
-  const toggleFile = () => {
-    setIsFileOpen(!isFileOpen);
-    setIsExternalDataOpen(false);
-    setIsEditOpen(false);
-  };
-
-  const toggleExternalData = (e:any) => {
-    e.stopPropagation(); // Prevent File dropdown from closing
-    setIsExternalDataOpen(!isExternalDataOpen);
-  };
-
-  const toggleEdit = () => {
-    setIsEditOpen(!isEditOpen);
-    setIsFileOpen(false);
-    setIsExternalDataOpen(false);
+  const toggleItem = (name: string) => {
+    setExpandedItems((prev) => ({
+      ...prev,
+      [name]: !prev[name],
+    }));
   };
 
   return (
-    <aside className="bg-[#2E2D2D] text-white w-64 min-h-screen py-4 px-3 flex flex-col">
-      <div className="mb-4">
-        <button
-          className={`flex items-center justify-between w-full py-2 px-3 rounded-md hover:bg-[#3A3939] focus:outline-none ${
-            isFileOpen ? "bg-[#3A3939]" : ""
-          }`}
-          onClick={toggleFile}
-        >
-          <div className="flex items-center gap-2">
-            <FileIcon />
-            File
-          </div>
-          <span>&gt;</span>
-        </button>
-        {isFileOpen && (
-          <div className="mt-1 ml-2">
-            <div className="py-2 px-4 hover:bg-[#474646] rounded-md cursor-pointer">
-              Transaction
-            </div>
-            <div className="py-2 px-4 hover:bg-[#474646] rounded-md cursor-pointer">
-              Utilities
-            </div>
-            <div className="py-2 px-4 hover:bg-[#474646] rounded-md cursor-pointer">
-              New Account
-            </div>
-            <div className="py-2 px-4 hover:bg-[#474646] rounded-md cursor-pointer">
-              Replica Account
-            </div>
-            <div className="py-2 px-4 hover:bg-[#474646] rounded-md cursor-pointer">
-              Merge Account
-            </div>
-            <div
-              className={`flex items-center justify-between py-2 px-4 hover:bg-[#474646] rounded-md cursor-pointer ${
-                isExternalDataOpen ? "bg-[#474646]" : ""
-              }`}
-              onClick={toggleExternalData}
-            >
-              <div className="flex items-center gap-2">
-                External Data
-              </div>
-              <span>&gt;</span>
-            </div>
-            {isExternalDataOpen && (
-              <div className="mt-1 ml-2">
-                <div className="py-2 px-4 hover:bg-[#545353] rounded-md cursor-pointer">
-                  Import Bank Statement
-                </div>
-                <div className="py-2 px-4 hover:bg-[#545353] rounded-md cursor-pointer">
-                  Classify Bank Statement
-                </div>
-                <div className="py-2 px-4 hover:bg-[#545353] rounded-md cursor-pointer">
-                  Post Bank Statement
-                </div>
-                <div className="py-2 px-4 hover:bg-[#545353] rounded-md cursor-pointer">
-                  Insert C/B Transaction
-                </div>
-                <div className="py-2 px-4 hover:bg-[#545353] rounded-md cursor-pointer">
-                  Reconcile
-                </div>
-                <div className="py-2 px-4 hover:bg-[#545353] rounded-md cursor-pointer">
-                  Unmatch Transaction
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+    <>
+      {/* Mobile menu button */}
+      <button
+        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-gray-800 text-white rounded-md shadow-sm"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        {isOpen ? <FiX size={24} /> : <FiMenu size={24} />}
+      </button>
 
-        <button
-          className={`flex items-center justify-between w-full py-2 px-3 rounded-md hover:bg-[#3A3939] focus:outline-none ${
-            isEditOpen ? "bg-[#3A3939]" : ""
-          }`}
-          onClick={toggleEdit}
-        >
-          <div className="flex items-center gap-2">
-            <EditIcon />
-            Edit
-          </div>
-          <span>&gt;</span>
-        </button>
-        {isEditOpen && (
-          <div className="mt-1 ml-2">
-            <div className="py-2 px-4 hover:bg-[#474646] rounded-md cursor-pointer">
-              View
-            </div>
-            <div className="py-2 px-4 hover:bg-[#474646] rounded-md cursor-pointer">
-              Activities Log
-            </div>
-            <div className="py-2 px-4 hover:bg-[#474646] rounded-md cursor-pointer">
-              Delete
+      {/* Sidebar */}
+      <div
+        className={`fixed md:static inset-y-0 left-0 transform ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        } md:translate-x-0 transition-transform duration-200 ease-in-out z-40 w-64 bg-[#2E2D2D] text-white h-screen overflow-y-auto`}
+      >
+        <div className="p-4 h-full flex flex-col">
+          <div className="flex items-center justify-between py-4 px-2 border-b border-gray-700 mb-4">
+            <div className="flex items-center space-x-2">
+              <div className="">
+                <img
+                  src="/logo.svg"
+                  alt="Company Logo"
+                  className="h-20 w-auto"
+                />
+              </div>
             </div>
           </div>
-        )}
 
-        <button className="flex items-center gap-2 w-full py-2 px-3 rounded-md hover:bg-[#3A3939] focus:outline-none">
-          <MaintenanceIcon />
-          Maintenance
-        </button>
-        <button className="flex items-center gap-2 w-full py-2 px-3 rounded-md hover:bg-[#3A3939] focus:outline-none">
-          <HelpIcon />
-          Help
-        </button>
+          {/* Menu Items */}
+          <nav className="flex-1">
+            <ul className="space-y-1">
+              {menuItems.map((item) => (
+                <li key={item.name}>
+                  <button
+                    onClick={() => toggleItem(item.name)}
+                    className={`w-full flex items-center justify-between px-4 py-3 text-left rounded-md hover:bg-gray-700 transition-colors ${expandedItems[item.name] ? 'bg-gray-700' : ''}`}
+                  >
+                    <div className="flex items-center">
+                      <Image 
+                        src={item.icon} 
+                        width={20} 
+                        height={20} 
+                        alt={item.name}
+                        className="mr-3"
+                      />
+                      <span>{item.name}</span>
+                    </div>
+                    
+                  </button>
+
+                  
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </div>
       </div>
-    </aside>
+
+      {/* Overlay for mobile */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+    </>
   );
 };
 
