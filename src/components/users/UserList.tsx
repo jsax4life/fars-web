@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Sidebar from "../utility/Sidebar";
 import { useRouter } from "next/navigation";
+import { useUserAuth } from "@/hooks/useUserAuth";
 
 interface User {
   id: string;
@@ -22,7 +23,8 @@ interface NewAdmin {
   role: string;
 }
 
-const Home = () => {
+const UserList = () => {
+  const { user } = useUserAuth()
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([
     {
@@ -46,7 +48,7 @@ const Home = () => {
       dateAdded: "Q1 - Q3 - 2023",
     },
   ]);
-  
+
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [newAdmin, setNewAdmin] = useState<NewAdmin>({
@@ -66,8 +68,8 @@ const Home = () => {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   const handleRoleChange = (userId: string, newRole: string) => {
-    setUsers(users.map(user => 
-      user.id === userId ? {...user, role: newRole} : user
+    setUsers(users.map(user =>
+      user.id === userId ? { ...user, role: newRole } : user
     ));
   };
 
@@ -107,15 +109,15 @@ const Home = () => {
   const handleSubmitDeactivation = () => {
     // Update user status
     if (selectedUserId) {
-      setUsers(users.map(user => 
-        user.id === selectedUserId ? {...user, status: "Inactive"} : user
+      setUsers(users.map(user =>
+        user.id === selectedUserId ? { ...user, status: "Inactive" } : user
       ));
     }
-    
+
     // Show success message
     setShowDeactivateForm(false);
     setShowSuccessModal(true);
-    
+
     // Reset form
     setDeactivationReason({
       title: "",
@@ -130,10 +132,17 @@ const Home = () => {
       <div className="flex-1 p-4 md:p-6 mt-16 md:mt-0 overflow-x-hidden">
         <div className="mb-6">
           <h1 className="text-[#363636] text-xl md:text-2xl font-bold">
-            Hi, Olayimmika
+            Hi, {user?.firstName} {user?.lastName}
           </h1>
           <p className="text-gray-500 text-sm md:text-base">
-            June 18th 2023 - 08:34 am
+            {new Date().toLocaleString("en-US", {
+              month: "long",
+              day: "numeric",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true,
+            })}
           </p>
         </div>
 
@@ -188,13 +197,13 @@ const Home = () => {
               </div>
             </div>
             <div className="flex flex-col sm:flex-row w-full md:w-auto gap-2 sm:gap-4">
-              <button 
+              <button
                 onClick={() => setShowCreateModal(true)}
                 className="bg-[#F36F2E] hover:bg-[#F36F2E] text-white py-2 px-4 rounded text-sm w-full sm:w-auto"
               >
                 Create User
               </button>
-              <button 
+              <button
                 onClick={() => router.push("/RoleList")}
                 className="bg-[#fff] hover:bg-gray-300 text-[#F36F2E] border-[#F36F2E] border-2 py-2 px-4 rounded text-sm w-full sm:w-auto"
               >
@@ -271,11 +280,10 @@ const Home = () => {
                     <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
                       <span
                         className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                        ${
-                          user.status === "Active"
+                        ${user.status === "Active"
                             ? "bg-green-100 text-green-800"
                             : "bg-red-100 text-red-800"
-                        }`}
+                          }`}
                       >
                         {user.status}
                       </span>
@@ -284,7 +292,7 @@ const Home = () => {
                       {user.dateAdded}
                     </td>
                     <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
-                      <button 
+                      <button
                         className="focus:outline-none"
                         onClick={() => handleDeactivateUser(user.id)}
                       >
@@ -300,7 +308,7 @@ const Home = () => {
               </tbody>
             </table>
           </div>
-          
+
           {/* Pagination Section */}
           <div className="px-4 py-3 bg-white border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-sm text-gray-700">
@@ -320,14 +328,14 @@ const Home = () => {
               </button>
             </div>
           </div>
-          
+
           {/* Create User Modal */}
           {showCreateModal && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-lg p-6 w-full max-w-md">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-semibold">Create New Admin</h3>
-                  <button 
+                  <button
                     onClick={() => setShowCreateModal(false)}
                     className="text-gray-500 hover:text-gray-700"
                   >
@@ -401,7 +409,7 @@ const Home = () => {
 
           {/* Deactivate Confirmation Modal */}
           {showDeactivateConfirm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-lg p-6 w-full max-w-md">
                 <div className="mb-4">
                   <h3 className="text-lg font-semibold">Lorem ipsum dolor sit amet consectetur.</h3>
@@ -409,7 +417,7 @@ const Home = () => {
                     Lectus neque ut vestibulum molestie tincidunt.
                   </p>
                 </div>
-                
+
                 <div className="flex justify-end space-x-4 mt-6">
                   <button
                     onClick={() => setShowDeactivateConfirm(false)}
@@ -435,7 +443,7 @@ const Home = () => {
                 <div className="mb-6">
                   <h3 className="text-lg font-semibold">Deactivation Reason</h3>
                 </div>
-                
+
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Reason Title</label>
@@ -448,7 +456,7 @@ const Home = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
                     <textarea
@@ -460,7 +468,7 @@ const Home = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
                     />
                   </div>
-                  
+
                   <div className="border-t border-gray-200 pt-4 flex justify-end space-x-4">
                     <button
                       onClick={() => setShowDeactivateForm(false)}
@@ -485,7 +493,7 @@ const Home = () => {
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-lg p-6 w-full max-w-md text-center">
                 <div className="flex justify-end">
-                  <button 
+                  <button
                     onClick={() => setShowSuccessModal(false)}
                     className="text-gray-500 hover:text-gray-700"
                   >
@@ -518,4 +526,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default UserList;

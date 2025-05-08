@@ -199,10 +199,10 @@ export const UserAuthProvider = ({ children }: { children: ReactNode }) => {
       pinConfirmation: confirmPin
     })
     if (request?.message) {
-      // toast.success(request.message);
+      toast.success(request.message);
       return true;
     } else {
-      // toast.error('Failed to reset pin: ' + request?.message);
+      toast.error('Failed to reset pin: ' + request?.message);
       return false;
     }
   };

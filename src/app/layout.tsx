@@ -5,8 +5,13 @@ import { UserAuthProvider } from "@/hooks/useUserAuth";
 import { Toaster as Sonner } from "@/components/utility/sonner";
 
 export const metadata: Metadata = {
-  title: "Login Page",
-  description: "Authentication page for the application",
+  title: "FaRS",
+  description: "Financial and Risk Solutions",
+  icons: {
+    icon: "/logo.svg",
+    shortcut: "/logo.svg",
+    apple: "/logo.svg",
+  },
 };
 
 export default function RootLayout({
