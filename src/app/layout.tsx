@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { ApiProvider } from "@/hooks/useApi";
+import { UserAuthProvider } from "@/hooks/useUserAuth";
 
 export const metadata: Metadata = {
   title: "Login Page",
@@ -14,7 +16,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning>
-        {children}
+        <ApiProvider>
+          <UserAuthProvider>
+            {children}
+          </UserAuthProvider>
+        </ApiProvider>
       </body>
     </html>
   );

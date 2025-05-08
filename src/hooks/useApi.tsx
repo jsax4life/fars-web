@@ -1,35 +1,51 @@
+'use client'
 import React, { createContext, useContext, useState, useEffect } from "react";
 
+interface Tokens {
+    accessToken: string;
+    refreshToken: string;
+}
+
 interface ApiContextType {
-    token: string | null;
-    updateToken: (newToken: string | null) => void;
+    token: Tokens | null;
+    updateToken: (newToken: Tokens | null) => void;
 }
 
 // Define API Context
 const ApiContext = createContext<ApiContextType | null>(null);
 
 // API Base URL
-const API_BASE_URL = "https://dev.api.cakkie.com";
+const API_BASE_URL = "http://fars-api-env.eba-rfmzrjse.eu-west-2.elasticbeanstalk.com";
+
 
 export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [token, setToken] = useState<string | null>(null);
+    const [token, setToken] = useState<Tokens | null>(null);
     const [loading, setLoading] = useState(true); // Track loading state
 
     // Load token from storage
     useEffect(() => {
-        const storedToken = localStorage.getItem("authToken");
+        const storedToken = localStorage.getItem("authTokenFaRs");
         if (storedToken) {
-            setToken(storedToken);
+            // Parse the token if it's in JSON format
+            try {
+                const parsedToken = JSON.parse(storedToken) as Tokens;
+                setToken(parsedToken);
+            }
+            catch (error) {
+                console.error("Failed to parse token from localStorage:", error);
+                setToken(null); // Reset token if parsing fails
+            }
         }
         setLoading(false); // Mark as loaded
     }, []);
 
-    const updateToken = (newToken: string | null) => {
+    const updateToken = (newToken: Tokens | null) => {
         setToken(newToken);
         if (newToken) {
-            localStorage.setItem("authToken", newToken);
+            // Store the token in localStorage as a string
+            localStorage.setItem("authTokenFaRs", JSON.stringify(newToken));
         } else {
-            localStorage.removeItem("authToken");
+            localStorage.removeItem("authTokenFaRs");
         }
     };
 
@@ -69,7 +85,7 @@ export const useApi = () => {
         };
 
         if (token) {
-            headers["Authorization"] = `Bearer ${token}`;
+            headers["Authorization"] = `Bearer ${token.accessToken}`;
         }
 
         try {
