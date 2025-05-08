@@ -13,7 +13,7 @@ const Endpoints = {
     logOut: '/auth/logout',
     profile: '/api/auth/profile',
     account: '/account',
-    order: '/order',
+    users: '/api/users',
 }
 
 export default Endpoints;

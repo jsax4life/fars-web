@@ -1,20 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Sidebar from "../utility/Sidebar";
 import { useRouter } from "next/navigation";
 import { useUserAuth } from "@/hooks/useUserAuth";
-
-interface User {
-  id: string;
-  provo: string;
-  fullName: string;
-  email: string;
-  phone: string;
-  role: string;
-  status: string;
-  dateAdded: string;
-}
+import { useUsers } from "@/hooks/useUsers";
+import { User } from "@/types";
 
 interface NewAdmin {
   fullName: string;
@@ -25,29 +16,10 @@ interface NewAdmin {
 
 const UserList = () => {
   const { user } = useUserAuth()
+  const { getUsers } = useUsers()
   const router = useRouter();
-  const [users, setUsers] = useState<User[]>([
-    {
-      id: "01",
-      provo: "Ash",
-      fullName: "Sub Article Fells",
-      email: "biblayinkels@igmail.com",
-      phone: "08101831001",
-      role: "Admin",
-      status: "Active",
-      dateAdded: "Q2 - Q4 - 2023",
-    },
-    {
-      id: "02",
-      provo: "Bis",
-      fullName: "John Doe",
-      email: "john.doe@example.com",
-      phone: "08012345678",
-      role: "User",
-      status: "Active",
-      dateAdded: "Q1 - Q3 - 2023",
-    },
-  ]);
+  const [role, setRole] = useState('Staff')
+  const [users, setUsers] = useState<User[]>([]);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -66,6 +38,18 @@ const UserList = () => {
     message: "",
   });
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+
+  const fetchUsers = () => {
+    getUsers(role.toUpperCase()).then(users => {
+      console.log(users)
+      if (users) {
+        setUsers(users)
+      }
+    })
+  }
+  useEffect(() => {
+    fetchUsers()
+  }, [role])
 
   const handleRoleChange = (userId: string, newRole: string) => {
     setUsers(users.map(user =>
@@ -148,7 +132,7 @@ const UserList = () => {
 
         <div className="mb-6">
           <h2 className="text-[#363636] text-lg md:text-xl font-semibold">
-            Admin
+            {user?.role.toLocaleLowerCase()}
           </h2>
         </div>
 
@@ -156,11 +140,13 @@ const UserList = () => {
           <div className="p-4 border-b border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex flex-col sm:flex-row w-full md:w-auto gap-2 sm:gap-4">
               <div className="relative w-full sm:w-auto">
-                <select className="block appearance-none bg-white border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded leading-tight focus:outline-none focus:border-blue-500 text-sm w-full">
-                  <option>Role</option>
-                  <option>Admin</option>
-                  <option>User</option>
-                  <option>Editor</option>
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  className="block appearance-none bg-white border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded leading-tight focus:outline-none focus:border-blue-500 text-sm w-full">
+                  <option value={'admin'}>Admin</option>
+                  <option value={'super_admin'}>Super Admin</option>
+                  <option value={'staff'}>Staff</option>
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                   <svg
@@ -246,50 +232,53 @@ const UserList = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {users.map((user) => (
+                {users.map((user, index) => (
                   <tr key={user.id}>
                     <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
-                      {user.id}
+                      {index + 1}
                     </td>
                     <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
-                      {user.provo}
+                      <img
+                        src={user.avatarUrl}
+                        width={30}
+                        height={30}
+                      />
                     </td>
                     <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
-                      {user.fullName}
+                      {user.firstName} {user.lastName}
                     </td>
                     <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 truncate max-w-[120px] hidden sm:table-cell">
                       {user.email}
                     </td>
                     <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 hidden md:table-cell">
-                      {user.phone}
+                      {user.phone || 'N/A'}
                     </td>
                     <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
                       <div className="relative">
                         <select
-                          value={user.role}
+                          value={user.role.toLocaleLowerCase()}
                           onChange={(e) => handleRoleChange(user.id, e.target.value)}
                           className="block appearance-none bg-white border border-gray-300 text-gray-700 py-1 px-2 pr-6 rounded leading-tight focus:outline-none focus:border-[#F36F2E] text-xs md:text-sm"
                         >
-                          <option value="Admin">Admin</option>
-                          <option value="User">User</option>
-                          <option value="Editor">Editor</option>
-                          <option value="Viewer">Viewer</option>
+                          <option value="staff">Staff</option>
+                          <option value="admin">Admin</option>
+                          <option value="super_admin">Super Admin</option>
                         </select>
                       </div>
                     </td>
                     <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
                       <span
                         className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                        ${user.status === "Active"
+                        ${user.isActive
                             ? "bg-green-100 text-green-800"
                             : "bg-red-100 text-red-800"
                           }`}
                       >
-                        {user.status}
+                        {user.isActive ? 'Active' : 'In Active'}
                       </span>
                     </td>
                     <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 hidden lg:table-cell">
-                      {user.dateAdded}
+                      {new Date(user.createdAt).toLocaleString()}
                     </td>
                     <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
                       <button
