@@ -18,16 +18,12 @@ interface AuthContextType {
     referralCode?: string,
   ) => Promise<boolean>;
   logout: () => void;
-  isAdmin: () => boolean;
-  updateUserRole: (role: 'user' | 'baker' | 'admin') => void;
   changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
   verifyOTP: (otp: string, email: string) => Promise<boolean>;
   resetPassword: (password: string, confirmPassword: string) => Promise<boolean>;
   requestOTP: (email: string) => Promise<boolean>;
   forgetPassword: (email: string) => Promise<boolean>;
-  checkUsernameAvailability: (username: string) => Promise<boolean>;
   resetPin: (otp: string, pin: string, confirmPin: string) => Promise<boolean>;
-  getRefferals: () => Promise<User[] | undefined>;
   updateAccount: (name: string, phoneNumber: string, bio: string) => Promise<boolean>;
   deleteAccount: (reason: string) => Promise<boolean>;
 }
@@ -86,20 +82,13 @@ export const UserAuthProvider = ({ children }: { children: ReactNode }) => {
         password,
       })
 
-      if (request?.token) {
-        const { password, ...userWithoutPassword } = request?.user;
-        api.updateToken(request?.token);
-        setUser(userWithoutPassword);
-        localStorage.setItem('user', JSON.stringify(userWithoutPassword));
+      if (request) {
+        const { id, accessToken, refreshToken } = request;
+        api.updateToken({ accessToken, refreshToken });
         // toast.success('Logged in successfully!');
         return 'success';
-      } else if (request?.isNewDevice) {
-        // toast.error(request?.message);
-        return 'new';
-      } else {
-        // toast.error('Invalid email or password');
-        return 'error';
       }
+      return 'error';
     } catch (error) {
       // toast.error('Login failed: ' + error?.message);
       return 'error';
@@ -154,20 +143,6 @@ export const UserAuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const checkUsernameAvailability = async (username: string): Promise<boolean> => {
-    try {
-      // call api
-      const request = await api.get(Endpoints.checkUsername + `/${username}`)
-
-      if (request) {
-        return true
-      }
-      return false;
-    } catch (error) {
-      // toast.error('Failed to check username availability');
-      return false;
-    }
-  };
 
   const forgetPassword = async (email: string): Promise<boolean> => {
     setIsLoading(true);
@@ -265,23 +240,6 @@ export const UserAuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const getRefferals = async () => {
-    setIsLoading(true);
-
-    try {
-      // call get refferals api
-      const request = await api.get(Endpoints.refferals)
-
-      if (request) {
-        return request;
-      }
-    } catch (error) {
-      // toast.error('Failed to get refferals: ' + error?.message);
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
   const logout = () => {
     api.get(Endpoints.logout)
       .then(() => {
@@ -295,25 +253,6 @@ export const UserAuthProvider = ({ children }: { children: ReactNode }) => {
         api.updateToken(null);
         // toast.success('Logged out');
       });
-  };
-
-  const isBaker = () => {
-    return user?.hasShop;
-  };
-
-  const isAdmin = () => {
-    return user?.userType === 'Admin';
-  };
-
-  const updateUserRole = (role: 'user' | 'baker' | 'admin') => {
-    if (!user) return;
-
-    // const updatedUser = { ...user, role };
-    // setUser(updatedUser);
-    // localStorage.setItem('user', JSON.stringify(updatedUser));
-
-    // In a real app, this would make an API call to update the database
-    // toast.success(`User role updated to ${role}`);
   };
 
   const changePassword = async (currentPassword: string, newPassword: string): Promise<boolean> => {
@@ -393,16 +332,12 @@ export const UserAuthProvider = ({ children }: { children: ReactNode }) => {
       login,
       register,
       logout,
-      isAdmin,
-      updateUserRole,
       changePassword,
       verifyOTP,
       requestOTP,
-      checkUsernameAvailability,
       forgetPassword,
       resetPassword,
       resetPin,
-      getRefferals,
       updateAccount,
       deleteAccount,
     }}>
