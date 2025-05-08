@@ -44,7 +44,6 @@ const Login = () => {
         setLoading(false);
       }
     });
-    console.log("Login submitted with:", { email, password });
   };
 
   return (

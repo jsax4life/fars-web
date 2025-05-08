@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ApiProvider } from "@/hooks/useApi";
 import { UserAuthProvider } from "@/hooks/useUserAuth";
+import { Toaster as Sonner } from "@/components/utility/sonner";
 
 export const metadata: Metadata = {
   title: "Login Page",
@@ -16,6 +17,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning>
+        <Sonner />
         <ApiProvider>
           <UserAuthProvider>
             {children}
