@@ -3,6 +3,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { useApi } from './useApi';
 import Endpoints from '@/lib/endpoints';
 import { User } from '@/types';
+import { toast } from 'sonner';
 
 
 interface AuthContextType {
@@ -59,8 +60,8 @@ export const UserAuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(request);
         localStorage.setItem('user', JSON.stringify(request));
       }
-    } catch (error) {
-      // toast.error('Failed to get profile: ' + error?.message);
+    } catch (error: any) {
+      toast.error('Failed to get profile: ' + error?.message);
     } finally {
       setIsLoading(false);
     }
@@ -85,12 +86,12 @@ export const UserAuthProvider = ({ children }: { children: ReactNode }) => {
       if (request) {
         const { id, accessToken, refreshToken } = request;
         api.updateToken({ accessToken, refreshToken });
-        // toast.success('Logged in successfully!');
+        toast.success('Logged in successfully!');
         return 'success';
       }
       return 'error';
-    } catch (error) {
-      // toast.error('Login failed: ' + error?.message);
+    } catch (error: any) {
+      toast.error('Login failed: ' + error?.message);
       return 'error';
     } finally {
       setIsLoading(false);
