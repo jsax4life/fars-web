@@ -13,11 +13,7 @@ const Login = () => {
 
   const handleForgotPassword = (e: any) => {
     e.preventDefault();
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      router.push("/ForgotPassword");
-    }, 3000);
+    router.push("/ForgotPassword");
   };
 
   const handleSubmit = (e: any) => {

@@ -155,12 +155,12 @@ export const UserAuthProvider = ({ children }: { children: ReactNode }) => {
       })
 
       if (request?.message) {
-        // toast.success(request?.message);
+        toast.success(request?.message);
         return true;
       }
       return false;
-    } catch (error) {
-      // toast.error('Request failed: ' + error?.message);
+    } catch (error: any) {
+      toast.error('Request failed: ' + error?.message);
       return false;
     } finally {
       setIsLoading(false);

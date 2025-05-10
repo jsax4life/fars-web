@@ -4,7 +4,7 @@ const Endpoints = {
     register: '/auth/sign-up',
     verify: '/auth/verify-account',
     requestOtp: '/auth/resend-otp',
-    forgotPassword: '/auth/forgot-password',
+    forgotPassword: '/api/auth/forgot-password',
     resetPassword: '/auth/reset-password',
     resetPin: '/auth/reset-pin',
     logout: '/api/auth/logout',
