@@ -98,18 +98,17 @@ export const useApi = () => {
             const result = await response.json();
 
             if (!response.ok) {
-                throw new Error(result.message || "Something went wrong");
+                // Handle token expiration or invalidation here
+                if (response.status === 401 || response.statusText === "Unauthorized") {
+                    // Optionally, you can refresh the token here or redirect to login
+                    console.warn("Token expired. Please log in again.");
+                    updateToken(null); // Clear token on error
+                }
+                throw new Error(result.message || response.statusText);
             }
 
             return result;
         } catch (error: any) {
-            console.error("API Error:", error);
-            // Handle token expiration or invalidation here
-            if (error.statusCode === 401 || error.message === "Unauthorized") {
-                // Optionally, you can refresh the token here or redirect to login
-                console.warn("Token expired. Please log in again.");
-                updateToken(null); // Clear token on error
-            }
             throw error;
         }
     };
