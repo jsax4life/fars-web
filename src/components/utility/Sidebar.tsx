@@ -1,5 +1,7 @@
 "use client";
 import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import React, { useState } from "react";
 import {
   FiFile,
@@ -18,23 +20,23 @@ import {
   FiChevronRight,
 } from "react-icons/fi";
 import { MenuItem } from '../../types/menu';
+
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>(
-    {}
-  );
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+  const pathname = usePathname();
 
-  const menuItems : MenuItem[] = [
-    { name: "File", icon: '/sidebar/1.svg' },
-    { name: "Edit", icon: '/sidebar/2.svg' },
-    { name: "Maintenance", icon: '/sidebar/3.svg' },
-    { name: "Client Management", icon: '/sidebar/4.svg' },
-    { name: "Role Management", icon: '/sidebar/5.svg' },
-    { name: "Staff", icon: '/sidebar/6.svg' },
-    { name: "Report", icon: '/sidebar/7.svg' },
-    { name: "Classification", icon: '/sidebar/8.svg' },
-    { name: "Bank Account", icon: '/sidebar/9.svg' },
-    { name: "Help", icon: '/sidebar/10.svg' },
+  const menuItems: MenuItem[] = [
+    { name: "File", icon: '/sidebar/1.svg', path: '/file' },
+    { name: "Edit", icon: '/sidebar/2.svg', path: '/edit' },
+    { name: "Maintenance", icon: '/sidebar/3.svg', path: '/maintenance' },
+    { name: "Client Management", icon: '/sidebar/4.svg', path: '/ClientList' },
+    { name: "Role Management", icon: '/sidebar/5.svg', path: '/RoleList' },
+    { name: "Staff", icon: '/sidebar/6.svg', path: '/UserList' },
+    { name: "Report", icon: '/sidebar/7.svg', path: '/report' },
+    { name: "Classification", icon: '/sidebar/8.svg', path: '/classification' },
+    { name: "Bank Account", icon: '/sidebar/9.svg', path: '/Account' },
+    { name: "Help", icon: '/sidebar/10.svg', path: '/help' },
   ];
 
   const toggleItem = (name: string) => {
@@ -42,6 +44,11 @@ const Sidebar = () => {
       ...prev,
       [name]: !prev[name],
     }));
+  };
+
+  // Function to check if a route is active
+  const isActive = (path: string) => {
+    return pathname === path || pathname.startsWith(`${path}/`);
   };
 
   return (
@@ -78,9 +85,12 @@ const Sidebar = () => {
             <ul className="space-y-1">
               {menuItems.map((item) => (
                 <li key={item.name}>
-                  <button
+                  <Link
+                    href={item.path}
                     onClick={() => toggleItem(item.name)}
-                    className={`w-full flex items-center justify-between px-4 py-3 text-left rounded-md hover:bg-gray-700 transition-colors ${expandedItems[item.name] ? 'bg-gray-700' : ''}`}
+                    className={`w-full flex items-center px-4 py-3 rounded-md hover:bg-gray-700 transition-colors ${
+                      isActive(item.path) ? 'bg-gray-700 font-medium' : ''
+                    }`}
                   >
                     <div className="flex items-center">
                       <Image 
@@ -92,10 +102,7 @@ const Sidebar = () => {
                       />
                       <span>{item.name}</span>
                     </div>
-                    
-                  </button>
-
-                  
+                  </Link>
                 </li>
               ))}
             </ul>
