@@ -112,13 +112,13 @@ const Account = () => {
             </div>
 
             <div className="flex flex-col items-start gap-4 mb-4">
-              <div className="font-semibold text-lg md:text-xl mr-4">Account Selection</div>
+              <div className="font-semibold text-black text-lg md:text-xl mr-4">Account Selection</div>
               <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-4 w-full mb-4">
                 <div className="relative w-full md:w-auto md:flex-1">
                   <input
                     type="text"
                     placeholder="Search"
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-indigo-500 text-sm"
+                    className="w-full pl-10 pr-4 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:border-indigo-500 text-sm"
                   />
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">
                     <FaSearch />
@@ -128,14 +128,14 @@ const Account = () => {
                   <input
                     type="text"
                     placeholder="Account Number"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-indigo-500 text-sm"
+                    className="w-full px-4 py-2 border text-black border-gray-300 rounded-md focus:outline-none focus:border-indigo-500 text-sm"
                   />
                 </div>
                 <div className="relative w-full md:w-auto md:flex-1">
                   <input
                     type="text"
                     placeholder="Account Code"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-indigo-500 text-sm"
+                    className="w-full px-4 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:border-indigo-500 text-sm"
                   />
                 </div>
                 <button className="w-full md:w-auto bg-orange-500 text-white py-2 px-4 rounded-md hover:bg-orange-600 focus:outline-none text-sm">
@@ -154,11 +154,11 @@ const Account = () => {
                           <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">S/N</th>
                           <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                           <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account Name</th>
-                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Account Number</th>
-                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Account Type</th>
-                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Symbol</th>
-                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden xl:table-cell">Bank Name</th>
-                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden xl:table-cell">Bank Address</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ">Account Number</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account Type</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Symbol</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ">Bank Name</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ">Bank Address</th>
                           <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
                         </tr>
                       </thead>
@@ -168,11 +168,11 @@ const Account = () => {
                             <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.sNo}</td>
                             <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.entryDate}</td>
                             <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.transactionDate}</td>
-                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">{transaction.valueDate}</td>
-                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 hidden lg:table-cell">{transaction.tellerNumber}</td>
+                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 ">{transaction.valueDate}</td>
+                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 ">{transaction.tellerNumber}</td>
                             <td className="px-3 py-4 text-sm text-gray-500">{transaction.transactionDescription}</td>
-                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 hidden lg:table-cell">{transaction.transactionType}</td>
-                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 hidden xl:table-cell">{transaction.chequeNo}</td>
+                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 ">{transaction.transactionType}</td>
+                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 ">{transaction.chequeNo}</td>
                             <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 relative">
                               <button>
                                 <img
