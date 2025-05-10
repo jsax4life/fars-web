@@ -2,8 +2,10 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useUserAuth } from "@/hooks/useUserAuth";
 
 const OTP: React.FC = () => {
+  const { forgetPassword } = useUserAuth()
   const [loading, setLoading] = useState<boolean>(false);
   const [otp, setOtp] = useState<string>("");
   const router = useRouter();
@@ -23,6 +25,14 @@ const OTP: React.FC = () => {
       }, 2000);
     }
   }, [otp, router]);
+
+  const handleResendCode = () => {
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      console.log("Resend Code clicked");
+    }, 2000);
+  }
 
   const handleInputChange = (index: number, value: string) => {
     const numericValue = value.replace(/[^0-9]/g, "").slice(0, 1);
