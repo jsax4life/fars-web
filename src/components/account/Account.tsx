@@ -24,107 +24,121 @@ const Account = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100 overflow-hidden">
-      {/* Fixed Sidebar - assuming your sidebar is 64px wide */}
-      <div className="fixed h-full w-64">
+    <div className="flex flex-col md:flex-row h-screen bg-gray-100 overflow-hidden">
+      {/* Sidebar - hidden on mobile, shown on medium screens and up */}
+      <div className="hidden md:block fixed h-full w-64">
         <Sidebar />
       </div>
 
-      {/* Scrollable Main Content */}
-      <div className="flex-1 ml-64 overflow-auto">
-        <div className="bg-gray-100 min-h-full p-6">
-          <div className="bg-white rounded-md shadow-md p-6">
-            <div className="mb-4 flex border-b border-gray-200">
-              <button
-                onClick={() => handleTabChange("Entry")}
-                className={`py-2 px-4 -mb-px font-semibold text-sm ${
-                  activeTab === "Entry"
-                    ? "border-b-2 border-orange-500 text-orange-500"
-                    : "text-gray-500 hover:text-orange-500"
-                } focus:outline-none`}
-              >
-                Entry
-              </button>
-              <button
-                onClick={() => handleTabChange("Reconstructed Statement")}
-                className={`py-2 px-4 -mb-px font-semibold text-sm ${
-                  activeTab === "Reconstructed Statement"
-                    ? "border-b-2 border-orange-500 text-orange-500"
-                    : "text-gray-500 hover:text-orange-500"
-                } focus:outline-none`}
-              >
-                Reconstructed Statement
-              </button>
-              <button
-                onClick={() => handleTabChange("Bank Statement")}
-                className={`py-2 px-4 -mb-px font-semibold text-sm ${
-                  activeTab === "Bank Statement"
-                    ? "border-b-2 border-orange-500 text-orange-500"
-                    : "text-gray-500 hover:text-orange-500"
-                } focus:outline-none`}
-              >
-                Bank Statement
-              </button>
-              <button
-                onClick={() => handleTabChange("Cash Back")}
-                className={`py-2 px-4 -mb-px font-semibold text-sm ${
-                  activeTab === "Cash Back"
-                    ? "border-b-2 border-orange-500 text-orange-500"
-                    : "text-gray-500 hover:text-orange-500"
-                } focus:outline-none`}
-              >
-                Cash Back
-              </button>
-              <button
-                onClick={() => handleTabChange("Trans Matched")}
-                className={`py-2 px-4 -mb-px font-semibold text-sm ${
-                  activeTab === "Trans Matched"
-                    ? "border-b-2 border-orange-500 text-orange-500"
-                    : "text-gray-500 hover:text-orange-500"
-                } focus:outline-none`}
-              >
-                Trans Matched
-              </button>
-              <button
-                onClick={() => handleTabChange("Query")}
-                className={`py-2 px-4 -mb-px font-semibold text-sm ${
-                  activeTab === "Query"
-                    ? "border-b-2 border-orange-500 text-orange-500"
-                    : "text-gray-500 hover:text-orange-500"
-                } focus:outline-none`}
-              >
-                Query
-              </button>
+      {/* Mobile header with menu button - shown only on small screens */}
+      <div className="md:hidden bg-white shadow-sm p-4 flex items-center">
+        <button className="mr-4">
+          {/* Mobile menu icon would go here */}
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        <h1 className="text-xl font-semibold">Account</h1>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 md:ml-64 overflow-auto mt-16 md:mt-0">
+        <div className="bg-gray-100 min-h-full p-4 md:p-6">
+          <div className="bg-white rounded-md shadow-md p-4 md:p-6">
+            {/* Tabs - scrollable on mobile */}
+            <div className="mb-4 overflow-x-auto">
+              <div className="flex whitespace-nowrap border-b border-gray-200">
+                <button
+                  onClick={() => handleTabChange("Entry")}
+                  className={`py-2 px-3 md:px-4 -mb-px font-semibold text-sm ${
+                    activeTab === "Entry"
+                      ? "border-b-2 border-orange-500 text-orange-500"
+                      : "text-gray-500 hover:text-orange-500"
+                  } focus:outline-none`}
+                >
+                  Entry
+                </button>
+                <button
+                  onClick={() => handleTabChange("Reconstructed Statement")}
+                  className={`py-2 px-3 md:px-4 -mb-px font-semibold text-sm ${
+                    activeTab === "Reconstructed Statement"
+                      ? "border-b-2 border-orange-500 text-orange-500"
+                      : "text-gray-500 hover:text-orange-500"
+                  } focus:outline-none`}
+                >
+                  Reconstructed Statement
+                </button>
+                <button
+                  onClick={() => handleTabChange("Bank Statement")}
+                  className={`py-2 px-3 md:px-4 -mb-px font-semibold text-sm ${
+                    activeTab === "Bank Statement"
+                      ? "border-b-2 border-orange-500 text-orange-500"
+                      : "text-gray-500 hover:text-orange-500"
+                  } focus:outline-none`}
+                >
+                  Bank Statement
+                </button>
+                <button
+                  onClick={() => handleTabChange("Cash Back")}
+                  className={`py-2 px-3 md:px-4 -mb-px font-semibold text-sm ${
+                    activeTab === "Cash Back"
+                      ? "border-b-2 border-orange-500 text-orange-500"
+                      : "text-gray-500 hover:text-orange-500"
+                  } focus:outline-none`}
+                >
+                  Cash Back
+                </button>
+                <button
+                  onClick={() => handleTabChange("Trans Matched")}
+                  className={`py-2 px-3 md:px-4 -mb-px font-semibold text-sm ${
+                    activeTab === "Trans Matched"
+                      ? "border-b-2 border-orange-500 text-orange-500"
+                      : "text-gray-500 hover:text-orange-500"
+                  } focus:outline-none`}
+                >
+                  Trans Matched
+                </button>
+                <button
+                  onClick={() => handleTabChange("Query")}
+                  className={`py-2 px-3 md:px-4 -mb-px font-semibold text-sm ${
+                    activeTab === "Query"
+                      ? "border-b-2 border-orange-500 text-orange-500"
+                      : "text-gray-500 hover:text-orange-500"
+                  } focus:outline-none`}
+                >
+                  Query
+                </button>
+              </div>
             </div>
 
             <div className="flex flex-col items-start gap-4 mb-4">
-              <div className="font-semibold text-xl mr-4">Account Selection</div>
-              <div className="flex items-center mb-4">
-                <div className="relative mr-2">
+              <div className="font-semibold text-lg md:text-xl mr-4">Account Selection</div>
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-4 w-full mb-4">
+                <div className="relative w-full md:w-auto md:flex-1">
                   <input
                     type="text"
                     placeholder="Search"
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-indigo-500 sm:text-sm"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-indigo-500 text-sm"
                   />
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">
                     <FaSearch />
                   </div>
                 </div>
-                <div className="relative mr-2">
+                <div className="relative w-full md:w-auto md:flex-1">
                   <input
                     type="text"
                     placeholder="Account Number"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-indigo-500 sm:text-sm"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-indigo-500 text-sm"
                   />
                 </div>
-                <div className="relative mr-4">
+                <div className="relative w-full md:w-auto md:flex-1">
                   <input
                     type="text"
                     placeholder="Account Code"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-indigo-500 sm:text-sm"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-indigo-500 text-sm"
                   />
                 </div>
-                <button className="bg-orange-500 text-white py-2 px-4 rounded-md hover:bg-orange-600 focus:outline-none sm:text-sm">
+                <button className="w-full md:w-auto bg-orange-500 text-white py-2 px-4 rounded-md hover:bg-orange-600 focus:outline-none text-sm">
                   Create New
                 </button>
               </div>
@@ -137,29 +151,29 @@ const Account = () => {
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50 sticky top-0">
                         <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">S/N</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account Name</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account Number</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account Type</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Symbol</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bank Name</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bank Address</th>
-                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">S/N</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account Name</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Account Number</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Account Type</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Symbol</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden xl:table-cell">Bank Name</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden xl:table-cell">Bank Address</th>
+                          <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
                         {transactions.map((transaction) => (
                           <tr key={transaction.sNo}>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.sNo}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.entryDate}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.transactionDate}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.valueDate}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.tellerNumber}</td>
-                            <td className="px-6 py-4 text-sm text-gray-500">{transaction.transactionDescription}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.transactionType}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.chequeNo}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 relative">
+                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.sNo}</td>
+                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.entryDate}</td>
+                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.transactionDate}</td>
+                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">{transaction.valueDate}</td>
+                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 hidden lg:table-cell">{transaction.tellerNumber}</td>
+                            <td className="px-3 py-4 text-sm text-gray-500">{transaction.transactionDescription}</td>
+                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 hidden lg:table-cell">{transaction.transactionType}</td>
+                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 hidden xl:table-cell">{transaction.chequeNo}</td>
+                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 relative">
                               <button>
                                 <img
                                   src="/Users/action.svg"
