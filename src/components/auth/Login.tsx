@@ -1,9 +1,11 @@
 "use client";
-
+import { toast } from 'sonner';
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useUserAuth } from "@/hooks/useUserAuth";
 
 const Login = () => {
+  const { login } = useUserAuth()
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,11 +22,28 @@ const Login = () => {
 
   const handleSubmit = (e: any) => {
     e.preventDefault();
-    setTimeout(() => {
-      setLoading(false);
-      router.push("/UserList");
-    }, 3000);
-    console.log("Login submitted with:", { email, password });
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+
+    // Password non-empty check
+    if (password.trim() === "") {
+      toast.error("Password cannot be empty.");
+      return;
+    }
+    setLoading(true);
+    // Call the login function from useUserAuth
+    login(email, password).then((response) => {
+      if (response === "success") {
+        setLoading(false);
+        router.push("/UserList");
+      } else {
+        setLoading(false);
+      }
+    });
   };
 
   return (
