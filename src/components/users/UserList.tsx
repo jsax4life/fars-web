@@ -558,7 +558,7 @@ const UserList = () => {
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
                 <div className="mb-4">
-                  <h3 className="text-lg font-semibold">Confirm Deactivation</h3>
+                  <h3 className="text-lg font-semibold text-gray-700">Confirm Deactivation</h3>
                   <p className="text-gray-600 mt-2">
                     Are you sure you want to deactivate this user?
                   </p>
@@ -587,7 +587,7 @@ const UserList = () => {
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-lg p-6 w-full max-w-md">
                 <div className="mb-6">
-                  <h3 className="text-lg font-semibold">Deactivation Reason</h3>
+                  <h3 className="text-lg font-semibold text-gray-700">Deactivation Reason</h3>
                 </div>
 
                 <div className="space-y-4">
