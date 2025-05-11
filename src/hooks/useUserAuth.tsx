@@ -23,7 +23,7 @@ interface AuthContextType {
   resetPassword: (password: string, token: string) => Promise<boolean>;
   forgetPassword: (email: string) => Promise<boolean>;
   resetPin: (otp: string, pin: string, confirmPin: string) => Promise<boolean>;
-  updateAccount: (name: string, phoneNumber: string, bio: string) => Promise<boolean>;
+  updateAccount: (id: string, data: {}) => Promise<boolean>;
   deleteAccount: (reason: string) => Promise<boolean>;
 }
 
@@ -230,16 +230,21 @@ export const UserAuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateAccount = async (name: string, phoneNumber: string, bio: string) => {
+  const updateAccount = async (id: string, data: {
+    firstName?: string,
+    lastName?: string,
+    username?: string,
+    email?: string,
+    avatarUrl?: string,
+    role?: string,
+    permissions?: string[],
+    isActive?: true
+  }) => {
     setIsLoading(true);
 
     try {
       // call update account api
-      const request = await api.put(Endpoints.updateAccount, {
-        name,
-        phoneNumber,
-        bio
-      })
+      const request = await api.put(Endpoints.updateAccount + id, data)
 
       if (request) {
         // toast.success('Account updated successfully!');

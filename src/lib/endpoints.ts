@@ -9,7 +9,7 @@ const Endpoints = {
     resetPin: '/auth/reset-pin',
     logout: '/api/auth/logout',
     verifyPin: '/account/verify-pin/',
-    updateAccount: '/account/update-profile',
+    updateAccount: '/api/users/',
     logOut: '/auth/logout',
     profile: '/api/auth/profile',
     account: '/account',
