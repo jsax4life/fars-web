@@ -118,6 +118,7 @@ export const useApi = () => {
         updateToken,
         get: (endpoint: string) => request("GET", endpoint),
         post: (endpoint: string, data: any) => request("POST", endpoint, data),
+        patch: (endpoint: string, data: any) => request("PATCH", endpoint, data),
         put: (endpoint: string, data: any) => request("PUT", endpoint, data),
         delete: (endpoint: string) => request("DELETE", endpoint),
     };

@@ -1,13 +1,17 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useUserAuth } from "@/hooks/useUserAuth";
 
 const NewPassword = () => {
+  const {resetPassword} = useUserAuth()
   const [loading, setLoading] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get('token');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,17 +22,24 @@ const NewPassword = () => {
     }
 
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const response = await resetPassword(password, token!);
+      if (response) {
+        setLoading(false);
+        router.replace("/");
+      } else {
+        setLoading(false);
+      }
+    } catch (error) {
       setLoading(false);
-      console.log("Password reset successfully:", password);
-      router.push("/"); // redirect to login or home after success
-    }, 2000);
+      console.error("Error resetting password:", error);
+    }
   };
 
   return (
     <div className="relative min-h-screen flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8">
-        {/* Logo at top left */}
-        <div className="absolute top-6 left-6 z-20">
+      {/* Logo at top left */}
+      <div className="absolute top-6 left-6 z-20">
         <img src="/logo.svg" alt="Company Logo" className="h-20 w-auto" />
       </div>
       {loading && (
@@ -37,9 +48,9 @@ const NewPassword = () => {
         </div>
       )}
 
-<div className="absolute inset-0 z-0 bg-[url('/bg.svg')] bg-cover bg-no-repeat opacity-100"></div>
+      <div className="absolute inset-0 z-0 bg-[url('/bg.svg')] bg-cover bg-no-repeat opacity-100"></div>
 
-<div className="absolute inset-0 z-10 bg-gradient-to-br from-[#2E2D2D]/90 to-[#2E2D2D]/50"></div>
+      <div className="absolute inset-0 z-10 bg-gradient-to-br from-[#2E2D2D]/90 to-[#2E2D2D]/50"></div>
 
 
       <div className="relative z-20 w-full max-w-md">
@@ -50,7 +61,7 @@ const NewPassword = () => {
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-4">
           <div>
-          
+
             <input
               type="password"
               id="password"
@@ -63,7 +74,7 @@ const NewPassword = () => {
           </div>
 
           <div>
-          
+
             <input
               type="password"
               id="confirmPassword"

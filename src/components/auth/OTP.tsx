@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useUserAuth } from "@/hooks/useUserAuth";
 
 const OTP: React.FC = () => {
@@ -10,22 +10,23 @@ const OTP: React.FC = () => {
   const email = searchParams.get('email');
   const [loading, setLoading] = useState<boolean>(false);
   const [otp, setOtp] = useState<string>("");
+  const router = useRouter();
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   useEffect(() => {
     if (inputRefs.current[0]) inputRefs.current[0].focus();
   }, []);
 
-  // useEffect(() => {
-  //   if (otp.length === 4) {
-  //     setLoading(true);
-  //     setTimeout(() => {
-  //       setLoading(false);
-  //       console.log("OTP Submitted:", otp);
-  //       router.push("/NewPassword");
-  //     }, 2000);
-  //   }
-  // }, [otp, router]);
+  useEffect(() => {
+    if (otp.length === 4) {
+      setLoading(true);
+      setTimeout(() => {
+        setLoading(false);
+        console.log("OTP Submitted:", otp);
+        router.replace("/NewPassword?token=" + otp);
+      }, 2000);
+    }
+  }, [otp, router]);
 
   const handleResendCode = () => {
     setLoading(true);
@@ -78,13 +79,13 @@ const OTP: React.FC = () => {
 
       <div className="relative z-20 w-full max-w-md">
         <h1 className="text-3xl sm:text-4xl font-bold text-white">
-          A reset link has been sent to your {email?.slice(0, 3)}****@{email?.split("@")[1]}
+          Enter the 6-digit sent to {email}
         </h1>
         <p className="mt-2 text-sm font-light sm:text-base text-[#f3f3f3]">
-          Please check your email and even the spam folder for the reset link.
+          Please enter the 4-digit OTP sent to your email address.
         </p>
 
-        {/* <div className="mt-8 space-y-4">
+        <div className="mt-8 space-y-4">
           <div className="flex space-x-2 justify-start">
             {[0, 1, 2, 3].map((index) => (
               <input
@@ -99,12 +100,12 @@ const OTP: React.FC = () => {
               />
             ))}
           </div>
-        </div> */}
+        </div>
 
         <div className="mt-4 text-left text-gray-400">
-          Didn't receive the link?{" "}
+          Didn't receive the Code?{" "}
           <button onClick={handleResendCode} className="text-[#F36F2E] hover:underline focus:outline-none">
-            Resend Link
+            Resend Code
           </button>
         </div>
       </div>

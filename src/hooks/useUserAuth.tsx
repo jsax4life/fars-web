@@ -20,9 +20,7 @@ interface AuthContextType {
   ) => Promise<boolean>;
   logout: () => void;
   changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
-  verifyOTP: (otp: string, email: string) => Promise<boolean>;
-  resetPassword: (password: string, confirmPassword: string) => Promise<boolean>;
-  requestOTP: (email: string) => Promise<boolean>;
+  resetPassword: (password: string, token: string) => Promise<boolean>;
   forgetPassword: (email: string) => Promise<boolean>;
   resetPin: (otp: string, pin: string, confirmPin: string) => Promise<boolean>;
   updateAccount: (name: string, phoneNumber: string, bio: string) => Promise<boolean>;
@@ -98,53 +96,6 @@ export const UserAuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const verifyOTP = async (otp: string, email: string): Promise<boolean> => {
-    setIsLoading(true);
-
-    try {
-      // call verify otp api
-      const request = await api.post(Endpoints.verify, {
-        email,
-        otp,
-      })
-
-      if (request?.user) {
-        api.updateToken(request?.token);
-        setUser(request?.user);
-        localStorage.setItem('user', JSON.stringify(request?.user));
-        // toast.success('OTP verified successfully!');
-        return true;
-      }
-      return false;
-    } catch (error) {
-      // toast.error('OTP verification failed: ' + error?.message);
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const requestOTP = async (email: string): Promise<boolean> => {
-    setIsLoading(true);
-
-    try {
-      // call request otp api
-      const request = await api.post(Endpoints.requestOtp + `/${email}`, {})
-
-      if (request?.message) {
-        // toast.success(request?.message);
-        return true;
-      }
-      return false;
-    } catch (error) {
-      // toast.error('OTP request failed: ' + error?.message);
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-
   const forgetPassword = async (email: string): Promise<boolean> => {
     setIsLoading(true);
 
@@ -168,23 +119,23 @@ export const UserAuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
 
-  const resetPassword = async (password: string, confirmPassword: string): Promise<boolean> => {
+  const resetPassword = async (password: string, token: string): Promise<boolean> => {
     setIsLoading(true);
 
     try {
       // call reset otp api
-      const request = await api.post(Endpoints.resetPassword, {
+      const request = await api.patch(Endpoints.resetPassword, {
         password,
-        passwordConfirmation: confirmPassword,
+        resetToken: token,
       })
 
       if (request?.message) {
-        // toast.success(request.message);
+        toast.success(request.message);
         return true;
       }
       return false;
-    } catch (error) {
-      // toast.error('Password reset failed: ' + error?.message);
+    } catch (error: any) {
+      toast.error('Password reset failed: ' + error?.message);
       return false;
     } finally {
       setIsLoading(false);
@@ -334,8 +285,6 @@ export const UserAuthProvider = ({ children }: { children: ReactNode }) => {
       register,
       logout,
       changePassword,
-      verifyOTP,
-      requestOTP,
       forgetPassword,
       resetPassword,
       resetPin,
