@@ -10,6 +10,7 @@ const Endpoints = {
     logout: '/api/auth/logout',
     verifyPin: '/account/verify-pin/',
     updateAccount: '/api/users/',
+    createuser: '/api/users',
     logOut: '/auth/logout',
     profile: '/api/auth/profile',
     account: '/account',

@@ -17,7 +17,7 @@ interface NewAdmin {
 
 const UserList = () => {
   const router = useRouter();
-  const { getUsers, updateUser } = useUsers()
+  const { getUsers, updateUser, deleteUser, createUser } = useUsers()
   const { user } = useUserAuth()
   const [role, setRole] = useState('staff');
   const [users, setUsers] = useState<User[]>([]);
@@ -29,7 +29,7 @@ const UserList = () => {
     fullName: "",
     email: "",
     phone: "",
-    role: "Admin",
+    role: "admin",
   });
 
   // Deactivation flow states
@@ -136,9 +136,14 @@ const UserList = () => {
   };
 
   const handleDeleteUser = (userId: string) => {
-    console.log("Deleting user:", userId);
-    setUsers(users.filter(user => user.id !== userId));
-    closeActionMenu();
+    setLoading(true)
+    deleteUser(userId).then(() => {
+      setUsers(users.filter(user => user.id !== userId));
+      setShowSuccessModal(true);
+      closeActionMenu();
+    }).finally(() => {
+      setLoading(false)
+    })
   };
 
   const openViewModal = (user: User) => {
@@ -183,7 +188,7 @@ const UserList = () => {
         lastName: editFormData.lastName,
         email: editFormData.email,
         // phone: editFormData.phone,
-        role: editFormData.role,
+        role: editFormData.role.toUpperCase(),
       }).then(() => {
         setUsers(users.map(user =>
           user.id === editedUser.id ? { ...user, ...editFormData } : user
@@ -197,13 +202,29 @@ const UserList = () => {
 
   const handleCreateUser = () => {
     setShowCreateModal(false);
-    setShowSuccessModal(true);
-    setNewAdmin({
-      fullName: "",
-      email: "",
-      phone: "",
-      role: "Admin",
-    });
+    setLoading(true)
+    createUser({
+      firstName: newAdmin.fullName.split(" ")[0],
+      lastName: newAdmin.fullName.split(" ")[1],
+      email: newAdmin.email,
+      role: newAdmin.role.toUpperCase(),
+    }).then((res) => {
+      if (res) {
+        setUsers([...users, res]);
+        setShowSuccessModal(true);
+        setNewAdmin({
+          fullName: "",
+          email: "",
+          phone: "",
+          role: "admin",
+        });
+      } else {
+        setShowSuccessModal(false);
+      }
+    }).finally(() => {
+      setLoading(false)
+      setLoading(false)
+    })
   };
 
   const handleConfirmDeactivate = () => {
@@ -536,9 +557,9 @@ const UserList = () => {
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
                     >
-                      <option value="Admin">Admin</option>
-                      <option value="User">User</option>
-                      <option value="Editor">Editor</option>
+                      <option value="admin">Admin</option>
+                      <option value="staff">Staff</option>
+                      <option value="super_admin">Super Admin</option>
                     </select>
                   </div>
 
@@ -817,7 +838,7 @@ const UserList = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label htmlFor="firstName" className="block text-xs font-medium text-gray-600 mb-1">Firstname</label>
-                      <input type="text" id="firstName" name="firstName" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" value={editFormData.firstName} onChange={handleEditFormChange}  />
+                      <input type="text" id="firstName" name="firstName" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" value={editFormData.firstName} onChange={handleEditFormChange} />
                     </div>
                     <div>
                       <label htmlFor="lastName" className="block text-xs font-medium text-gray-600 mb-1">Lastname</label>
