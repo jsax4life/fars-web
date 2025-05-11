@@ -1,37 +1,37 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useUserAuth } from "@/hooks/useUserAuth";
 
 const OTP: React.FC = () => {
   const { forgetPassword } = useUserAuth()
+  const searchParams = useSearchParams();
+  const email = searchParams.get('email');
   const [loading, setLoading] = useState<boolean>(false);
   const [otp, setOtp] = useState<string>("");
-  const router = useRouter();
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   useEffect(() => {
     if (inputRefs.current[0]) inputRefs.current[0].focus();
   }, []);
 
-  useEffect(() => {
-    if (otp.length === 4) {
-      setLoading(true);
-      setTimeout(() => {
-        setLoading(false);
-        console.log("OTP Submitted:", otp);
-        router.push("/NewPassword");
-      }, 2000);
-    }
-  }, [otp, router]);
+  // useEffect(() => {
+  //   if (otp.length === 4) {
+  //     setLoading(true);
+  //     setTimeout(() => {
+  //       setLoading(false);
+  //       console.log("OTP Submitted:", otp);
+  //       router.push("/NewPassword");
+  //     }, 2000);
+  //   }
+  // }, [otp, router]);
 
   const handleResendCode = () => {
     setLoading(true);
-    setTimeout(() => {
+    forgetPassword(email!).finally(() => {
       setLoading(false);
-      console.log("Resend Code clicked");
-    }, 2000);
+    });
   }
 
   const handleInputChange = (index: number, value: string) => {
@@ -78,13 +78,13 @@ const OTP: React.FC = () => {
 
       <div className="relative z-20 w-full max-w-md">
         <h1 className="text-3xl sm:text-4xl font-bold text-white">
-          Enter the 6-digit sent to olayimika@gmail.com
+          A reset link has been sent to your {email?.slice(0, 3)}****@{email?.split("@")[1]}
         </h1>
         <p className="mt-2 text-sm font-light sm:text-base text-[#f3f3f3]">
-          Please enter the 4-digit OTP sent to your email address.
+          Please check your email and even the spam folder for the reset link.
         </p>
 
-        <div className="mt-8 space-y-4">
+        {/* <div className="mt-8 space-y-4">
           <div className="flex space-x-2 justify-start">
             {[0, 1, 2, 3].map((index) => (
               <input
@@ -95,16 +95,16 @@ const OTP: React.FC = () => {
                 value={otp[index] || ""}
                 onChange={(e) => handleInputChange(index, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(index, e)}
-                ref={(el:any) => (inputRefs.current[index] = el)}
+                ref={(el: any) => (inputRefs.current[index] = el)}
               />
             ))}
           </div>
-        </div>
+        </div> */}
 
         <div className="mt-4 text-left text-gray-400">
-          Didn't receive the Code?{" "}
-          <button className="text-[#F36F2E] hover:underline focus:outline-none">
-            Resend Code
+          Didn't receive the link?{" "}
+          <button onClick={handleResendCode} className="text-[#F36F2E] hover:underline focus:outline-none">
+            Resend Link
           </button>
         </div>
       </div>

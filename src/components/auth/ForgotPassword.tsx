@@ -8,7 +8,6 @@ const ForgotPassword = () => {
   const { forgetPassword } = useUserAuth()
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const router = useRouter(); // Initialize the router
 
   const handleLogin = (e: any) => {
@@ -22,7 +21,8 @@ const ForgotPassword = () => {
     forgetPassword(email).then((response) => {
       if (response) {
         setLoading(false);
-        router.push("/OTP");
+        //send email to otp page
+        router.push(`/OTP?email=${encodeURIComponent(email)}`);
       } else {
         setLoading(false);
       }
