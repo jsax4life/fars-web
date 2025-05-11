@@ -177,14 +177,21 @@ const UserList = () => {
 
   const handleSaveEdit = () => {
     if (editedUser) {
-      const updatedUsers = users.map(user =>
-        user.id === editedUser.id
-          ? { ...user, ...editFormData }
-          : user
-      );
-      setUsers(updatedUsers);
-      closeEditModal();
-      setShowSuccessModal(true); // Optionally show a success message
+      setLoading(true)
+      updateUser(editedUser.id, {
+        firstName: editFormData.firstName,
+        lastName: editFormData.lastName,
+        email: editFormData.email,
+        // phone: editFormData.phone,
+        role: editFormData.role,
+      }).then(() => {
+        setUsers(users.map(user =>
+          user.id === editedUser.id ? { ...user, ...editFormData } : user
+        ));
+        setLoading(false)
+        closeEditModal();
+        setShowSuccessModal(true);
+      })
     }
   };
 
@@ -779,9 +786,10 @@ const UserList = () => {
                     <div className="relative">
                       <div className="w-16 h-16 rounded-full bg-orange-200 flex items-center justify-center overflow-hidden">
                         {/* Replace with actual user image */}
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-orange-700">
+                        {/* <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-orange-700">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.125h15.002M9.75 21.75l-3 1.5-3-1.5m9.75 0l3 1.5 3-1.5M9.375 6a9.375 9.375 0 0116.875-3.75m-16.875 3.75l1.5-7.5m15-7.5l-1.5 7.5m-15 6.75a2.25 2.25 0 002.25 2.25m13.5 0a2.25 2.25 0 002.25-2.25m-16.5 0a2.25 2.25 0 012.25-2.25m13.5 0a2.25 2.25 0 012.25 2.25" />
-                        </svg>
+                        </svg> */}
+                        <img src={editedUser.avatarUrl} alt="User Avatar" className="absolute inset-0 w-full h-full object-cover rounded-full" />
                       </div>
                       <button className="absolute bottom-0 right-0 bg-white rounded-full shadow-sm p-1 text-gray-500 hover:text-gray-700">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -790,8 +798,8 @@ const UserList = () => {
                       </button>
                     </div>
                     <div className="ml-4">
-                      <h3 className="text-lg font-semibold text-gray-800">Olayimika Oluwasegun</h3>
-                      <p className="text-sm text-gray-500">olayimikaoluwasegun@gmail.com</p>
+                      <h3 className="text-lg font-semibold text-gray-800">{editedUser.firstName} {editedUser.lastName}</h3>
+                      <p className="text-sm text-gray-500">{editedUser.email}</p>
                     </div>
                   </div>
                   <button onClick={() => setShowEditModal(false)} className="text-gray-500 hover:text-gray-700 focus:outline-none">
@@ -808,16 +816,16 @@ const UserList = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label htmlFor="firstname" className="block text-xs font-medium text-gray-600 mb-1">Firstname</label>
-                      <input type="text" id="firstname" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" value="Olayimika" readOnly />
+                      <label htmlFor="firstName" className="block text-xs font-medium text-gray-600 mb-1">Firstname</label>
+                      <input type="text" id="firstName" name="firstName" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" value={editFormData.firstName} onChange={handleEditFormChange}  />
                     </div>
                     <div>
-                      <label htmlFor="lastname" className="block text-xs font-medium text-gray-600 mb-1">Lastname</label>
-                      <input type="text" id="lastname" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" value="Segun" readOnly />
+                      <label htmlFor="lastName" className="block text-xs font-medium text-gray-600 mb-1">Lastname</label>
+                      <input type="text" id="lastName" name="lastName" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" value={editFormData.lastName} onChange={handleEditFormChange} />
                     </div>
                     <div className="col-span-2">
                       <label htmlFor="email" className="block text-xs font-medium text-gray-600 mb-1">Email Address</label>
-                      <input type="email" id="email" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" value="olayimikaoluwasegun@gmail.com" readOnly />
+                      <input type="email" id="email" name="email" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" value={editFormData.email} onChange={handleEditFormChange} />
                     </div>
                     <div>
                       <label htmlFor="phone" className="block text-xs font-medium text-gray-600 mb-1">Phone Number</label>
@@ -828,11 +836,11 @@ const UserList = () => {
                             {/* Add more country codes */}
                           </select>
                         </div>
-                        <input type="tel" id="phone" className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none" value="08101831001" readOnly />
+                        <input type="tel" id="phone" name="phone" className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none" value={editFormData.phone} onChange={handleEditFormChange} />
                       </div>
                     </div>
                     <div className="col-span-2 flex justify-end">
-                      <button className="bg-orange-500 hover:bg-orange-600 text-white rounded-md py-2 px-4 text-sm font-medium focus:outline-none focus:shadow-outline-orange active:bg-orange-700">
+                      <button onClick={handleSaveEdit} className="bg-orange-500 hover:bg-orange-600 text-white rounded-md py-2 px-4 text-sm font-medium focus:outline-none focus:shadow-outline-orange active:bg-orange-700">
                         Save Changes
                       </button>
                     </div>
