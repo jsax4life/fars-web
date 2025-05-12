@@ -1,12 +1,25 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { FaSearch, FaFilter, FaArchive } from "react-icons/fa";
 import Sidebar from "@/components/utility/Sidebar";
+import Link from "next/link";
+
+interface Transaction {
+  sNo: string;
+  entryDate: string;
+  transactionDate: string;
+  valueDate: string;
+  tellerNumber: string;
+  transactionDescription: string;
+  transactionType: string;
+  chequeNo: string;
+  originalValue: string;
+}
 
 const Account = () => {
-  const [activeTab, setActiveTab] = useState("Entry");
-  const transactions = [
+
+  const transactions: Transaction[] = [
     { sNo: "01", entryDate: "02 - 04 - 2023", transactionDate: "02 - 04 - 2023", valueDate: "02 - 04 - 2023", tellerNumber: "N/A", transactionDescription: "Principal LIQ-406965523730001", transactionType: "Cash/Cheque", chequeNo: "Nil", originalValue: "44,897,985.89" },
     { sNo: "02", entryDate: "02 - 04 - 2023", transactionDate: "02 - 04 - 2023", valueDate: "02 - 04 - 2023", tellerNumber: "U000001333", transactionDescription: "Debetuje baje ide Oluola", transactionType: "Cash/Cheque", chequeNo: "Cash", originalValue: "100,000.00" },
     { sNo: "03", entryDate: "02 - 04 - 2023", transactionDate: "02 - 04 - 2023", valueDate: "02 - 04 - 2023", tellerNumber: "0000001333", transactionDescription: "Bebetuje baje ide Oluola", transactionType: "CHG", chequeNo: "CHG", originalValue: "400,000.00" },
@@ -19,8 +32,70 @@ const Account = () => {
     { sNo: "10", entryDate: "02 - 04 - 2023", transactionDate: "03 - 04 - 2023", valueDate: "03 - 04 - 2023", tellerNumber: "7108001649", transactionDescription: "Principal LIQ-406965523730001", transactionType: "Cash/Cheque", chequeNo: "CHG", originalValue: "465,897.00" },
   ];
 
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
+  // Action menu state
+  const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
+  const [selectedTransactionForAction, setSelectedTransactionForAction] = useState<Transaction | null>(null);
+  const actionMenuRef = useRef<HTMLDivElement>(null);
+  const actionButtonRefs = useRef<{[key: string]: HTMLButtonElement | null}>({});
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (actionMenuRef.current && !actionMenuRef.current.contains(event.target as Node)) {
+        closeActionMenu();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+
+
+  const openActionMenu = (transaction: Transaction, event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    setSelectedTransactionForAction(transaction);
+    setIsActionMenuOpen(true);
+    
+    // Store the button reference
+    if (transaction.sNo) {
+      actionButtonRefs.current[transaction.sNo] = event.currentTarget;
+    }
+  };
+
+  // Calculate position for the popup
+  const getPopupPosition = () => {
+    if (!selectedTransactionForAction?.sNo || !actionButtonRefs.current[selectedTransactionForAction.sNo]) {
+      return { top: 0, left: 0 };
+    }
+
+    const button = actionButtonRefs.current[selectedTransactionForAction.sNo];
+    if (!button) return { top: 0, left: 0 };
+
+    const rect = button.getBoundingClientRect();
+    return {
+      top: rect.bottom + window.scrollY,
+      left: rect.right + window.scrollX - 130, // Adjust 130 to match your popup width
+    };
+  };
+
+  const closeActionMenu = () => {
+    setIsActionMenuOpen(false);
+    setSelectedTransactionForAction(null);
+  };
+
+  const handleDeleteTransaction = (sNo: string) => {
+    console.log("Deleting transaction:", sNo);
+    closeActionMenu();
+    // Implement your delete logic here
+  };
+
+  const openViewModal = (transaction: Transaction) => {
+    console.log("Viewing transaction:", transaction);
+    closeActionMenu();
+    // Implement your view modal logic here
   };
 
   return (
@@ -45,71 +120,7 @@ const Account = () => {
       <div className="flex-1 md:ml-64 overflow-auto mt-16 md:mt-0">
         <div className="bg-gray-100 min-h-full p-4 md:p-6">
           <div className="bg-white rounded-md shadow-md p-4 md:p-6">
-            {/* Tabs - scrollable on mobile */}
-            <div className="mb-4 overflow-x-auto">
-              <div className="flex whitespace-nowrap border-b border-gray-200">
-                <button
-                  onClick={() => handleTabChange("Entry")}
-                  className={`py-2 px-3 md:px-4 -mb-px font-semibold text-sm ${
-                    activeTab === "Entry"
-                      ? "border-b-2 border-orange-500 text-orange-500"
-                      : "text-gray-500 hover:text-orange-500"
-                  } focus:outline-none`}
-                >
-                  Entry
-                </button>
-                <button
-                  onClick={() => handleTabChange("Reconstructed Statement")}
-                  className={`py-2 px-3 md:px-4 -mb-px font-semibold text-sm ${
-                    activeTab === "Reconstructed Statement"
-                      ? "border-b-2 border-orange-500 text-orange-500"
-                      : "text-gray-500 hover:text-orange-500"
-                  } focus:outline-none`}
-                >
-                  Reconstructed Statement
-                </button>
-                <button
-                  onClick={() => handleTabChange("Bank Statement")}
-                  className={`py-2 px-3 md:px-4 -mb-px font-semibold text-sm ${
-                    activeTab === "Bank Statement"
-                      ? "border-b-2 border-orange-500 text-orange-500"
-                      : "text-gray-500 hover:text-orange-500"
-                  } focus:outline-none`}
-                >
-                  Bank Statement
-                </button>
-                <button
-                  onClick={() => handleTabChange("Cash Back")}
-                  className={`py-2 px-3 md:px-4 -mb-px font-semibold text-sm ${
-                    activeTab === "Cash Back"
-                      ? "border-b-2 border-orange-500 text-orange-500"
-                      : "text-gray-500 hover:text-orange-500"
-                  } focus:outline-none`}
-                >
-                  Cash Back
-                </button>
-                <button
-                  onClick={() => handleTabChange("Trans Matched")}
-                  className={`py-2 px-3 md:px-4 -mb-px font-semibold text-sm ${
-                    activeTab === "Trans Matched"
-                      ? "border-b-2 border-orange-500 text-orange-500"
-                      : "text-gray-500 hover:text-orange-500"
-                  } focus:outline-none`}
-                >
-                  Trans Matched
-                </button>
-                <button
-                  onClick={() => handleTabChange("Query")}
-                  className={`py-2 px-3 md:px-4 -mb-px font-semibold text-sm ${
-                    activeTab === "Query"
-                      ? "border-b-2 border-orange-500 text-orange-500"
-                      : "text-gray-500 hover:text-orange-500"
-                  } focus:outline-none`}
-                >
-                  Query
-                </button>
-              </div>
-            </div>
+           
 
             <div className="flex flex-col items-start gap-4 mb-4">
               <div className="font-semibold text-black text-lg md:text-xl mr-4">Account Selection</div>
@@ -138,13 +149,13 @@ const Account = () => {
                     className="w-full px-4 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:border-indigo-500 text-sm"
                   />
                 </div>
-                <button className="w-full md:w-auto bg-orange-500 text-white py-2 px-4 rounded-md hover:bg-orange-600 focus:outline-none text-sm">
+                <Link href = "/NewAccount" className="w-full md:w-auto bg-orange-500 text-white py-2 px-4 rounded-md hover:bg-orange-600 focus:outline-none text-sm">
                   Create New
-                </button>
+                </Link>
               </div>
             </div>
 
-            {activeTab === "Entry" && (
+           
               <>
                 <div className="overflow-x-auto">
                   <div className="max-h-[calc(100vh-300px)] overflow-y-auto">
@@ -173,14 +184,45 @@ const Account = () => {
                             <td className="px-3 py-4 text-sm text-gray-500">{transaction.transactionDescription}</td>
                             <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 ">{transaction.transactionType}</td>
                             <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 ">{transaction.chequeNo}</td>
-                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 relative">
-                              <button>
+                            <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 relative">
+                              <button
+                                ref={el => {
+                                  if (transaction.sNo) actionButtonRefs.current[transaction.sNo] = el;
+                                }}
+                                className="focus:outline-none z-0"
+                                onClick={(e) => openActionMenu(transaction, e)}
+                              >
                                 <img
                                   src="/Users/action.svg"
                                   alt="Dropdown Icon"
-                                  className="w-4 h-4 md:w-5 md:h-5"
+                                  className="w-4 h-4 z-0 md:w-5 md:h-5"
                                 />
                               </button>
+                              {isActionMenuOpen && selectedTransactionForAction?.sNo === transaction.sNo && (
+                                <div
+                                  ref={actionMenuRef}
+                                  className="fixed z-50 bg-white rounded-md shadow-lg"
+                                  style={{
+                                    top: `${getPopupPosition().top}px`,
+                                    left: `${getPopupPosition().left}px`,
+                                  }}
+                                >
+                                  <div className="py-1">
+                                    <Link
+                                      href="/AccountDetails"
+                                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
+                                    >
+                                      View
+                                    </Link>
+                                    <button
+                                      onClick={() => handleDeleteTransaction(transaction.sNo)}
+                                      className="block px-4 py-2 text-sm text-gray-700 border-gray-700 text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
+                                    >
+                                      Delete
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
                             </td>
                           </tr>
                         ))}
@@ -192,13 +234,9 @@ const Account = () => {
                   Showing 1 to {transactions.length} of {transactions.length} entries
                 </div>
               </>
-            )}
+       
 
-            {activeTab !== "Entry" && (
-              <div className="py-6 text-center text-gray-500">
-                Content for "{activeTab}" tab will be displayed here.
-              </div>
-            )}
+          
           </div>
         </div>
       </div>
