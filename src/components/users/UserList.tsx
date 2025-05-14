@@ -17,7 +17,7 @@ interface NewAdmin {
 
 const UserList = () => {
   const router = useRouter();
-  const { getUsers, updateUser, deleteUser, createUser } = useUsers()
+  const { getUsers, updateUser, deleteUser, createUser, deactivateUser } = useUsers()
   const { user } = useUserAuth()
   const [role, setRole] = useState('staff');
   const [users, setUsers] = useState<User[]>([]);
@@ -234,16 +234,21 @@ const UserList = () => {
 
   const handleSubmitDeactivation = () => {
     if (selectedUserId) {
-      setUsers(users.map(user =>
-        user.id === selectedUserId ? { ...user, isActive: false } : user
-      ));
+      deactivateUser(selectedUserId, deactivationReason.message).then(() => {
+        setUsers(users.map(user =>
+          user.id === selectedUserId ? { ...user, isActive: false } : user
+        ));
+        setShowDeactivateForm(false);
+        setShowSuccessModal(true);
+        setDeactivationReason({
+          title: "",
+          message: "",
+        });
+      }).catch(() => {
+        setShowDeactivateForm(false);
+      })
     }
-    setShowDeactivateForm(false);
-    setShowSuccessModal(true);
-    setDeactivationReason({
-      title: "",
-      message: "",
-    });
+
   };
 
   return (

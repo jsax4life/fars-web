@@ -89,6 +89,24 @@ export const useUsers = () => {
         }
     }
 
+    const deactivateUser = async (id: string, reason: string) => {
+        try {
+            // call deactivate account api
+            const request = await api.patch(Endpoints.deactivateUser + id, {
+                reason: reason,
+            })
+
+            if (request) {
+                toast.success('Account deactivated successfully!');
+                return request;
+            }
+            return false;
+        } catch (error: any) {
+            toast.error('Failed to deactivate account: ' + error?.message);
+            return false;
+        }
+    }
+
 
 
     return {
@@ -96,6 +114,7 @@ export const useUsers = () => {
         updateUser,
         deleteUser,
         createUser,
+        deactivateUser,
     }
 
 }
