@@ -513,14 +513,14 @@ const UserList = () => {
             <div className="flex space-x-2">
               <button
                 className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled = {page === 0}
+                disabled={page === 0}
                 onClick={() => setPage((prev) => Math.max(prev - 1, 0))}
               >
                 Previous
               </button>
               <button
                 className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled = {page === Math.ceil(users.length / 10) - 1}
+                disabled={page === Math.ceil(users.length / 10) - 1}
                 onClick={() => setPage((prev) => Math.min(prev + 1, Math.ceil(users.length / 10) - 1))}
               //  className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
               >
@@ -557,18 +557,6 @@ const UserList = () => {
                       className="w-full px-3 py-2 border text-black border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
                     />
                   </div>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                    <input
-                      type="text"
-                      name="fullName"
-                      value={newAdmin.fullName}
-                      onChange={handleInputChange}
-                      placeholder="Enter Admin Full name"
-                      className="w-full px-3 py-2 border text-black border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-                    />
-                  </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
@@ -581,29 +569,7 @@ const UserList = () => {
                       className="w-full text-black px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={newAdmin.email}
-                      onChange={handleInputChange}
-                      placeholder="Enter Admin Email"
-                      className="w-full text-black px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-                    />
-                  </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={newAdmin.phone}
-                      onChange={handleInputChange}
-                      placeholder="Enter Admin Phone Number"
-                      className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-                    />
-                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                     <input
@@ -699,23 +665,6 @@ const UserList = () => {
               </div>
             </div>
           )}
-                <div className="flex justify-end space-x-4 mt-6">
-                  <button
-                    onClick={() => setShowDeactivateConfirm(false)}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleConfirmDeactivate}
-                    className="px-4 py-2 bg-[#F36F2E] text-white rounded-md text-sm font-medium hover:bg-[#E05C2B]"
-                  >
-                    Deactivate
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Deactivation Reason Form */}
           {showDeactivateForm && (
@@ -749,36 +698,7 @@ const UserList = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
-                    <textarea
-                      name="message"
-                      value={deactivationReason.message}
-                      onChange={handleDeactivationInputChange}
-                      placeholder="Enter Message Here"
-                      rows={4}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-                    />
-                  </div>
 
-                  <div className="border-t border-gray-200 pt-4 flex justify-end space-x-4">
-                    <button
-                      onClick={() => setShowDeactivateForm(false)}
-                      className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleSubmitDeactivation}
-                      className="px-4 py-2 bg-[#F36F2E] text-white rounded-md text-sm font-medium hover:bg-[#E05C2B]"
-                    >
-                      Send
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
                   <div className="border-t border-gray-200 pt-4 flex justify-end space-x-4">
                     <button
                       onClick={() => setShowDeactivateForm(false)}
@@ -820,23 +740,7 @@ const UserList = () => {
                     posuere duis. Velit euismod quis sed ut quis.
                   </p>
                 </div>
-                <div className="mb-4">
-                  <h3 className="text-lg font-semibold text-green-600">Successful</h3>
-                  <p className="text-gray-600 mt-2">
-                    Lorem ipsum dolor sit amet consectetur. Tellus pulvinar cras sed
-                    posuere duis. Velit euismod quis sed ut quis.
-                  </p>
-                </div>
 
-                <button
-                  onClick={() => setShowSuccessModal(false)}
-                  className="bg-[#F36F2E] text-white py-2 px-6 rounded-md hover:bg-[#E05C2B] transition-colors"
-                >
-                  Ok
-                </button>
-              </div>
-            </div>
-          )}
                 <button
                   onClick={() => setShowSuccessModal(false)}
                   className="bg-[#F36F2E] text-white py-2 px-6 rounded-md hover:bg-[#E05C2B] transition-colors"
