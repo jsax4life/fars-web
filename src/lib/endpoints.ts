@@ -16,6 +16,7 @@ const Endpoints = {
     account: '/account',
     users: '/api/users',
     deactivateUser: '/api/users/deactivate/',
+    activateUser: '/api/users/activate/',
 }
 
 export default Endpoints;

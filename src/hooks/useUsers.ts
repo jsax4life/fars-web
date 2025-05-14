@@ -107,6 +107,22 @@ export const useUsers = () => {
         }
     }
 
+    const activateUser = async (id: string) => {
+        try {
+            // call activate account api
+            const request = await api.patch(Endpoints.activateUser + id, {})
+
+            if (request) {
+                toast.success('Account activated successfully!');
+                return request;
+            }
+            return false;
+        }
+        catch (error: any) {
+            toast.error('Failed to activate account: ' + error?.message);
+            return false;
+        }
+    }
 
 
     return {
@@ -115,6 +131,7 @@ export const useUsers = () => {
         deleteUser,
         createUser,
         deactivateUser,
+        activateUser,
     }
 
 }

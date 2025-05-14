@@ -17,7 +17,7 @@ interface NewAdmin {
 
 const UserList = () => {
   const router = useRouter();
-  const { getUsers, updateUser, deleteUser, createUser, deactivateUser } = useUsers()
+  const { getUsers, updateUser, deleteUser, createUser, deactivateUser, activateUser } = useUsers()
   const { user } = useUserAuth()
   const [role, setRole] = useState('staff');
   const [users, setUsers] = useState<User[]>([]);
@@ -34,6 +34,7 @@ const UserList = () => {
 
   // Deactivation flow states
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
+  const [showActivateConfirm, setShowActivateConfirm] = useState(false);
   const [showDeactivateForm, setShowDeactivateForm] = useState(false);
   const [deactivationReason, setDeactivationReason] = useState({
     title: "",
@@ -135,6 +136,12 @@ const UserList = () => {
     closeActionMenu();
   };
 
+  const handleActivateUser = (userId: string) => {
+    setSelectedUserId(userId);
+    setShowActivateConfirm(true);
+    closeActionMenu();
+  };
+
   const handleDeleteUser = (userId: string) => {
     setLoading(true)
     deleteUser(userId).then(() => {
@@ -232,6 +239,20 @@ const UserList = () => {
     setShowDeactivateForm(true);
   };
 
+  const handleConfirmActivate = () => {
+    if (selectedUserId) {
+      activateUser(selectedUserId).then(() => {
+        setUsers(users.map(user =>
+          user.id === selectedUserId ? { ...user, isActive: true } : user
+        ));
+        setShowActivateConfirm(false);
+        setShowSuccessModal(true);
+      }).catch(() => {
+        // setShowDeactivateForm(false);
+      })
+    }
+  }
+
   const handleSubmitDeactivation = () => {
     if (selectedUserId) {
       deactivateUser(selectedUserId, deactivationReason.message).then(() => {
@@ -245,7 +266,7 @@ const UserList = () => {
           message: "",
         });
       }).catch(() => {
-        setShowDeactivateForm(false);
+        // setShowDeactivateForm(false);
       })
     }
 
@@ -460,10 +481,10 @@ const UserList = () => {
                               Edit
                             </button>
                             <button
-                              onClick={() => handleDeactivateUser(user.id)}
+                              onClick={() =>user.isActive ? handleDeactivateUser(user.id) : handleActivateUser(user.id)}
                               className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
                             >
-                              Deactivate
+                              {user.isActive ? 'Deactivate' : 'Activate'}
                             </button>
                             <button
                               onClick={() => handleDeleteUser(user.id)}
@@ -578,6 +599,36 @@ const UserList = () => {
               </div>
             </div>
           )}
+
+            {/* Activate Confirmation Modal */}
+            {showActivateConfirm && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold text-gray-700">Confirm Activation</h3>
+                  <p className="text-gray-600 mt-2">
+                    Are you sure you want to activate this user?
+                  </p>
+                </div>
+
+                <div className="flex justify-end space-x-4 mt-6">
+                  <button
+                    onClick={() => setShowActivateConfirm(false)}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleConfirmActivate}
+                    className="px-4 py-2 bg-[#F36F2E] text-white rounded-md text-sm font-medium hover:bg-[#E05C2B]"
+                  >
+                    Activate
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
 
           {/* Deactivate Confirmation Modal */}
           {showDeactivateConfirm && (
