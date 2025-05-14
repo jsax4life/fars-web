@@ -27,8 +27,7 @@ const Sidebar = () => {
   const pathname = usePathname();
 
   const menuItems: MenuItem[] = [
-    { name: "File", icon: '/sidebar/1.svg', path: '/file' },
-    { name: "Edit", icon: '/sidebar/2.svg', path: '/edit' },
+    
     { name: "Maintenance", icon: '/sidebar/3.svg', path: '/maintenance' },
     { name: "Client Management", icon: '/sidebar/4.svg', path: '/ClientList' },
     { name: "Role Management", icon: '/sidebar/5.svg', path: '/RoleList' },
