@@ -84,3 +84,23 @@ export function formatRole(role: string | undefined): string {
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
 }
+
+/**
+ * Paginates a list of items.
+ *
+ * @param items The list of items to paginate.
+ * @param page The current page number (0-indexed).
+ * @param itemsPerPage The number of items to show per page.
+ * @returns A new array containing the items for the current page.
+ */
+export function paginateItems<T>(items: T[], page: number, itemsPerPage: number = 10): T[] {
+  // Ensure page is a non-negative integer
+  const currentPage = Math.max(0, Math.floor(page));
+
+  const startIndex = currentPage * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+
+  // Slice the array to get the items for the current page
+  // The slice method handles cases where endIndex might be greater than the array length.
+  return items.slice(startIndex, endIndex);
+}

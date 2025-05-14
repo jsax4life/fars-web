@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useUsers } from "@/hooks/useUsers";
 import { useUserAuth } from "@/hooks/useUserAuth";
 import { User } from "@/types";
-import { formatRole } from "@/lib/utils";
+import { formatRole, paginateItems } from "@/lib/utils";
 
 interface NewAdmin {
   fullName: string;
@@ -22,6 +22,7 @@ const UserList = () => {
   const [role, setRole] = useState('staff');
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false)
+  const [page, setPage] = useState(0);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -399,7 +400,7 @@ const UserList = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200 z-1000">
-                {users.map((user, index) => (
+                {paginateItems(users, page, 10).map((user, index) => (
                   <tr key={user.id}>
                     <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
                       {index + 1}
@@ -481,7 +482,7 @@ const UserList = () => {
                               Edit
                             </button>
                             <button
-                              onClick={() =>user.isActive ? handleDeactivateUser(user.id) : handleActivateUser(user.id)}
+                              onClick={() => user.isActive ? handleDeactivateUser(user.id) : handleActivateUser(user.id)}
                               className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
                             >
                               {user.isActive ? 'Deactivate' : 'Activate'}
@@ -506,17 +507,23 @@ const UserList = () => {
           <div className="px-4 py-3 bg-white border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-sm text-gray-700">
               Showing <span className="font-medium">1</span> to{" "}
-              <span className="font-medium">10</span> of{" "}
-              <span className="font-medium">38</span> entries
+              <span className="font-medium">{users.length >= 10 ? 10 : users.length}</span> of{" "}
+              <span className="font-medium">{users.length}</span> entries
             </div>
             <div className="flex space-x-2">
               <button
                 className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled
+                disabled = {page === 0}
+                onClick={() => setPage((prev) => Math.max(prev - 1, 0))}
               >
                 Previous
               </button>
-              <button className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+              <button
+                className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled = {page === Math.ceil(users.length / 10) - 1}
+                onClick={() => setPage((prev) => Math.min(prev + 1, Math.ceil(users.length / 10) - 1))}
+              //  className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              >
                 Next
               </button>
             </div>
@@ -600,8 +607,8 @@ const UserList = () => {
             </div>
           )}
 
-            {/* Activate Confirmation Modal */}
-            {showActivateConfirm && (
+          {/* Activate Confirmation Modal */}
+          {showActivateConfirm && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
                 <div className="mb-4">
