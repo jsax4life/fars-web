@@ -267,14 +267,14 @@ const ClientList = () => {
                 onClick={() => setShowCreateModal(true)}
                 className="bg-[#F36F2E] hover:bg-[#F36F2E] text-white py-2 px-4 rounded text-sm w-full sm:w-auto"
               >
-                Create User
+                Create Client
               </button>
-              <button
+              {/* <button
                 onClick={() => router.push("/RoleList")}
                 className="bg-[#fff] hover:bg-gray-300 text-[#F36F2E] border-[#F36F2E] border-2 py-2 px-4 rounded text-sm w-full sm:w-auto"
               >
                 Upload
-              </button>
+              </button> */}
             </div>
           </div>
 
@@ -378,8 +378,21 @@ const ClientList = () => {
                             onClick={() => openViewModal(user)}
                             className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
                           >
-                            View
+                            View Client Details
                           </button>
+                          <Link
+                            href = "/ClientAccounts"
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
+                          >
+                            View Accounts
+                          </Link>
+                          <Link
+                            href = "/NewAccount"
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
+                          >
+                            Create Account
+                          </Link>
+
             <button
               onClick={() => handleDeleteUser(user.id)}
               className="block px-4 py-2 text-sm text-gray-700 border-gray-700 text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
@@ -418,128 +431,128 @@ const ClientList = () => {
           </div>
 
           {/* Create User Modal */}
-          {showCreateModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg text-black font-semibold">Create New Client</h3>
-                  <button
-                    onClick={() => setShowCreateModal(false)}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
+    {showCreateModal && (
+  <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg text-black font-semibold">Create New Client</h3>
+        <button
+          onClick={() => setShowCreateModal(false)}
+          className="text-gray-500 hover:text-gray-700"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
 
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                    <input
-                      type="text"
-                      name="fullName"
-                      value={newClient.fullName}
-                      onChange={handleInputChange}
-                      placeholder="Enter Full name"
-                      className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-                    />
-                  </div>
+      <div className="space-y-4 overflow-y-auto max-h-[calc(100vh-150px)]"> {/* Added scrollbar and max height */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+          <input
+            type="text"
+            name="fullName"
+            value={newClient.fullName}
+            onChange={handleInputChange}
+            placeholder="Enter Full name"
+            className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
+          />
+        </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={newClient.country}
-                      onChange={handleInputChange}
-                      placeholder="Enter Email"
-                      className="w-full px-3 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-                    />
-                  </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+          <input
+            type="text"
+            name="country"
+            value={newClient.country}
+            onChange={handleInputChange}
+            placeholder="Enter Country"
+            className="w-full px-3 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
+          />
+        </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={newClient.company}
-                      onChange={handleInputChange}
-                      placeholder="Enter Company Name"
-                      className="w-full px-3 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                    <input
-                      type="text"
-                      name="fullName"
-                      value={newClient.address}
-                      onChange={handleInputChange}
-                      placeholder="Enter Company Address"
-                      className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input
-                      type="text"
-                      name="fullName"
-                      value={newClient.email}
-                      onChange={handleInputChange}
-                      placeholder="Enter Company Email"
-                      className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                    <input
-                      type="text"
-                      name="fullName"
-                      value={newClient.contact}
-                      onChange={handleInputChange}
-                      placeholder="Enter Phone Number"
-                      className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
-                    <input
-                      type="text"
-                      name="fullName"
-                      value={newClient.state}
-                      onChange={handleInputChange}
-                      placeholder="Enter State"
-                      className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                    <input
-                      type="text"
-                      name="fullName"
-                      value={newClient.city}
-                      onChange={handleInputChange}
-                      placeholder="Enter City"
-                      className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-                    />
-                  </div>
-                 
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+          <input
+            type="text"
+            name="company"
+            value={newClient.company}
+            onChange={handleInputChange}
+            placeholder="Enter Company Name"
+            className="w-full px-3 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+          <input
+            type="text"
+            name="address"
+            value={newClient.address}
+            onChange={handleInputChange}
+            placeholder="Enter Company Address"
+            className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <input
+            type="email"
+            name="email"
+            value={newClient.email}
+            onChange={handleInputChange}
+            placeholder="Enter Company Email"
+            className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+          <input
+            type="tel"
+            name="contact"
+            value={newClient.contact}
+            onChange={handleInputChange}
+            placeholder="Enter Phone Number"
+            className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+          <input
+            type="text"
+            name="state"
+            value={newClient.state}
+            onChange={handleInputChange}
+            placeholder="Enter State"
+            className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+          <input
+            type="text"
+            name="city"
+            value={newClient.city}
+            onChange={handleInputChange}
+            placeholder="Enter City"
+            className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
+          />
+        </div>
 
-                  <button
-                    onClick={handleCreateUser}
-                    className="w-full bg-[#F36F2E] text-white py-2 px-4 rounded-md hover:bg-[#E05C2B] transition-colors"
-                  >
-                    Create Client
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+
+        <button
+          onClick={handleCreateUser}
+          className="w-full bg-[#F36F2E] text-white py-2 px-4 rounded-md hover:bg-[#E05C2B] transition-colors"
+        >
+          Create Client
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
           {/* Deactivate Confirmation Modal */}
           {showDeactivateConfirm && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
                 <div className="mb-4">
                   <h3 className="text-lg font-semibold">Lorem ipsum dolor sit amet consectetur.</h3>
@@ -568,7 +581,7 @@ const ClientList = () => {
 
           {/* Deactivation Reason Form */}
           {showDeactivateForm && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="fixed inset-0 bg-black bg-opacity-0 flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
                 <div className="mb-6">
                   <h3 className="text-lg font-semibold">Deactivation Reason</h3>
@@ -620,7 +633,7 @@ const ClientList = () => {
 
           {/* Success Modal */}
           {showSuccessModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md text-center">
                 <div className="flex justify-end">
                   <button 
@@ -651,7 +664,7 @@ const ClientList = () => {
             </div>
           )}
           {showViewModal && viewedUser && (
-  <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 z-50 flex justify-center items-center">
+  <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4">
     <div className="bg-gray-50 p-6 rounded-md shadow-md w-full max-w-2xl"> {/* Increased max-w */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center">

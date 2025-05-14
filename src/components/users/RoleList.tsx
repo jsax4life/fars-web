@@ -11,39 +11,98 @@ const RoleList = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentRole, setCurrentRole] = useState("");
   const [roleTitle, setRoleTitle] = useState("");
+  const [selectedAccountCodes, setSelectedAccountCodes] = useState<string[]>([]);
+  const [availableAccountCodes, setAvailableAccountCodes] = useState([
+    { code: "ACC001", name: "Main Account" },
+    { code: "ACC002", name: "Savings Account" },
+    { code: "ACC003", name: "Investment Account" },
+    { code: "ACC004", name: "Business Account" },
+    { code: "ACC005", name: "Personal Account" },
+  ]);
   const [permissions, setPermissions] = useState({
-    setCommission: false,
-    editCommission: false,
-    option3: false,
-    option4: false,
-    option5: false,
+    accessOwnerInformation: false,
+    accountsBalance: false,
+    accountInformation: false,
+    bankStatement: false,
+    accountCurrencyList: false,
+    cashBook: false,
+    cashBookBalance: false,
+    changePassword: false,
+    chequeClearingDays: false,
+    chequeStock: false,
+    createStaff: false,
+    createClient: false,
+    editClientInformation: false,
+    editStaffInformation: false,
+    closeAccount: false,
+    createAccountReplica: false,
+    createNewAccount: false,
+    editAccountDetails: false,
+    emptyArchive: false,
+    exportAccount: false,
+    importAccount: false,
+    importCashBook: false,
+    markHoliday: false,
+    mergeAccount: false,
+    printerSetup: false,
+    reopenAccount: false,
+    reconstructedStatement: false,
+    releaseAccount: false,
+    removeAccountDetails: false,
+    returnChargeAndRates: false,
+    reverseHoliday: false,
+    assignPermission: false,
+    cancelPermission: false,
+    editStandingOrder: false,
+    stopStandingOrder: false,
+    transactionMatched: false,
+    accountActivities: false,
+    allTansactions: false,
   });
   const modalRef = useRef<HTMLDivElement>(null);
+  const accountCodesDropdownRef = useRef<HTMLSelectElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Handle form submission here
-    console.log({ roleTitle, permissions });
+    console.log({ roleTitle, selectedAccountCodes, permissions });
     setIsModalOpen(false);
   };
 
   const handleEditSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Handle edit form submission here
-    console.log({ currentRole, permissions });
+    console.log({ currentRole, selectedAccountCodes, permissions });
     setIsEditModalOpen(false);
   };
 
   const togglePermission = (permission: keyof typeof permissions) => {
-    setPermissions(prev => ({
+    setPermissions((prev) => ({
       ...prev,
-      [permission]: !prev[permission]
+      [permission]: !prev[permission],
     }));
   };
 
   const handleRoleClick = (role: string) => {
     setCurrentRole(role);
+    // For demo purposes, pre-select some account codes when editing
+    setSelectedAccountCodes(["ACC001", "ACC003"]);
     setIsEditModalOpen(true);
+  };
+
+  const handleAccountCodeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedValue = e.target.value;
+    if (selectedValue && !selectedAccountCodes.includes(selectedValue)) {
+      setSelectedAccountCodes([...selectedAccountCodes, selectedValue]);
+      // Optionally reset the dropdown to its default state
+      if (accountCodesDropdownRef.current) {
+        accountCodesDropdownRef.current.value = "";
+      }
+    }
+  };
+
+  const removeSelectedAccountCode = (codeToRemove: string) => {
+    setSelectedAccountCodes(selectedAccountCodes.filter((code) => code !== codeToRemove));
   };
 
   // Close modal when clicking outside
@@ -71,20 +130,20 @@ const RoleList = () => {
       <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
         {/* Back Button */}
         <div className="mb-4 sm:mb-6">
-          <button 
+          <button
             onClick={() => router.back()}
             className="flex items-center text-gray-600 hover:text-[#F36F2E] transition-colors"
           >
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              className="h-5 w-5 mr-1" 
-              viewBox="0 0 20 20" 
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5 mr-1"
+              viewBox="0 0 20 20"
               fill="currentColor"
             >
-              <path 
-                fillRule="evenodd" 
-                d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" 
-                clipRule="evenodd" 
+              <path
+                fillRule="evenodd"
+                d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
+                clipRule="evenodd"
               />
             </svg>
             <h2 className="text-lg sm:text-xl font-semibold text-gray-700">Admin</h2>
@@ -101,8 +160,8 @@ const RoleList = () => {
         <div className="mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
             <h2 className="text-lg sm:text-xl font-semibold text-gray-700">Admin</h2>
-            
-            <button 
+
+            <button
               onClick={() => setIsModalOpen(true)}
               className="w-full sm:w-auto bg-[#F36F2E] hover:bg-[#E05C2B] text-white py-2 px-4 rounded-md text-sm transition-colors"
             >
@@ -116,21 +175,21 @@ const RoleList = () => {
           {/* Role Cards Section */}
           <div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <button 
+              <button
                 onClick={() => handleRoleClick("Super admin")}
                 className="flex items-center justify-between bg-white border border-gray-200 rounded-lg p-4 hover:border-[#F36F2E] hover:text-[#F36F2E] transition-colors shadow-sm"
               >
                 <span className="text-sm sm:text-base font-bold text-[#404141]">Admin/Staff</span>
                 <span className="text-gray-400">→</span>
               </button>
-              <button 
+              <button
                 onClick={() => handleRoleClick("Client/Staff")}
                 className="flex items-center justify-between bg-white border border-gray-200 rounded-lg p-4 hover:border-[#F36F2E] hover:text-[#F36F2E] transition-colors shadow-sm"
               >
                 <span className="text-sm sm:text-base font-bold text-[#404141]">Client/Staff</span>
                 <span className="text-gray-400">→</span>
               </button>
-              <button 
+              <button
                 onClick={() => handleRoleClick("Bank")}
                 className="flex items-center justify-between bg-white border border-gray-200 rounded-lg p-4 hover:border-[#F36F2E] hover:text-[#F36F2E] transition-colors shadow-sm"
               >
@@ -143,12 +202,12 @@ const RoleList = () => {
 
         {/* Create New Role Modal */}
         {isModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-10 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg w-full max-w-md mx-2 sm:mx-0" ref={modalRef}>
-              <div className="p-4 sm:p-6">
+          <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg w-full max-w-md mx-2 sm:mx-0 max-h-[90vh] flex flex-col" ref={modalRef}>
+              <div className="p-4 sm:p-6 overflow-y-auto">
                 <div className="flex justify-between items-center mb-4 sm:mb-6">
                   <h3 className="text-lg font-bold text-black">Create New Role</h3>
-                  <button 
+                  <button
                     onClick={() => setIsModalOpen(false)}
                     className="text-gray-500 hover:text-gray-700"
                   >
@@ -157,7 +216,7 @@ const RoleList = () => {
                     </svg>
                   </button>
                 </div>
-                
+
                 <form onSubmit={handleSubmit}>
                   <div className="mb-4 sm:mb-6">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -165,7 +224,7 @@ const RoleList = () => {
                     </label>
                     <input
                       type="text"
-                      className="w-full px-3 py-2 border text-gray-500 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F36F2E] focus:border-transparent"
+                      className="w-full px-3 py-2 border text-gray-700 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F36F2E] focus:border-transparent"
                       placeholder="Enter Role Title"
                       value={roleTitle}
                       onChange={(e) => setRoleTitle(e.target.value)}
@@ -174,19 +233,59 @@ const RoleList = () => {
                   </div>
 
                   <div className="mb-4 sm:mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Account Codes</label>
+                    <select
+                      ref={accountCodesDropdownRef}
+                      onChange={handleAccountCodeChange}
+                      className="w-full px-3 py-2 border text-gray-500 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F36F2E] focus:border-transparent h-auto min-h-[42px]"
+                    >
+                      <option value="" disabled hidden>Select Account Code</option>
+                      {availableAccountCodes.map((account) => (
+                        <option key={account.code} value={account.code}>
+                          {account.code} - {account.name}
+                        </option>
+                      ))}
+                    </select>
+                    {selectedAccountCodes.length > 0 && (
+                      <div className="mt-2">
+                        <p className="text-xs font-medium text-gray-700">Selected Account Codes:</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {selectedAccountCodes.map((code) => {
+                            const account = availableAccountCodes.find((ac) => ac.code === code);
+                            return (
+                              <span key={code} className="inline-flex items-center text-xs text-gray-700 bg-gray-100 px-2 py-1 rounded">
+                                {account ? `${account.code} - ${account.name}` : code}
+                                <button
+                                  type="button"
+                                  onClick={() => removeSelectedAccountCode(code)}
+                                  className="ml-1 text-gray-400 hover:text-gray-600 focus:outline-none"
+                                >
+                                  <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mb-4 sm:mb-6">
                     <h4 className="text-sm font-medium text-gray-700 mb-3">Assign Permission <span className="text-red-500">*</span></h4>
-                    
-                    <div className="space-y-2">
+
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
                       {Object.entries(permissions).map(([key, value]) => (
-                        <div key={key} className="p-2 rounded-md">
+                        <div key={key} className="p-2 rounded-md hover:bg-gray-50">
                           <div className="flex items-center justify-between mb-1">
-                            <span className="font-medium text-black">
-                              {key.split(/(?=[A-Z])/).join(' ').replace(/^./, str => str.toUpperCase())}
+                            <span className="font-medium text-black text-sm">
+                              {key.split(/(?=[A-Z])/).join(' ').replace(/^./, (str) => str.toUpperCase())}
                             </span>
                             <label className="relative inline-flex items-center cursor-pointer">
-                              <input 
-                                type="checkbox" 
-                                className="sr-only peer" 
+                              <input
+                                type="checkbox"
+                                className="sr-only peer"
                                 checked={value as boolean}
                                 onChange={() => togglePermission(key as keyof typeof permissions)}
                               />
@@ -194,15 +293,12 @@ const RoleList = () => {
                               <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition ${value ? 'transform translate-x-4' : ''}`}></div>
                             </label>
                           </div>
-                          <p className="text-xs text-gray-500">
-                            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Egestas sem massa dui placerat ut sit.
-                          </p>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  <div className="flex justify-end space-x-3">
+                  <div className="flex justify-end space-x-3 pt-4 border-t">
                     <button
                       type="button"
                       onClick={() => setIsModalOpen(false)}
@@ -225,12 +321,12 @@ const RoleList = () => {
 
         {/* Edit Role Modal */}
         {isEditModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-10 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg w-full max-w-md mx-2 sm:mx-0" ref={modalRef}>
-              <div className="p-4 sm:p-6">
+          <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg w-full max-w-md mx-2 sm:mx-0 max-h-[90vh] flex flex-col" ref={modalRef}>
+              <div className="p-4 sm:p-6 overflow-y-auto">
                 <div className="flex justify-between items-center mb-4 sm:mb-6">
                   <h3 className="text-lg font-bold text-black">Edit {currentRole}</h3>
-                  <button 
+                  <button
                     onClick={() => setIsEditModalOpen(false)}
                     className="text-gray-500 hover:text-gray-700"
                   >
@@ -239,20 +335,62 @@ const RoleList = () => {
                     </svg>
                   </button>
                 </div>
-                
-                <form onSubmit={handleEditSubmit}>
+
+                <form onSubmit={handleEditSubmit}> 
                   <div className="mb-4 sm:mb-6">
-                    <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Account Codes</label>
+                    <select
+                      ref={accountCodesDropdownRef}
+                      onChange={handleAccountCodeChange}
+                      className="w-full px-3 py-2 border text-gray-500 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F36F2E] focus:border-transparent h-auto min-h-[42px]"
+                    >
+                      <option value="" disabled hidden>Select Account Code</option>
+                      {availableAccountCodes.map((account) => (
+                        <option key={account.code} value={account.code}>
+                          {account.code} - {account.name}
+                        </option>
+                      ))}
+                    </select>
+                    {selectedAccountCodes.length > 0 && (
+                      <div className="mt-2">
+                        <p className="text-xs font-medium text-gray-700">Selected Account Codes:</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {selectedAccountCodes.map((code) => {
+                            const account = availableAccountCodes.find((ac) => ac.code === code);
+                            return (
+                              <span key={code} className="inline-flex items-center text-xs text-gray-700 bg-gray-100 px-2 py-1 rounded">
+                                {account ? `${account.code} - ${account.name}` : code}
+                                <button
+                                  type="button"
+                                  onClick={() => removeSelectedAccountCode(code)}
+                                  className="ml-1 text-gray-400 hover:text-gray-600 focus:outline-none"
+                                >
+                                  <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mb-4 sm:mb-6">
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Assign Permission <span className="text-red-500">*</span></h4>
+
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
                       {Object.entries(permissions).map(([key, value]) => (
-                        <div key={key} className="p-2 rounded-md">
+                        <div key={key} className="p-2 rounded-md hover:bg-gray-50">
                           <div className="flex items-center justify-between mb-1">
-                            <span className="font-medium text-black">
-                              {key.split(/(?=[A-Z])/).join(' ').replace(/^./, str => str.toUpperCase())}
+                            <span className="font-medium text-black text-sm">
+                              {key.split(/(?=[A-Z])/).join(' ').replace(/^./, (str) => str.toUpperCase())}
                             </span>
                             <label className="relative inline-flex items-center cursor-pointer">
-                              <input 
-                                type="checkbox" 
-                                className="sr-only peer" 
+                              <input
+                                type="checkbox"
+                                className="sr-only peer"
                                 checked={value as boolean}
                                 onChange={() => togglePermission(key as keyof typeof permissions)}
                               />
@@ -268,7 +406,7 @@ const RoleList = () => {
                     </div>
                   </div>
 
-                  <div className="flex justify-end space-x-3">
+                  <div className="flex justify-end space-x-3 pt-4 border-t">
                     <button
                       type="button"
                       onClick={() => setIsEditModalOpen(false)}
