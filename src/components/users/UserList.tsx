@@ -616,7 +616,7 @@ const UserList = () => {
                   <h3 className="text-lg font-semibold text-gray-700">Deactivation Reason</h3>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-4 text-gray-700">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Reason Title</label>
                     <input
