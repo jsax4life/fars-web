@@ -18,7 +18,7 @@ const OTP: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (otp.length === 4) {
+    if (otp.length === 6) {
       setLoading(true);
       setTimeout(() => {
         setLoading(false);
@@ -43,7 +43,7 @@ const OTP: React.FC = () => {
     const newOtp = otpArray.join("");
     setOtp(newOtp);
 
-    if (numericValue && index < 3 && inputRefs.current[index + 1]) {
+    if (numericValue && index < 5 && inputRefs.current[index + 1]) {
       inputRefs.current[index + 1]?.focus();
     }
   };
@@ -82,12 +82,12 @@ const OTP: React.FC = () => {
           Enter the 6-digit sent to {email}
         </h1>
         <p className="mt-2 text-sm font-light sm:text-base text-[#f3f3f3]">
-          Please enter the 4-digit OTP sent to your email address.
+          Please enter the 6-digit OTP sent to your email address.
         </p>
 
         <div className="mt-8 space-y-4">
           <div className="flex space-x-2 justify-start">
-            {[0, 1, 2, 3].map((index) => (
+            {[0, 1, 2, 3, 4, 5].map((index) => (
               <input
                 key={index}
                 type="text"
@@ -112,5 +112,5 @@ const OTP: React.FC = () => {
     </div>
   );
 };
-//comment
+
 export default OTP;
