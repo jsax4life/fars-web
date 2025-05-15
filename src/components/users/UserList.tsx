@@ -366,7 +366,7 @@ const UserList = () => {
             </div>
           </div>
 
-          <div className="overflow-x-auto min-h-[500px]">
+          <div className="overflow-x-auto min-h-[100px]">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
@@ -531,9 +531,9 @@ const UserList = () => {
 
           {/* Create User Modal */}
           {showCreateModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-lg p-6 w-full max-w-md">
-                <div className="flex justify-between items-center mb-4">
+            <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4 overflow-y-auto">
+              <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+                <div className="flex justify-between items-center mb-4 sticky top-0 bg-white py-2">
                   <h3 className="text-lg text-black font-semibold">Create New Admin</h3>
                   <button
                     onClick={() => setShowCreateModal(false)}
@@ -545,7 +545,7 @@ const UserList = () => {
                   </button>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-4 pb-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
                     <input
@@ -598,7 +598,7 @@ const UserList = () => {
 
                   <button
                     onClick={handleCreateUser}
-                    className="w-full bg-[#F36F2E] text-white py-2 px-4 rounded-md hover:bg-[#E05C2B] transition-colors"
+                    className="w-full bg-[#F36F2E] text-white py-2 px-4 rounded-md hover:bg-[#E05C2B] transition-colors sticky bottom-0"
                   >
                     Create User
                   </button>
@@ -609,8 +609,8 @@ const UserList = () => {
 
           {/* Activate Confirmation Modal */}
           {showActivateConfirm && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4 overflow-y-auto">
+              <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
                 <div className="mb-4">
                   <h3 className="text-lg font-semibold text-gray-700">Confirm Activation</h3>
                   <p className="text-gray-600 mt-2">
@@ -639,8 +639,8 @@ const UserList = () => {
 
           {/* Deactivate Confirmation Modal */}
           {showDeactivateConfirm && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4 overflow-y-auto">
+              <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
                 <div className="mb-4">
                   <h3 className="text-lg font-semibold text-gray-700">Confirm Deactivation</h3>
                   <p className="text-gray-600 mt-2">
@@ -668,13 +668,13 @@ const UserList = () => {
 
           {/* Deactivation Reason Form */}
           {showDeactivateForm && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-lg p-6 w-full max-w-md">
-                <div className="mb-6">
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+              <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+                <div className="mb-6 sticky top-0 bg-white py-2">
                   <h3 className="text-lg font-semibold text-gray-700">Deactivation Reason</h3>
                 </div>
 
-                <div className="space-y-4 text-gray-700">
+                <div className="space-y-4 text-gray-700 pb-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Reason Title</label>
                     <input
@@ -699,7 +699,7 @@ const UserList = () => {
                     />
                   </div>
 
-                  <div className="border-t border-gray-200 pt-4 flex justify-end space-x-4">
+                  <div className="border-t border-gray-200 pt-4 flex justify-end space-x-4 sticky bottom-0 bg-white py-2">
                     <button
                       onClick={() => setShowDeactivateForm(false)}
                       className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
@@ -720,9 +720,9 @@ const UserList = () => {
 
           {/* Success Modal */}
           {showSuccessModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-lg p-6 w-full max-w-md text-center">
-                <div className="flex justify-end">
+            <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4 overflow-y-auto">
+              <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+                <div className="flex justify-end sticky top-0 bg-white py-2">
                   <button
                     onClick={() => setShowSuccessModal(false)}
                     className="text-gray-500 hover:text-gray-700"
@@ -743,7 +743,7 @@ const UserList = () => {
 
                 <button
                   onClick={() => setShowSuccessModal(false)}
-                  className="bg-[#F36F2E] text-white py-2 px-6 rounded-md hover:bg-[#E05C2B] transition-colors"
+                  className="bg-[#F36F2E] text-white py-2 px-6 rounded-md hover:bg-[#E05C2B] transition-colors sticky bottom-0"
                 >
                   Ok
                 </button>
@@ -752,16 +752,12 @@ const UserList = () => {
           )}
 
           {showViewModal && viewedUser && (
-            <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 z-50 flex justify-center items-center">
-              <div className="bg-gray-50 p-6 rounded-md shadow-md w-full max-w-2xl"> {/* Increased max-w */}
-                <div className="flex items-center justify-between mb-6">
+            <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4 overflow-y-auto">
+              <div className="bg-gray-50 p-6 rounded-md shadow-md w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                <div className="flex items-center justify-between mb-6 sticky top-0 bg-gray-50 py-2">
                   <div className="flex items-center">
                     <div className="relative">
                       <div className="w-16 h-16 rounded-full bg-orange-200 flex items-center justify-center overflow-hidden">
-                        {/* Replace with actual user image */}
-                        {/* <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-orange-700">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.125h15.002M9.75 21.75l-3 1.5-3-1.5m9.75 0l3 1.5 3-1.5M9.375 6a9.375 9.375 0 0116.875-3.75m-16.875 3.75l1.5-7.5m15-7.5l-1.5 7.5m-15 6.75a2.25 2.25 0 002.25 2.25m13.5 0a2.25 2.25 0 002.25-2.25m-16.5 0a2.25 2.25 0 012.25-2.25m13.5 0a2.25 2.25 0 012.25 2.25" />
-                        </svg> */}
                         <img src={viewedUser.avatarUrl} alt="User Avatar" className="absolute inset-0 w-full h-full object-cover rounded-full" />
                       </div>
                       <button className="absolute bottom-0 right-0 bg-white rounded-full shadow-sm p-1 text-gray-500 hover:text-gray-700">
@@ -781,7 +777,7 @@ const UserList = () => {
                 </div>
 
                 <div className="mb-6 p-4 bg-white rounded-md border border-gray-200">
-                  <div className="md:grid md:grid-cols-2 md:items-start md:gap-6 mb-4"> {/* Flex layout for label and text */}
+                  <div className="md:grid md:grid-cols-2 md:items-start md:gap-6 mb-4">
                     <div>
                       <h4 className="text-sm font-semibold text-gray-700">Update Personal Details</h4>
                     </div>
@@ -863,9 +859,9 @@ const UserList = () => {
 
           {/* Edit User Modal */}
           {showEditModal && editedUser && (
-            <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 z-50 flex justify-center items-center">
-              <div className="bg-gray-50 p-6 rounded-md shadow-md w-full max-w-2xl"> {/* Increased max-w */}
-                <div className="flex items-center justify-between mb-6">
+            <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4 overflow-y-auto">
+              <div className="bg-gray-50 p-6 rounded-md shadow-md w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                <div className="flex items-center justify-between mb-6 sticky top-0 bg-gray-50 py-2">
                   <div className="flex items-center">
                     <div className="relative">
                       <div className="w-16 h-16 rounded-full bg-orange-200 flex items-center justify-center overflow-hidden">
