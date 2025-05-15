@@ -232,7 +232,7 @@ const RoleList = () => {
                     />
                   </div>
 
-                  <div className="mb-4 sm:mb-6">
+                  {/* <div className="mb-4 sm:mb-6">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Account Codes</label>
                     <select
                       ref={accountCodesDropdownRef}
@@ -270,7 +270,7 @@ const RoleList = () => {
                         </div>
                       </div>
                     )}
-                  </div>
+                  </div> */}
 
                   <div className="mb-4 sm:mb-6">
                     <h4 className="text-sm font-medium text-gray-700 mb-3">Assign Permission <span className="text-red-500">*</span></h4>
@@ -337,7 +337,7 @@ const RoleList = () => {
                 </div>
 
                 <form onSubmit={handleEditSubmit}> 
-                  <div className="mb-4 sm:mb-6">
+                  {/* <div className="mb-4 sm:mb-6">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Account Codes</label>
                     <select
                       ref={accountCodesDropdownRef}
@@ -375,7 +375,7 @@ const RoleList = () => {
                         </div>
                       </div>
                     )}
-                  </div>
+                  </div> */}
 
                   <div className="mb-4 sm:mb-6">
                     <h4 className="text-sm font-medium text-gray-700 mb-3">Assign Permission <span className="text-red-500">*</span></h4>
