@@ -67,7 +67,7 @@ const Modal: React.FC<ModalProps> = ({
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}
-                    className={`fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center ${overlayClassName}`}
+                    className={`fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4 overflow-y-auto ${overlayClassName}`}
                     style={{
                         // Ensure the modal is at the highest layer
                         zIndex: 1000,

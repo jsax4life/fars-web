@@ -13,6 +13,7 @@ interface NewAdmin {
   email: string;
   phone: string;
   role: string;
+  password: string;
 }
 
 const UserList = () => {
@@ -30,6 +31,7 @@ const UserList = () => {
     fullName: "",
     email: "",
     phone: "",
+    password: "",
     role: "admin",
   });
 
@@ -38,8 +40,7 @@ const UserList = () => {
   const [showActivateConfirm, setShowActivateConfirm] = useState(false);
   const [showDeactivateForm, setShowDeactivateForm] = useState(false);
   const [deactivationReason, setDeactivationReason] = useState({
-    title: "",
-    message: "",
+    reason: "",
   });
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
@@ -115,7 +116,7 @@ const UserList = () => {
     setNewAdmin({ ...newAdmin, [name]: value });
   };
 
-  const handleDeactivationInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleDeactivationInputChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
     setDeactivationReason({ ...deactivationReason, [name]: value });
   };
@@ -224,6 +225,7 @@ const UserList = () => {
           fullName: "",
           email: "",
           phone: "",
+          password: "",
           role: "admin",
         });
       } else {
@@ -256,15 +258,15 @@ const UserList = () => {
 
   const handleSubmitDeactivation = () => {
     if (selectedUserId) {
-      deactivateUser(selectedUserId, deactivationReason.message).then(() => {
+      deactivateUser(selectedUserId, deactivationReason.reason).then(() => {
         setUsers(users.map(user =>
           user.id === selectedUserId ? { ...user, isActive: false } : user
         ));
         setShowDeactivateForm(false);
         setShowSuccessModal(true);
         setDeactivationReason({
-          title: "",
-          message: "",
+      
+          reason: "",
         });
       }).catch(() => {
         // setShowDeactivateForm(false);
@@ -534,7 +536,7 @@ const UserList = () => {
             <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4 overflow-y-auto">
               <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
                 <div className="flex justify-between items-center mb-4 sticky top-0 bg-white py-2">
-                  <h3 className="text-lg text-black font-semibold">Create New Admin</h3>
+                  <h3 className="text-lg text-black font-semibold">Create New User</h3>
                   <button
                     onClick={() => setShowCreateModal(false)}
                     className="text-black hover:text-gray-700"
@@ -581,7 +583,17 @@ const UserList = () => {
                       className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
                     />
                   </div>
-
+<div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                   <input
+  type="password"
+  name="password"
+  value={newAdmin.password}
+  onChange={handleInputChange}
+  placeholder="Enter Password"
+  className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
+/>
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
                     <select
@@ -590,9 +602,8 @@ const UserList = () => {
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
                     >
+                       <option value="staff">Staff</option>
                       <option value="admin">Admin</option>
-                      <option value="staff">Staff</option>
-                      <option value="super_admin">Super Admin</option>
                     </select>
                   </div>
 
@@ -668,52 +679,44 @@ const UserList = () => {
 
           {/* Deactivation Reason Form */}
           {showDeactivateForm && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+            <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4 overflow-y-auto">
               <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
                 <div className="mb-6 sticky top-0 bg-white py-2">
                   <h3 className="text-lg font-semibold text-gray-700">Deactivation Reason</h3>
                 </div>
 
                 <div className="space-y-4 text-gray-700 pb-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Reason Title</label>
-                    <input
-                      type="text"
-                      name="title"
-                      value={deactivationReason.title}
-                      onChange={handleDeactivationInputChange}
-                      placeholder="Enter Reason Title"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-                    />
-                  </div>
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">Reason for Deactivation</label>
+    <select
+      name="reason"
+      value={deactivationReason.reason}
+      onChange={handleDeactivationInputChange}
+      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
+    >
+      <option value="">Select a reason</option>
+      <option value="reason1">Reason One</option>
+      <option value="reason2">Another Reason</option>
+      <option value="reason3">A Different Reason</option>
+      {/* Add more reason options here */}
+    </select>
+  </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
-                    <textarea
-                      name="message"
-                      value={deactivationReason.message}
-                      onChange={handleDeactivationInputChange}
-                      placeholder="Enter Message Here"
-                      rows={4}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-                    />
-                  </div>
-
-                  <div className="border-t border-gray-200 pt-4 flex justify-end space-x-4 sticky bottom-0 bg-white py-2">
-                    <button
-                      onClick={() => setShowDeactivateForm(false)}
-                      className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleSubmitDeactivation}
-                      className="px-4 py-2 bg-[#F36F2E] text-white rounded-md text-sm font-medium hover:bg-[#E05C2B]"
-                    >
-                      Send
-                    </button>
-                  </div>
-                </div>
+  <div className="border-t border-gray-200 pt-4 flex justify-end space-x-4 sticky bottom-0 bg-white py-2">
+    <button
+      onClick={() => setShowDeactivateForm(false)}
+      className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+    >
+      Cancel
+    </button>
+    <button
+      onClick={handleSubmitDeactivation}
+      className="px-4 py-2 bg-[#F36F2E] text-white rounded-md text-sm font-medium hover:bg-[#E05C2B]"
+    >
+      Send
+    </button>
+  </div>
+</div>
               </div>
             </div>
           )}
@@ -812,46 +815,6 @@ const UserList = () => {
                   </div>
                 </div>
 
-                <div className="p-4 bg-white rounded-md border border-gray-200">
-                  <div className="md:grid md:grid-cols-2 md:items-start md:gap-6 mb-4"> {/* Flex layout for label and text */}
-                    <div>
-                      <h4 className="text-sm font-semibold text-gray-700 mb-4">Password</h4>
-                    </div>
-                    <div className="text-xs text-gray-500 md:mt-1">Lorem ipsum dolor sit amet consectetur. Purus odio porttitor dignissim orci non odio porttitor dignissim orci non purus purus. Nunc nisl ut</div>
-                  </div>
-                  <div className="space-y-4">
-                    <div>
-                      <label htmlFor="old-password" className="block text-xs font-medium text-gray-600 mb-1">Old Password</label>
-                      <div className="relative">
-                        <input type="password" id="old-password" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" value="********" readOnly />
-                        <button className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7 1.274 4.057 1.274 8.057 0 12-1.274 4.057-5.064 7-9.542 7-4.476 0-8.268-2.943-9.542-7 0-4.057 0-8.057 0-12z" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                    <div>
-                      <label htmlFor="new-password" className="block text-xs font-medium text-gray-600 mb-1">New Password</label>
-                      <div className="relative">
-                        <input type="password" id="new-password" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" value="********" readOnly />
-                        <button className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7 1.274 4.057 1.274 8.057 0 12-1.274 4.057-5.064 7-9.542 7-4.476 0-8.268-2.943-9.542-7 0-4.057 0-8.057 0-12z" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-
-                  </div>
-                  <div className="mt-4 flex justify-end">
-                    <button onClick={() => setShowViewModal(false)} className="bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-md py-2 px-4 text-sm font-medium focus:outline-none focus:shadow-outline-gray active:bg-gray-500">
-                      Cancel
-                    </button>
-                  </div>
-                </div>
               </div>
             </div>
           )}
