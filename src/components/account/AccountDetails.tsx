@@ -44,6 +44,11 @@ const AccountDetails = () => {
         { no: "2", class: "Credit", transDate: "04-05-2025", valueDate: "04-05-2025", transactionDescription: "Salary Deposit", tellerNo: "ABC123", chequeNo: "N/A", debit: "0.00", credit: "20,000.00", balance: "30,000.00", remarks: "" },
         // ... more bank statement data
     ];
+        const queryTransactions: Transaction[] = [
+        { no: "1", class: "Debit", transDate: "03-05-2025", valueDate: "03-05-2025", transactionDescription: "ATM Withdrawal", tellerNo: "N/A", chequeNo: "N/A", debit: "5,000.00", credit: "0.00", balance: "10,000.00", remarks: "" },
+        { no: "2", class: "Credit", transDate: "04-05-2025", valueDate: "04-05-2025", transactionDescription: "Salary Deposit", tellerNo: "ABC123", chequeNo: "N/A", debit: "0.00", credit: "20,000.00", balance: "30,000.00", remarks: "" },
+        // ... more bank statement data
+    ];
 
     const reconstructedStatementTransactions: Transaction[] = [
         { no: "1", entryDate: "02-05-2025", transDate: "03-05-2025", valueDate: "03-05-2025", tellerNo: "N/A", transactionDescription: "Online Transfer", transType: "Debit", chequeNo: "N/A", originalValue: "2,500.00", debit: "2,500.00", credit: "0.00", balance: "7,500.00", currency: "NGN", confirmation: "Yes", cleared: "Yes", exchangeRate: "1.00", clearance: "Completed" },
@@ -99,8 +104,8 @@ const AccountDetails = () => {
                 };
             case "Query":
                 return {
-                    headers: ["Date", "Description", "Amount"],
-                    data: [], // You might fetch or have query results here
+                     headers: ["No.", "Class", "Trans Date", "Value Date", "Transaction Description", "Teller No.", "Cheque No.", "Debit", "Credit", "Balance", "Remarks"],
+                      data: queryTransactions,
                 };
             default: // "Entry"
                 return {
@@ -437,13 +442,13 @@ const AccountDetails = () => {
                                 </div>
                             </>
                         )}
-                        {activeTab !== "Query" && (activeTab === "Bank Statement" || activeTab === "Reconstructed Statement" || activeTab === "Cash Book" || activeTab === "Trans Matched") && (
+                        {(activeTab === "Query" || activeTab === "Bank Statement" || activeTab === "Reconstructed Statement" || activeTab === "Cash Book" || activeTab === "Trans Matched") && (
                             <div className="overflow-y-auto max-h-[600px]">
                                 <TransactionTable headers={headers} data={data} />
                             </div>
                         )}
 
-                        {activeTab === "Query" && (
+                        {/* {activeTab === "Query" && (
                             <div className="relative">
                                 <div className="overflow-x-auto">
                                     <table className="min-w-full leading-normal">
@@ -470,7 +475,7 @@ const AccountDetails = () => {
                                     </table>
                                 </div>
                             </div>
-                        )}
+                        )} */}
                     </div>
                 </div>
             </div>
