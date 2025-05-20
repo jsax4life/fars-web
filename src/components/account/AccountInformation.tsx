@@ -127,15 +127,12 @@ const AccountInformation = () => {
     { id: "chequeNo", label: "Cheque No", type: "checkbox" },
     { id: "postingBalance", label: "Posting Balance", type: "text" },
     { id: "orderBy", label: "Order By", type: "text" },
-    { id: "imnSCharge", label: "IMN S Charge", type: "text" },
-    { id: "imnSChargeAmt", label: "IMN S Charge Amt", type: "text" },
+ 
     { id: "returnChargeRate", label: "Return Charge Rate", type: "text" },
     { id: "returnChargeAmt", label: "Return Charge Amt", type: "text" },
-    { id: "cdfConvRate", label: "CDF Conv. Rate", type: "text" },
-    { id: "cdfConvAmt", label: "CDF Conv. Amount", type: "text" },
+
     { id: "totOfSCharge", label: "Total of S Charge", type: "text" },
     { id: "totOfSChargeAmt", label: "Total of S Charge Amt", type: "text" },
-    { id: "lsCreditTenorDays", label: "LS Credit Tenor Days", type: "text" },
     { id: "CAMFRate", label: "CAMF Rate", type: "text" },
     { id: "limitStartDate", label: "Limit Start Date", type: "date" },
     { id: "limitEndDate", label: "Limit End Date", type: "date" },
@@ -297,6 +294,7 @@ const AccountInformation = () => {
           </div>
         ))}
       </div>
+      
     </div>
   );
 };

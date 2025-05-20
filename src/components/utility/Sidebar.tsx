@@ -32,7 +32,7 @@ const Sidebar = () => {
     { name: "Client Management", icon: '/sidebar/4.svg', path: '/ClientList' },
     { name: "Role Management", icon: '/sidebar/5.svg', path: '/RoleList' },
     { name: "Staff", icon: '/sidebar/6.svg', path: '/UserList' },
-    { name: "Report", icon: '/sidebar/7.svg', path: '/report' },
+    // { name: "Report", icon: '/sidebar/7.svg', path: '/report' },
     { name: "Classification", icon: '/sidebar/8.svg', path: '/Classification' },
     { name: "Bank Account", icon: '/sidebar/9.svg', path: '/Account' },
     { name: "Help", icon: '/sidebar/10.svg', path: '/help' },
