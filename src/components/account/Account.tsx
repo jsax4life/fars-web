@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { FaSearch, FaFilter, FaArchive } from "react-icons/fa";
+import { FaSearch } from "react-icons/fa"; // Removed FaFilter, FaArchive as they were not used
 import Sidebar from "@/components/utility/Sidebar";
 import Link from "next/link";
 
@@ -17,6 +17,7 @@ interface AccountData {
   accountCode: string;
   originalValue: string;
   status: "open" | "closed";
+  report?: string; // Added optional report field to AccountData
 }
 
 const Account = () => {
@@ -38,6 +39,12 @@ const Account = () => {
   const actionMenuRef = useRef<HTMLDivElement>(null);
   const actionButtonRefs = useRef<{[key: string]: HTMLButtonElement | null}>({});
 
+  // State for the reporting modal, adjusted for account transactions
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportingAccount, setReportingAccount] = useState<AccountData | null>(null);
+  const [reportContent, setReportContent] = useState("");
+
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (actionMenuRef.current && !actionMenuRef.current.contains(event.target as Node)) {
@@ -53,6 +60,35 @@ const Account = () => {
 
   const handleAccountTabChange = (tab: string) => {
     setActiveAccountTab(tab);
+  };
+
+  const handleCreateReportClick = (account: AccountData) => {
+    setReportingAccount(account);
+    setReportContent(account.report || ""); // Pre-fill if a report already exists
+    setShowReportModal(true);
+    closeActionMenu();
+  };
+
+  const handleSaveReport = () => {
+    if (reportingAccount) {
+      setAccounts(prevAccounts => prevAccounts.map(a =>
+        a.sNo === reportingAccount.sNo ? { ...a, report: reportContent } : a
+      ));
+      setShowReportModal(false);
+      setReportContent("");
+      setReportingAccount(null);
+    }
+  };
+
+  const handleViewReportClick = (account: AccountData) => {
+    console.log("Viewing report for transaction:", account.transactionDescription, account.report);
+    if (account.report) {
+      alert(`Opening/displaying report:\n\n${account.report}`);
+      // In a real app, you might render this in a dedicated modal or navigate
+    } else {
+      alert("No report available for this transaction.");
+    }
+    closeActionMenu();
   };
 
   const openActionMenu = (account: AccountData, event: React.MouseEvent<HTMLButtonElement>) => {
@@ -85,26 +121,11 @@ const Account = () => {
     setSelectedAccountForAction(null);
   };
 
-  // Close menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (actionMenuRef.current && !actionMenuRef.current.contains(event.target as Node)) {
-        closeActionMenu();
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
-
-
   const handleDeleteTransaction = (sNo: string) => {
     console.log("Deleting transaction:", sNo);
+    setAccounts(prevAccounts => prevAccounts.filter(account => account.sNo !== sNo));
     closeActionMenu();
-    // Implement your delete logic here
+    // In a real application, you would also make an API call here.
   };
 
   const handleCloseAccount = (sNo: string) => {
@@ -129,15 +150,12 @@ const Account = () => {
 
   return (
     <div className="flex flex-col md:flex-row h-screen bg-gray-100 overflow-hidden">
-      {/* Sidebar - hidden on mobile, shown on medium screens and up */}
       <div className="hidden md:block fixed h-full w-64">
         <Sidebar />
       </div>
 
-      {/* Mobile header with menu button - shown only on small screens */}
       <div className="md:hidden bg-white shadow-sm p-4 flex items-center">
         <button className="mr-4">
-          {/* Mobile menu icon would go here */}
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
@@ -145,11 +163,9 @@ const Account = () => {
         <h1 className="text-xl font-semibold">Account</h1>
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 md:ml-64 overflow-auto mt-16 md:mt-0">
         <div className="bg-gray-100 min-h-full p-4 md:p-6">
           <div className="bg-white rounded-md shadow-md p-4 md:p-6">
-
             <div className="flex flex-col items-start gap-4 mb-4">
               <div className="font-semibold text-black text-lg md:text-xl mr-4">Account Selection</div>
               <div className="mb-4 overflow-x-auto">
@@ -254,18 +270,30 @@ const Account = () => {
                                 <div
                                   ref={actionMenuRef}
                                   className="fixed z-50 bg-white rounded-md shadow-lg"
-                                  style={{
-                                    top: `${getPopupPosition().top}px`,
-                                    left: `${getPopupPosition().left}px`,
-                                  }}
+                                  style={getPopupPosition()}
                                 >
                                   <div className="py-1">
                                     <Link
-                                      href="/AccountDetails"
+                                      href={`/AccountDetails/${account.sNo}`} // Made dynamic
                                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
                                     >
                                       View
                                     </Link>
+                                    {account.report ? (
+                                      <button
+                                        onClick={() => handleViewReportClick(account)}
+                                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
+                                      >
+                                        View Report
+                                      </button>
+                                    ) : (
+                                      <button
+                                        onClick={() => handleCreateReportClick(account)}
+                                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
+                                      >
+                                        Create Report
+                                      </button>
+                                    )}
                                     <button
                                       onClick={() => handleCloseAccount(account.sNo)}
                                       className="block px-4 py-2 text-sm text-gray-700 border-gray-700 text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
@@ -274,7 +302,7 @@ const Account = () => {
                                     </button>
                                     <button
                                       onClick={() => handleDeleteTransaction(account.sNo)}
-                                      className="block px-4 py-2 text-sm text-gray-700 border-gray-700 text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
+                                      className="block px-4 py-2 text-sm text-red-700 hover:bg-gray-100 w-full text-left focus:outline-none"
                                     >
                                       Delete
                                     </button>
@@ -345,6 +373,56 @@ const Account = () => {
           </div>
         </div>
       </div>
+      {showReportModal && reportingAccount && (
+        <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg text-black font-semibold">Create Report for Transaction: {reportingAccount.sNo}</h3>
+              <button
+                onClick={() => {
+                  setShowReportModal(false);
+                  setReportingAccount(null);
+                  setReportContent("");
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div>
+              <label htmlFor="report-content" className="block text-sm font-medium text-gray-700 mb-1">Report Content</label>
+              <textarea
+                id="report-content"
+                value={reportContent}
+                onChange={(e) => setReportContent(e.target.value)}
+                rows={8}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
+                placeholder="Write your report here..."
+              />
+            </div>
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={() => {
+                  setShowReportModal(false);
+                  setReportingAccount(null);
+                  setReportContent("");
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 mr-2"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveReport}
+                className="px-4 py-2 bg-[#F36F2E] text-white rounded-md text-sm font-medium hover:bg-[#E05C2B]"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

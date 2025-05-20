@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, ChangeEvent, FormEvent } from "react";
 import Sidebar from "@/components/utility/Sidebar";
 import AccountInformation from "./AccountInformation";
 import TransactionTable from "@/components/account/Table/TransactionTable";
@@ -10,6 +10,7 @@ import { EyeIcon, ArrowDownTrayIcon, TrashIcon, CloudArrowUpIcon } from '@heroic
 import Modal from "@/components/utility/Modal";
 import { PlusIcon } from "@heroicons/react/20/solid";
 import Image from "next/image";
+import RateAdjustmentForm from "./RateAdjustment";
 
 // Dummy user data for the dropdown
 const users = [
@@ -24,6 +25,82 @@ const users = [
     { id: 9, name: "Ivy Moore", avatar: "/images/avatar-9.png" },
     { id: 10, name: "Jack Taylor", avatar: "/images/avatar-10.png" },
 ];
+
+interface FormData {
+    accountNumber?: string;
+    dateValue?: string;
+    accountCode?: string;
+    accountCodeVersion?: string;
+    accountName?: string;
+    accountShortName?: string;
+    locationOffline?: string;
+    revenueType?: string;
+    currency?: string;
+    transactionTeam?: string;
+    chequeNo?: boolean;
+    postingBalance?: string;
+    orderBy?: string;
+    imnSCharge?: string;
+    imnSChargeAmt?: string;
+    locStateCountry?: string;
+    returnChargeRate?: string;
+    returnChargeLimit?: string;
+    cotConvenantRate?: string;
+    cotOffConvenantRate?: string;
+    turnOverLimit?: string;
+    cotConvenantFrequency?: string;
+    chargeCOTOnTurnoverShortfall?: "yes" | "no";
+    creditInterestRate?: string;
+    vatWHTRate?: string;
+    drRate?: string;
+    exRate?: string;
+    exChangeType?: string;
+    limitAmount?: string;
+    loanType?: "shortTerm" | "termLoan";
+    loanInterestRate?: string;
+    loanPenalRate?: string;
+    loanContribution?: string;
+    leadBank?: string;
+    shareHolding?: string;
+    street?: string;
+    street2?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    zipCode?: string;
+    telephoneNo?: string;
+    faxNo?: string;
+    email?: string;
+    swiftCode?: string;
+    accountOfficer?: string;
+    bankingPreference?: "saturday" | "sunday";
+    cotApplicable?: "yes";
+}
+
+interface ModalFormData {
+    fromDate: string;
+    toDate: string;
+    localCheques: string;
+    intraStateCheques: string;
+    upCountryCheques: string;
+    setAsPrevailingDays: boolean;
+    setParametersAsPrevailing: boolean;
+    camfFrequency: string;
+    camfOnShortfall: string;
+    camfCoverRate: string;
+    camfOCRate: string;
+    turnoverLimit: string;
+    currencyDescription: string;
+    rate: string;
+    retChgRate: string;
+    retChgLimit: string;
+    overdraftLimit: string;
+    drRate: string;
+    exRate: string;
+    exChargeType: string;
+    creditInterestRate: string;
+    whtRate: string;
+}
 
 interface AssignedUser {
     id: number;
@@ -73,9 +150,89 @@ const AccountDetails = () => {
     const [isUserListOpen, setIsUserListOpen] = useState(false);
     const [assignedUsers, setAssignedUsers] = useState<AssignedUser[]>([]);
     const [isUploadDropdownOpen, setIsUploadDropdownOpen] = useState(false);
+    
+        const [formData, setFormData] = useState<FormData>({});
+      const [step, setStep] = useState<number>(1);
     const [uploadType, setUploadType] = useState<"cashbook" | "bankstatement" | null>(null);
     const [isQueryModalOpen, setIsQueryModalOpen] = useState(false);
+ const [showModal, setShowModal] = useState(false);
+    const [modalFormData, setModalFormData] = useState<ModalFormData>({
+      fromDate: '', // Initialize From Date
+        toDate: '',   // Initialize To Date
+        localCheques: '',
+        intraStateCheques: '',
+        upCountryCheques: '',
+        setAsPrevailingDays: false,
+        setParametersAsPrevailing: false,
+        camfFrequency: '',
+        camfOnShortfall: '',
+        camfCoverRate: '',
+        camfOCRate: '',
+        turnoverLimit: '',
+        currencyDescription: '',
+        rate: '',
+        retChgRate: '',
+        retChgLimit: '',
+        overdraftLimit: '',
+        drRate: '',
+        exRate: '',
+        exChargeType: '',
+        creditInterestRate: '',
+        whtRate: '',
+});
 
+    const handleModalChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value, type } = event.target;
+
+        if (type === 'checkbox') {
+            const checked = (event.target as HTMLInputElement).checked;
+            setModalFormData(prevData => ({
+                ...prevData,
+                [name]: checked,
+            }));
+        } else {
+            setModalFormData(prevData => ({
+                ...prevData,
+                [name]: value,
+            }));
+        }
+    };
+
+    const handleSelectChange = (name: keyof ModalFormData, value: string) => {
+        setModalFormData(prevData => ({
+            ...prevData,
+            [name]: value,
+        }));
+    };
+
+    const handleSave = () => {
+        console.log("Modal data:", modalFormData);
+        setShowModal(false);
+    };
+
+    const nextStep = () => {
+        setStep((prevStep) => prevStep + 1);
+    };
+
+    const prevStep = () => {
+        setStep((prevStep) => prevStep - 1);
+    };
+
+    const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value, type } = e.target;
+
+        if (type === "checkbox") {
+            setFormData((prevState) => ({
+                ...prevState,
+                [name]: (e.target as HTMLInputElement).checked,
+            }));
+        } else {
+            setFormData((prevState) => ({
+                ...prevState,
+                [name]: value,
+            }));
+        }
+    };
     const handleTabChange = (tab: string) => {
         setActiveTab(tab);
     };
@@ -209,6 +366,7 @@ const AccountDetails = () => {
                                     >
                                         <PlusIcon className="h-5 w-5" />
                                     </button>
+
                                 </div>
                                 {activeTab === "Entry" && (
                                     <div className="relative">
@@ -249,7 +407,15 @@ const AccountDetails = () => {
                                 )}
                             </div>
                         </div>
-
+ <div className="flex justify-end mb-4">
+                            <button 
+                                type="button" 
+                                onClick={() => setShowModal(true)}
+                                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                            >
+                                Rate Adjustment
+                            </button>
+                        </div>
                         <AccountInformation />
 
                         <div className="mb-4 overflow-x-auto">
@@ -555,6 +721,15 @@ const AccountDetails = () => {
                     <QueryForm  />
                 </Modal>
             )}
+            {showModal && (
+                            <div className="fixed inset-0 bg-black/50 overflow-y-auto z-50">
+                        <RateAdjustmentForm  setShowModal = {setShowModal}
+                            modalFormData = {modalFormData}
+                            handleModalChange = {handleModalChange}
+                            handleSelectChange = {handleSelectChange}
+                            handleSave = {handleSave} /> 
+                    </div>
+                        )}
         </div>
     );
 };

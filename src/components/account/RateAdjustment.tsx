@@ -1,333 +1,360 @@
-"use client";
+import { X } from 'lucide-react'; // Assuming you have lucide-react for the X icon
+interface ModalFormData {
+    fromDate: string; // Added From Date
+    toDate: string; // Added To Date
+    localCheques: string;
+    intraStateCheques: string;
+    upCountryCheques: string;
+    setAsPrevailingDays: boolean;
+    setParametersAsPrevailing: boolean;
+    camfFrequency: string;
+    camfOnShortfall: string;
+    camfCoverRate: string;
+    camfOCRate: string;
+    turnoverLimit: string;
+    currencyDescription: string;
+    rate: string;
+    retChgRate: string;
+    retChgLimit: string;
+    overdraftLimit: string;
+    drRate: string;
+    exRate: string;
+    exChargeType: string;
+    creditInterestRate: string;
+    whtRate: string;
+}
 
-import React, { useState } from "react";
-import { FaCalendarAlt, FaTrashAlt, FaCaretDown } from "react-icons/fa";
-import Sidebar from "@/components/utility/Sidebar";
+// Assuming these are props or state variables in your component
+interface RateAdjustmentFormProps {
+    setShowModal: (show: boolean) => void;
+    modalFormData: ModalFormData;
+    handleModalChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
+    handleSelectChange: (name: keyof ModalFormData, value: string) => void;
+    handleSave: () => void;
+}
 
-const RateAdjustment = () => {
-  // State declarations
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
-  const [currency, setCurrency] = useState("NGN");
-  const [fromRate, setFromRate] = useState("1.000000");
-  const [toRate, setToRate] = useState("");
-  const [fromChangeLimit, setFromChangeLimit] = useState("1.000000");
-  const [toChangeLimit, setToChangeLimit] = useState("");
-  const [overDraftLimit, setOverDraftLimit] = useState("1.000000");
-  const [debitInterestRate, setDebitInterestRate] = useState("1.000000");
-  const [creditInterestRate, setCreditInterestRate] = useState("");
-  const [accountClassType, setAccountClassType] = useState("");
-  const [accountName, setAccountName] = useState("");
-  const [creditOrDebit, setCreditOrDebit] = useState("Credit");
-  const [voucherOrCheque, setVoucherOrCheque] = useState("Cheque/Cash");
-  const [voucherNo, setVoucherNo] = useState("");
-  const [chequeNo, setChequeNo] = useState("");
-  const [tellerNo, setTellerNo] = useState("");
+const RateAdjustmentForm: React.FC<RateAdjustmentFormProps> = ({
+    setShowModal,
+    modalFormData,
+    handleModalChange,
+    handleSelectChange,
+    handleSave,
+}) => {
+    return (
+        <div className="fixed inset-0 bg-black/50 overflow-y-auto z-50">
+            <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto m-auto">
+                <div className="p-6">
+                    <div className="flex justify-between items-center border-b pb-4">
+                        <h3 className="text-xl font-semibold text-gray-900">Rate Adjustment Form</h3>
+                        <button
+                            onClick={() => setShowModal(false)}
+                            className="text-gray-400 hover:text-gray-500"
+                        >
+                            <X className="h-6 w-6" />
+                            <span className="sr-only">Close</span>
+                        </button>
+                    </div>
 
-  // Handler functions
-  const handleFromDateChange = (e :any) => setFromDate(e.target.value);
-  const handleToDateChange = (e :any) => setToDate(e.target.value);
-  const handleCurrencyChange = (e :any) => setCurrency(e.target.value);
-  const handleFromRateChange = (e :any) => setFromRate(e.target.value);
-  const handleToRateChange = (e :any) => setToRate(e.target.value);
-  const handleFromChangeLimitChange = (e :any) => setFromChangeLimit(e.target.value);
-  const handleToChangeLimitChange = (e :any) => setToChangeLimit(e.target.value);
-  const handleOverDraftLimitChange = (e :any) => setOverDraftLimit(e.target.value);
-  const handleDebitInterestRateChange = (e :any) => setDebitInterestRate(e.target.value);
-  const handleCreditInterestRateChange = (e :any) => setCreditInterestRate(e.target.value);
-  const handleAccountClassTypeChange = (e :any) => setAccountClassType(e.target.value);
-  const handleAccountNameChange = (e :any) => setAccountName(e.target.value);
-  const handleCreditOrDebitChange = (e :any) => setCreditOrDebit(e.target.value);
-  const handleVoucherOrChequeChange = (e :any) => setVoucherOrCheque(e.target.value);
-  const handleVoucherNoChange = (e :any) => setVoucherNo(e.target.value);
-  const handleChequeNoChange = (e :any) => setChequeNo(e.target.value);
-  const handleTellerNoChange = (e :any) => setTellerNo(e.target.value);
+                    <div className="mt-4 space-y-6">
+                        {/* From and To Date Fields */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label htmlFor="fromDate" className="block text-sm font-medium text-gray-700 mb-1">From Date</label>
+                                <input
+                                    type="date"
+                                    id="fromDate"
+                                    name="fromDate"
+                                    value={modalFormData.fromDate}
+                                    onChange={handleModalChange}
+                                    className="w-full border border-gray-300 text-gray-700 rounded-md px-3 py-2"
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor="toDate" className="block text-sm font-medium text-gray-700 mb-1">To Date</label>
+                                <input
+                                    type="date"
+                                    id="toDate"
+                                    name="toDate"
+                                    value={modalFormData.toDate}
+                                    onChange={handleModalChange}
+                                    className="w-full border border-gray-300 text-gray-700 rounded-md px-3 py-2"
+                                />
+                            </div>
+                        </div>
 
-  return (
-    <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar */}
-      <Sidebar />
+                        {/* Currency Section */}
+                        <div>
+                            <h4 className="text-lg font-medium mb-4 text-gray-700">Currency</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Currency Description</label>
+                                    <select
+                                        name="currencyDescription"
+                                        value={modalFormData.currencyDescription}
+                                        onChange={handleModalChange}
+                                        className="w-full border border-gray-300 text-gray-700  rounded-md px-3 py-2"
+                                    >
+                                        <option value="">Select description</option>
+                                        <option value="USD">US Dollar</option>
+                                        <option value="EUR">Euro</option>
+                                        <option value="GBP">British Pound</option>
+                                        {/* Add more currency options as needed */}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Rate</label>
+                                    <input
+                                        type="text"
+                                        name="rate"
+                                        value={modalFormData.rate}
+                                        onChange={handleModalChange}
+                                        className="w-full border border-gray-300 text-gray-700  rounded-md px-3 py-2"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Ret. Chg. Rate</label>
+                                    <input
+                                        type="text"
+                                        name="retChgRate"
+                                        value={modalFormData.retChgRate}
+                                        onChange={handleModalChange}
+                                        className="w-full border border-gray-300 text-gray-700  rounded-md px-3 py-2"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Ret. Chg. Limit</label>
+                                    <input
+                                        type="text"
+                                        name="retChgLimit"
+                                        value={modalFormData.retChgLimit}
+                                        onChange={handleModalChange}
+                                        className="w-full border border-gray-300 text-gray-700  rounded-md px-3 py-2"
+                                    />
+                                </div>
+                            </div>
+                        </div>
 
-      {/* Main Content */}
-      <div className="flex-1 p-6">
-        <div className="bg-white p-6 rounded-lg shadow-md max-w-4xl mx-auto">
-          {/* Form Header */}
-          <h2 className="text-xl font-bold text-gray-800 mb-6 border-b pb-2">Rate Adjustment Form</h2>
+                        {/* Overdraft Section */}
+                        <div>
+                            <h4 className="text-lg font-medium mb-4 text-gray-700">Overdraft</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Overdraft Limit</label>
+                                    <input
+                                        type="text"
+                                        name="overdraftLimit"
+                                        value={modalFormData.overdraftLimit}
+                                        onChange={handleModalChange}
+                                        className="w-full border border-gray-300 text-gray-700  rounded-md px-3 py-2"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Dr. Rate</label>
+                                    <input
+                                        type="text"
+                                        name="drRate"
+                                        value={modalFormData.drRate}
+                                        onChange={handleModalChange}
+                                        className="w-full border border-gray-300 text-gray-700  rounded-md px-3 py-2"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Ex. Rate</label>
+                                    <input
+                                        type="text"
+                                        name="exRate"
+                                        value={modalFormData.exRate}
+                                        onChange={handleModalChange}
+                                        className="w-full border border-gray-300 text-gray-700  rounded-md px-3 py-2"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Ex. Charge Type</label>
+                                    <input
+                                        type="text"
+                                        name="exChargeType"
+                                        value={modalFormData.exChargeType}
+                                        onChange={handleModalChange}
+                                        className="w-full border border-gray-300 text-gray-700  rounded-md px-3 py-2"
+                                    />
+                                </div>
+                            </div>
+                        </div>
 
-          {/* Date Range Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">From</label>
-              <div className="relative">
-                <input
-                  type="date"
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  value={fromDate}
-                  onChange={handleFromDateChange}
-                />
-                <FaCalendarAlt className="absolute right-3 top-3 text-gray-400" />
-                {fromDate && (
-                  <button
-                    onClick={() => setFromDate("")}
-                    className="absolute right-8 top-3 text-gray-400 hover:text-gray-600"
-                  >
-                    <FaTrashAlt />
-                  </button>
-                )}
-              </div>
+                        {/* Credit Interest/Cash Cover/Cash Collateral Section */}
+                        <div>
+                            <h4 className="text-lg font-medium mb-4 text-gray-700">Credit Interest/Cash Cover/Cash Collateral</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Credit Interest Rate</label>
+                                    <input
+                                        type="text"
+                                        name="creditInterestRate"
+                                        value={modalFormData.creditInterestRate}
+                                        onChange={handleModalChange}
+                                        className="w-full border border-gray-300 text-gray-700  rounded-md px-3 py-2"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">WHT Rate</label>
+                                    <input
+                                        type="text"
+                                        name="whtRate"
+                                        value={modalFormData.whtRate}
+                                        onChange={handleModalChange}
+                                        className="w-full border border-gray-300 text-gray-700  rounded-md px-3 py-2"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Existing Cheque Clearing Days Section */}
+                        <div>
+                            <h4 className="text-lg text-gray-700 font-medium mb-4">Cheque Clearing Days</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Local cheques</label>
+                                    <input
+                                        type="text"
+                                        name="localCheques"
+                                        value={modalFormData.localCheques}
+                                        onChange={handleModalChange}
+                                        className="w-full border border-gray-300 text-gray-700  rounded-md px-3 py-2"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Intra-state cheques</label>
+                                    <input
+                                        type="text"
+                                        name="intraStateCheques"
+                                        value={modalFormData.intraStateCheques}
+                                        onChange={handleModalChange}
+                                        className="w-full border border-gray-300 text-gray-700  rounded-md px-3 py-2"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Up-country cheques</label>
+                                    <input
+                                        type="text"
+                                        name="upCountryCheques"
+                                        value={modalFormData.upCountryCheques}
+                                        onChange={handleModalChange}
+                                        className="w-full border border-gray-300 text-gray-700  rounded-md px-3 py-2"
+                                    />
+                                </div>
+                            </div>
+                            <div className="mt-4 space-y-2">
+                                <div className="flex items-center">
+                                    <input
+                                        type="checkbox"
+                                        id="setAsPrevailingDays"
+                                        name="setAsPrevailingDays"
+                                        checked={modalFormData.setAsPrevailingDays}
+                                        onChange={handleModalChange}
+                                        className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 text-gray-700  rounded mr-2"
+                                    />
+                                    <label htmlFor="setAsPrevailingDays" className="text-sm font-medium text-gray-700">
+                                        Set as prevailing clearing days
+                                    </label>
+                                </div>
+                                <div className="flex items-center">
+                                    <input
+                                        type="checkbox"
+                                        id="setParametersAsPrevailing"
+                                        name="setParametersAsPrevailing"
+                                        checked={modalFormData.setParametersAsPrevailing}
+                                        onChange={handleModalChange}
+                                        className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 text-gray-700  rounded mr-2"
+                                    />
+                                    <label htmlFor="setParametersAsPrevailing" className="text-sm font-medium text-gray-700">
+                                        Set parameters as prevailing account parameters
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Existing CAMF Section */}
+                        <div>
+                            <h4 className="text-lg font-medium text-gray-700 mb-4">CAMF</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">CAMF frequency</label>
+                                    <select
+                                        onChange={(e) => handleSelectChange('camfFrequency', e.target.value)}
+                                        value={modalFormData.camfFrequency}
+                                        className="w-full border border-gray-300 text-gray-700  rounded-md px-3 py-2"
+                                    >
+                                        <option value="">Select frequency</option>
+                                        <option value="daily">Daily</option>
+                                        <option value="monthly">Monthly</option>
+                                        <option value="quarterly">Quarterly</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">CAMF on shortfall</label>
+                                    <select
+                                        onChange={(e) => handleSelectChange('camfOnShortfall', e.target.value)}
+                                        value={modalFormData.camfOnShortfall}
+                                        className="w-full border border-gray-300 text-gray-700  rounded-md px-3 py-2"
+                                    >
+                                        <option value="">Select option</option>
+                                        <option value="yes">Yes</option>
+                                        <option value="no">No</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">CAMF cover rate</label>
+                                    <input
+                                        type="text"
+                                        name="camfCoverRate"
+                                        value={modalFormData.camfCoverRate}
+                                        onChange={handleModalChange}
+                                        className="w-full border border-gray-300 text-gray-700  rounded-md px-3 py-2"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">CAMF O/C rate</label>
+                                    <input
+                                        type="text"
+                                        name="camfOCRate"
+                                        value={modalFormData.camfOCRate}
+                                        onChange={handleModalChange}
+                                        className="w-full border border-gray-300 text-gray-700  rounded-md px-3 py-2"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Turnover limit</label>
+                                    <input
+                                        type="text"
+                                        name="turnoverLimit"
+                                        value={modalFormData.turnoverLimit}
+                                        onChange={handleModalChange}
+                                        className="w-full border border-gray-300 text-gray-700  rounded-md px-3 py-2"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="mt-6 flex justify-end space-x-3">
+                        <button
+                            onClick={() => setShowModal(false)}
+                            className="px-4 py-2 border border-gray-300 text-gray-700  rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleSave}
+                            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                        >
+                            Save
+                        </button>
+                    </div>
+                </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">To</label>
-              <div className="relative">
-                <input
-                  type="date"
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  value={toDate}
-                  onChange={handleToDateChange}
-                />
-                <FaCalendarAlt className="absolute right-3 top-3 text-gray-400" />
-                {toDate && (
-                  <button
-                    onClick={() => setToDate("")}
-                    className="absolute right-8 top-3 text-gray-400 hover:text-gray-600"
-                  >
-                    <FaTrashAlt />
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Checkbox Section */}
-          <div className="mb-6">
-            <label className="inline-flex items-center">
-              <input
-                type="checkbox"
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <span className="ml-2 text-sm text-gray-700">
-                Close old transactions (COR/Transactional parameters)
-              </span>
-            </label>
-          </div>
-
-          {/* Currency and Rate Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Currency Description</label>
-              <div className="relative">
-                <select
-                  className="w-full p-2 border border-gray-300 rounded-md appearance-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  value={currency}
-                  onChange={handleCurrencyChange}
-                >
-                  <option>NGN</option>
-                  <option>USD</option>
-                  <option>EUR</option>
-                </select>
-                <FaCaretDown className="absolute right-3 top-3 text-gray-400 pointer-events-none" />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Rate</label>
-              <input
-                type="number"
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                value={toRate}
-                onChange={handleToRateChange}
-              />
-            </div>
-          </div>
-
-          {/* Rate Change Limit Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Ret. Change Rate</label>
-              <input
-                type="number"
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                value={fromChangeLimit}
-                onChange={handleFromChangeLimitChange}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Ret. Change Limit</label>
-              <input
-                type="number"
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                value={toChangeLimit}
-                onChange={handleToChangeLimitChange}
-              />
-            </div>
-          </div>
-
-          {/* Single Field Sections */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Over Draft Limit</label>
-            <input
-              type="number"
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              value={overDraftLimit}
-              onChange={handleOverDraftLimitChange}
-            />
-          </div>
-
-          {/* Interest Rates Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Dr. Interest Rate</label>
-              <input
-                type="number"
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                value={debitInterestRate}
-                onChange={handleDebitInterestRateChange}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Cr. Interest Rate</label>
-              <input
-                type="number"
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                value={creditInterestRate}
-                onChange={handleCreditInterestRateChange}
-              />
-            </div>
-          </div>
-
-          {/* Account Information Section */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Account Class Type</label>
-            <input
-              type="text"
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              value={accountClassType}
-              onChange={handleAccountClassTypeChange}
-            />
-          </div>
-
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Account Name</label>
-            <div className="relative">
-              <select
-                className="w-full p-2 border border-gray-300 rounded-md appearance-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                value={accountName}
-                onChange={handleAccountNameChange}
-              >
-                <option>Account 1</option>
-                <option>Account 2</option>
-              </select>
-              <FaCaretDown className="absolute right-3 top-3 text-gray-400 pointer-events-none" />
-            </div>
-          </div>
-
-          {/* Credit/Debit Radio Buttons */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Credit or Debit</label>
-            <div className="flex space-x-4">
-              <label className="inline-flex items-center">
-                <input
-                  type="radio"
-                  className="form-radio text-blue-600 focus:ring-blue-500"
-                  name="creditOrDebit"
-                  value="Credit"
-                  checked={creditOrDebit === "Credit"}
-                  onChange={handleCreditOrDebitChange}
-                />
-                <span className="ml-2">Credit</span>
-              </label>
-              <label className="inline-flex items-center">
-                <input
-                  type="radio"
-                  className="form-radio text-blue-600 focus:ring-blue-500"
-                  name="creditOrDebit"
-                  value="Debit"
-                  checked={creditOrDebit === "Debit"}
-                  onChange={handleCreditOrDebitChange}
-                />
-                <span className="ml-2">Debit</span>
-              </label>
-            </div>
-          </div>
-
-          {/* Voucher/Cheque Section */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Voucher/Cheque</label>
-            <div className="relative">
-              <select
-                className="w-full p-2 border border-gray-300 rounded-md appearance-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                value={voucherOrCheque}
-                onChange={handleVoucherOrChequeChange}
-              >
-                <option>Cheque/Cash</option>
-                <option>Voucher</option>
-              </select>
-              <FaCaretDown className="absolute right-3 top-3 text-gray-400 pointer-events-none" />
-            </div>
-          </div>
-
-          {/* Number Inputs Section */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Voucher No</label>
-              <input
-                type="text"
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                value={voucherNo}
-                onChange={handleVoucherNoChange}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Cheque No</label>
-              <input
-                type="text"
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                value={chequeNo}
-                onChange={handleChequeNoChange}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Teller No</label>
-              <input
-                type="text"
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                value={tellerNo}
-                onChange={handleTellerNoChange}
-              />
-            </div>
-          </div>
-
-          {/* Final Checkbox */}
-          <div className="mb-6">
-            <label className="inline-flex items-center">
-              <input
-                type="checkbox"
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <span className="ml-2 text-sm text-gray-700">
-                Erase old transactions (COR/Transactional parameters)
-              </span>
-            </label>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex justify-end space-x-3">
-            <button
-              type="button"
-              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              OK
-            </button>
-          </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 };
 
-export default RateAdjustment;
+export default RateAdjustmentForm;

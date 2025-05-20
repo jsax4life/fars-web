@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { FaSearch, FaFilter, FaArchive } from "react-icons/fa";
+import { FaSearch } from "react-icons/fa";
 import Sidebar from "@/components/utility/Sidebar";
 import Link from "next/link";
 
@@ -16,6 +16,7 @@ interface AccountData {
   bankName: string;
   bankAddress: string;
   status: "open" | "closed";
+  report?: string; // Added optional report field to AccountData
 }
 
 const Account = () => {
@@ -30,6 +31,11 @@ const Account = () => {
   const [selectedAccountForAction, setSelectedAccountForAction] = useState<AccountData | null>(null);
   const actionMenuRef = useRef<HTMLDivElement>(null);
   const actionButtonRefs = useRef<{[key: string]: HTMLButtonElement | null}>({});
+
+  // State for the reporting modal, adjusted for accounts
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportingAccount, setReportingAccount] = useState<AccountData | null>(null);
+  const [reportContent, setReportContent] = useState("");
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -48,27 +54,13 @@ const Account = () => {
     setActiveAccountTab(tab);
   };
 
-  // Close menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (actionMenuRef.current && !actionMenuRef.current.contains(event.target as Node)) {
-        closeActionMenu();
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
-
-
-  const handleDeleteTransaction = (id: string) => {
-    console.log("Deleting transaction:", id);
+  const handleDeleteAccount = (id: string) => {
+    console.log("Deleting account:", id);
+    setAccounts(prevAccounts => prevAccounts.filter(account => account.id !== id));
     closeActionMenu();
-    // Implement your delete logic here
+    // In a real application, you would also make an API call here.
   };
+
   const openActionMenu = (account: AccountData, event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     setSelectedAccountForAction(account);
@@ -119,6 +111,36 @@ const Account = () => {
   const getOpenAccounts = () => accounts.filter(account => account.status === "open");
   const getClosedAccounts = () => accounts.filter(account => account.status === "closed");
 
+  // Account-specific report functions
+  const handleCreateReportClick = (account: AccountData) => {
+    setReportingAccount(account);
+    setReportContent(account.report || ""); // Pre-fill if a report already exists
+    setShowReportModal(true);
+    closeActionMenu();
+  };
+
+  const handleSaveReport = () => {
+    if (reportingAccount) {
+      setAccounts(prevAccounts => prevAccounts.map(a =>
+        a.id === reportingAccount.id ? { ...a, report: reportContent } : a
+      ));
+      setShowReportModal(false);
+      setReportContent("");
+      setReportingAccount(null);
+    }
+  };
+
+  const handleViewReportClick = (account: AccountData) => {
+    console.log("Viewing report for account:", account.accountName, account.report);
+    if (account.report) {
+      alert(`Opening/displaying report:\n\n${account.report}`);
+      // In a real app, you might render this in a dedicated modal or navigate
+    } else {
+      alert("No report available for this account.");
+    }
+    closeActionMenu();
+  };
+
   return (
     <div className="flex flex-col md:flex-row h-screen bg-gray-100 overflow-hidden">
       <div className="hidden md:block fixed h-full w-64">
@@ -129,7 +151,7 @@ const Account = () => {
         <div className="bg-gray-100 min-h-full p-4 md:p-6">
           <div className="bg-white rounded-md shadow-md p-4 md:p-6">
             <div className="flex flex-col items-start gap-4 mb-4">
-              <div className="font-semibold text-black text-lg md:text-xl mr-4">Client user.id Account Selection</div>
+              <div className="font-semibold text-black text-lg md:text-xl mr-4">Client Account Selection</div>
               <div className="mb-4 overflow-x-auto">
                 <div className="flex whitespace-nowrap border-b border-gray-200">
                   <button
@@ -225,7 +247,7 @@ const Account = () => {
                                 onClick={(e) => openActionMenu(account, e)}
                               >
                                 <img
-                                  src="/Users/action.svg"
+                                  src="/Users/action.svg" // Consider a more generic icon if this isn't specific to "Users"
                                   alt="Dropdown Icon"
                                   className="w-4 h-4 z-0 md:w-5 md:h-5"
                                 />
@@ -234,27 +256,39 @@ const Account = () => {
                                 <div
                                   ref={actionMenuRef}
                                   className="fixed z-50 bg-white rounded-md shadow-lg"
-                                  style={{
-                                    top: `${getPopupPosition().top}px`,
-                                    left: `${getPopupPosition().left}px`,
-                                  }}
+                                  style={getPopupPosition()}
                                 >
                                   <div className="py-1">
                                     <Link
-                                      href="/AccountDetails"
+                                      href="/AccountDetails" // You might want to make this dynamic like `/AccountDetails/${account.id}`
                                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
                                     >
                                       View
                                     </Link>
+                                    {account.report ? (
+                                      <button
+                                        onClick={() => handleViewReportClick(account)}
+                                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
+                                      >
+                                        View Report
+                                      </button>
+                                    ) : (
+                                      <button
+                                        onClick={() => handleCreateReportClick(account)}
+                                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
+                                      >
+                                        Create Report
+                                      </button>
+                                    )}
                                     <button
                                       onClick={() => handleCloseAccount(account.id)}
-                                      className="block px-4 py-2 text-sm text-gray-700 border-gray-700 text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
+                                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
                                     >
                                       Close Account
                                     </button>
                                     <button
-                                       onClick={() => handleDeleteTransaction(account.id)}
-                                      className="block px-4 py-2 text-sm text-gray-700 border-gray-700 text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
+                                      onClick={() => handleDeleteAccount(account.id)} // Changed to handleDeleteAccount
+                                      className="block px-4 py-2 text-sm text-red-700 hover:bg-gray-100 w-full text-left focus:outline-none"
                                     >
                                       Delete
                                     </button>
@@ -327,6 +361,56 @@ const Account = () => {
           </div>
         </div>
       </div>
+      {showReportModal && reportingAccount && (
+        <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg text-black font-semibold">Create Report for {reportingAccount.accountName}</h3>
+              <button
+                onClick={() => {
+                  setShowReportModal(false);
+                  setReportingAccount(null);
+                  setReportContent("");
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div>
+              <label htmlFor="report-content" className="block text-sm font-medium text-gray-700 mb-1">Report Content</label>
+              <textarea
+                id="report-content"
+                value={reportContent}
+                onChange={(e) => setReportContent(e.target.value)}
+                rows={8}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
+                placeholder="Write your report here..."
+              />
+            </div>
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={() => {
+                  setShowReportModal(false);
+                  setReportingAccount(null);
+                  setReportContent("");
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 mr-2"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveReport}
+                className="px-4 py-2 bg-[#F36F2E] text-white rounded-md text-sm font-medium hover:bg-[#E05C2B]"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
