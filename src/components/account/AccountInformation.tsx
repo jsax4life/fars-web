@@ -25,7 +25,7 @@ interface FormData {
   totOfSCharge?: string;
   totOfSChargeAmt?: string;
   lsCreditTenorDays?: string;
-  cotRate?: string;
+  CAMFRate?: string;
   limitStartDate?: string;
   limitEndDate?: string;
   limitAmount?: string;
@@ -44,17 +44,17 @@ interface FormData {
   accountOfficer?: string;
   locStateCountry?: string;
   returnChargeLimit?: string;
-  cotConvenantRate?: string;
-  cotOffConvenantRate?: string;
+  CAMFConvenantRate?: string;
+  CAMFOffConvenantRate?: string;
   turnOverLimit?: string;
-  cotConvenantFrequency?: string;
+  CAMFConvenantFrequency?: string;
   creditInterestRate?: string;
   vatWHTRate?: string;
   drRate?: string;
   exRate?: string;
-  exChangeType?: "Select Type" | string;
+  exChargeType?: "Select Type" | string;
   bankingPreference?: "saturday" | "sunday";
-  cotApplicable?: "yes";
+  CAMFApplicable?: "yes";
   // Add other form fields here with their respective types
 }
 
@@ -136,7 +136,7 @@ const AccountInformation = () => {
     { id: "totOfSCharge", label: "Total of S Charge", type: "text" },
     { id: "totOfSChargeAmt", label: "Total of S Charge Amt", type: "text" },
     { id: "lsCreditTenorDays", label: "LS Credit Tenor Days", type: "text" },
-    { id: "cotRate", label: "COT Rate", type: "text" },
+    { id: "CAMFRate", label: "CAMF Rate", type: "text" },
     { id: "limitStartDate", label: "Limit Start Date", type: "date" },
     { id: "limitEndDate", label: "Limit End Date", type: "date" },
     { id: "limitAmount", label: "Limit Amount", type: "text" },
@@ -173,16 +173,16 @@ const AccountInformation = () => {
       ],
     },
     {
-      id: "cotApplicable",
-      label: "COT Applicable",
+      id: "CAMFApplicable",
+      label: "CAMF Applicable",
       type: "radio",
       options: [{ label: "Yes", value: "yes" }],
     },
     { id: "drRate", label: "Dr. Rate", type: "text" },
     { id: "exRate", label: "Ex. Rate", type: "text" },
     {
-      id: "exChangeType",
-      label: "Ex. Change Type.",
+      id: "exChargeType",
+      label: "Ex. Charge Type.",
       type: "select",
       options: ["Select Type"],
     },

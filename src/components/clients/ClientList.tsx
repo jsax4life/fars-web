@@ -17,6 +17,7 @@ interface User {
   city: string;
   action: string;
   dateAdded: string;
+  report?: string | null; // Add an optional report property
 }
 
 interface NewClient {
@@ -32,7 +33,7 @@ interface NewClient {
 
 const ClientList = () => {
   const router = useRouter();
- 
+
   const [users, setUsers] = useState<User[]>([
     {
       id: "01",
@@ -46,6 +47,7 @@ const ClientList = () => {
       city: "Abj",
       dateAdded: "Q2 - Q4 - 2023",
       action: "Active",
+      report: null,
     },
     {
       id: "02",
@@ -59,6 +61,7 @@ const ClientList = () => {
       city: "San Francisco",
       dateAdded: "Q1 - Q3 - 2024",
       action: "Inactive",
+      report: "report_john_doe.docx", // Example of a saved report
     },
   ]);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -77,6 +80,11 @@ const ClientList = () => {
   // Action menu state
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   const [selectedUserForAction, setSelectedUserForAction] = useState<User | null>(null);
+
+  // Report Modal State
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportContent, setReportContent] = useState("");
+  const [reportingUser, setReportingUser] = useState<User | null>(null);
 
   // Deactivation flow states
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
@@ -114,8 +122,6 @@ const ClientList = () => {
     });
   };
 
-  
-
   const closeActionMenu = () => {
     setIsActionMenuOpen(false);
     setSelectedUserForAction(null);
@@ -147,7 +153,7 @@ const ClientList = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
- // View User Modal State
+  // View User Modal State
   const [showViewModal, setShowViewModal] = useState(false);
   const [viewedUser, setViewedUser] = useState<User | null>(null);
 
@@ -155,7 +161,7 @@ const ClientList = () => {
     event.stopPropagation();
     setSelectedUserForAction(user);
     setIsActionMenuOpen(true);
-    
+
     // Store the button reference
     if (user.id) {
       actionButtonRefs.current[user.id] = event.currentTarget;
@@ -215,6 +221,37 @@ const ClientList = () => {
     setShowViewModal(true);
     closeActionMenu();
   };
+
+  const handleCreateReportClick = (user: User) => {
+    setReportingUser(user);
+    setShowReportModal(true);
+    closeActionMenu();
+  };
+
+  const handleSaveReport = () => {
+    if (reportingUser) {
+      setUsers(users.map(u =>
+        u.id === reportingUser.id ? { ...u, report: `report_${reportingUser.fullName.replace(/\s+/g, '_').toLowerCase()}.docx` } : u
+      ));
+      setShowReportModal(false);
+      setReportContent("");
+      setReportingUser(null);
+    }
+  };
+
+  const handleViewReportClick = (user: User) => {
+    // In a real application, you would fetch and display the report content
+    console.log("Viewing report for:", user.fullName, user.report);
+    // For now, let's just open a new tab or show a modal with a message
+    if (user.report) {
+      alert(`Opening/displaying report: ${user.report}`);
+      // You might use window.open or a modal here to display/edit the report
+    } else {
+      alert("No report available.");
+    }
+    closeActionMenu();
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
@@ -351,58 +388,71 @@ const ClientList = () => {
                       {user.dateAdded}
                     </td>
                     <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 relative">
-                    <button
-        ref={el => {
-          if (user.id) actionButtonRefs.current[user.id] = el;
-        }}
-        className="focus:outline-none"
-        onClick={(e) => openActionMenu(user, e)}
-      >
-        <img
-          src="/Users/action.svg"
-          alt="Dropdown Icon"
-          className="w-4 h-4 md:w-5 md:h-5"
-        />
-      </button>
-      {isActionMenuOpen && selectedUserForAction?.id === user.id && (
-        <div
-          ref={actionMenuRef}
-          className="fixed z-50 bg-white rounded-md shadow-lg"
-          style={{
-            top: `${getPopupPosition().top}px`,
-            left: `${getPopupPosition().left}px`,
-          }}
-        >
-          <div className="py-1">
-          <button
-                            onClick={() => openViewModal(user)}
-                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
-                          >
-                            View Client Details
-                          </button>
-                          <Link
-                            href = "/ClientAccounts"
-                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
-                          >
-                            View Accounts
-                          </Link>
-                          <Link
-                            href = "/NewAccount"
-                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
-                          >
-                            Create Account
-                          </Link>
-
-            <button
-              onClick={() => handleDeleteUser(user.id)}
-              className="block px-4 py-2 text-sm text-gray-700 border-gray-700 text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
-            >
-              Delete
-            </button>
-           
-          </div>
-        </div>
-      )}
+                      <button
+                        ref={el => {
+                          if (user.id) actionButtonRefs.current[user.id] = el;
+                        }}
+                        className="focus:outline-none"
+                        onClick={(e) => openActionMenu(user, e)}
+                      >
+                        <img
+                          src="/Users/action.svg"
+                          alt="Dropdown Icon"
+                          className="w-4 h-4 md:w-5 md:h-5"
+                        />
+                      </button>
+                      {isActionMenuOpen && selectedUserForAction?.id === user.id && (
+                        <div
+                          ref={actionMenuRef}
+                          className="fixed z-50 bg-white rounded-md shadow-lg"
+                          style={{
+                            top: `${getPopupPosition().top}px`,
+                            left: `${getPopupPosition().left}px`,
+                          }}
+                        >
+                          <div className="py-1">
+                            <button
+                              onClick={() => openViewModal(user)}
+                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
+                            >
+                              View Client Details
+                            </button>
+                            <Link
+                              href = "/ClientAccounts"
+                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
+                            >
+                              View Accounts
+                            </Link>
+                            <Link
+                              href = "/NewAccount"
+                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
+                            >
+                              Create Account
+                            </Link>
+                            {user.report ? (
+                              <button
+                                onClick={() => handleViewReportClick(user)}
+                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
+                              >
+                                View Report
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleCreateReportClick(user)}
+                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
+                              >
+                                Create Report
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleDeleteUser(user.id)}
+                              className="block px-4 py-2 text-sm text-gray-700 border-gray-700 text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -431,124 +481,176 @@ const ClientList = () => {
           </div>
 
           {/* Create User Modal */}
-    {showCreateModal && (
-  <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4">
-    <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg text-black font-semibold">Create New Client</h3>
-        <button
-          onClick={() => setShowCreateModal(false)}
-          className="text-gray-500 hover:text-gray-700"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
+          {showCreateModal && (
+            <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg text-black font-semibold">Create New Client</h3>
+                  <button
+                    onClick={() => setShowCreateModal(false)}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
 
-      <div className="space-y-4 overflow-y-auto max-h-[calc(100vh-150px)]"> {/* Added scrollbar and max height */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-          <input
-            type="text"
-            name="fullName"
-            value={newClient.fullName}
-            onChange={handleInputChange}
-            placeholder="Enter Full name"
-            className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-          />
-        </div>
+                <div className="space-y-4 overflow-y-auto max-h-[calc(100vh-150px)]"> {/* Added scrollbar and max height */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                    <input
+                      type="text"
+                      name="fullName"
+                      value={newClient.fullName}
+                      onChange={handleInputChange}
+                      placeholder="Enter Full name"
+                      className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
+                    />
+                  </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
-          <input
-            type="text"
-            name="country"
-            value={newClient.country}
-            onChange={handleInputChange}
-            placeholder="Enter Country"
-            className="w-full px-3 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-          />
-        </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                    <input
+                      type="text"
+                      name="country"
+                      value={newClient.country}
+                      onChange={handleInputChange}
+                      placeholder="Enter Country"
+                      className="w-full px-3 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
+                    />
+                  </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
-          <input
-            type="text"
-            name="company"
-            value={newClient.company}
-            onChange={handleInputChange}
-            placeholder="Enter Company Name"
-            className="w-full px-3 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-          <input
-            type="text"
-            name="address"
-            value={newClient.address}
-            onChange={handleInputChange}
-            placeholder="Enter Company Address"
-            className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-          <input
-            type="email"
-            name="email"
-            value={newClient.email}
-            onChange={handleInputChange}
-            placeholder="Enter Company Email"
-            className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-          <input
-            type="tel"
-            name="contact"
-            value={newClient.contact}
-            onChange={handleInputChange}
-            placeholder="Enter Phone Number"
-            className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
-          <input
-            type="text"
-            name="state"
-            value={newClient.state}
-            onChange={handleInputChange}
-            placeholder="Enter State"
-            className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-          <input
-            type="text"
-            name="city"
-            value={newClient.city}
-            onChange={handleInputChange}
-            placeholder="Enter City"
-            className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-          />
-        </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+                    <input
+                      type="text"
+                      name="company"
+                      value={newClient.company}
+                      onChange={handleInputChange}
+                      placeholder="Enter Company Name"
+                      className="w-full px-3 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                    <input
+                      type="text"
+                      name="address"
+                      value={newClient.address}
+                      onChange={handleInputChange}
+                      placeholder="Enter Company Address"
+                      className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={newClient.email}
+                      onChange={handleInputChange}
+                      placeholder="Enter Company Email"
+                      className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                    <input
+                      type="tel"
+                      name="contact"
+                      value={newClient.contact}
+                      onChange={handleInputChange}
+                      placeholder="Enter Phone Number"
+                      className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                    <input
+                      type="text"
+                      name="state"
+                      value={newClient.state}
+                      onChange={handleInputChange}
+                      placeholder="Enter State"
+                      className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                    <input
+                      type="text"
+                      name="city"
+                      value={newClient.city}
+                      onChange={handleInputChange}
+                      placeholder="Enter City"
+                      className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
+                    />
+                  </div>
 
 
-        <button
-          onClick={handleCreateUser}
-          className="w-full bg-[#F36F2E] text-white py-2 px-4 rounded-md hover:bg-[#E05C2B] transition-colors"
-        >
-          Create Client
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+                  <button
+                    onClick={handleCreateUser}
+                    className="w-full bg-[#F36F2E] text-white py-2 px-4 rounded-md hover:bg-[#E05C2B] transition-colors"
+                  >
+                    Create Client
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Report Modal */}
+          {showReportModal && reportingUser && (
+            <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg text-black font-semibold">Create Report for {reportingUser.fullName}</h3>
+                  <button
+                    onClick={() => {
+                      setShowReportModal(false);
+                      setReportingUser(null);
+                      setReportContent("");
+                    }}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <div>
+                  <label htmlFor="report-content" className="block text-sm font-medium text-gray-700 mb-1">Report Content</label>
+                  <textarea
+                    id="report-content"
+                    value={reportContent}
+                    onChange={(e) => setReportContent(e.target.value)}
+                    rows={8}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
+                    placeholder="Write your report here..."
+                  />
+                </div>
+                <div className="mt-4 flex justify-end">
+                  <button
+                    onClick={() => {
+                      setShowReportModal(false);
+                      setReportingUser(null);
+                      setReportContent("");
+                    }}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 mr-2"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveReport}
+                    className="px-4 py-2 bg-[#F36F2E] text-white rounded-md text-sm font-medium hover:bg-[#E05C2B]"
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Deactivate Confirmation Modal */}
           {showDeactivateConfirm && (
@@ -560,7 +662,7 @@ const ClientList = () => {
                     Lectus neque ut vestibulum molestie tincidunt.
                   </p>
                 </div>
-                
+
                 <div className="flex justify-end space-x-4 mt-6">
                   <button
                     onClick={() => setShowDeactivateConfirm(false)}
@@ -586,7 +688,7 @@ const ClientList = () => {
                 <div className="mb-6">
                   <h3 className="text-lg font-semibold">Deactivation Reason</h3>
                 </div>
-                
+
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Reason Title</label>
@@ -599,7 +701,7 @@ const ClientList = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
                     <textarea
@@ -611,7 +713,7 @@ const ClientList = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
                     />
                   </div>
-                  
+
                   <div className="border-t border-gray-200 pt-4 flex justify-end space-x-4">
                     <button
                       onClick={() => setShowDeactivateForm(false)}
@@ -636,14 +738,13 @@ const ClientList = () => {
             <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md text-center">
                 <div className="flex justify-end">
-                  <button 
+                  <button
                     onClick={() => setShowSuccessModal(false)}
                     className="text-gray-500 hover:text-gray-700"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
+                    </svg></button>
                 </div>
 
                 <div className="mb-4">
@@ -664,82 +765,82 @@ const ClientList = () => {
             </div>
           )}
           {showViewModal && viewedUser && (
-  <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4">
-    <div className="bg-gray-50 p-6 rounded-md shadow-md w-full max-w-2xl"> {/* Increased max-w */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center">
-          <div className="relative">
-            <div className="w-16 h-16 rounded-full bg-orange-200 flex items-center justify-center overflow-hidden">
-              {/* Replace with actual user image */}
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-orange-700">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.125h15.002M9.75 21.75l-3 1.5-3-1.5m9.75 0l3 1.5 3-1.5M9.375 6a9.375 9.375 0 0116.875-3.75m-16.875 3.75l1.5-7.5m15-7.5l-1.5 7.5m-15 6.75a2.25 2.25 0 002.25 2.25m13.5 0a2.25 2.25 0 002.25-2.25m-16.5 0a2.25 2.25 0 012.25-2.25m13.5 0a2.25 2.25 0 012.25 2.25" />
-              </svg>
-            </div>
-            <button className="absolute bottom-0 right-0 bg-white rounded-full shadow-sm p-1 text-gray-500 hover:text-gray-700">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l-6.585 6.585a2.121 2.121 0 00-1.414.615l-1.93-1.93a2.121 2.121 0 00-.615-1.414l6.585-6.585a2.121 2.121 0 003 0 2.121 2.121 0 000 3zM12 17.768h.008v.008H12v-.008z" />
-              </svg>
-            </button>
-          </div>
-          <div className="ml-4">
-            <h3 className="text-lg font-semibold text-gray-800">Olayimika Oluwasegun</h3>
-            <p className="text-sm text-gray-500">olayimikaoluwasegun@gmail.com</p>
-          </div>
-        </div>
-        <button onClick={() => setShowViewModal(false)} className="text-gray-500 hover:text-gray-700 focus:outline-none">
-          <svg className="h-6 w-6 fill-current" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"></path></svg>
-        </button>
-      </div>
+            <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4">
+              <div className="bg-gray-50 p-6 rounded-md shadow-md w-full max-w-2xl"> {/* Increased max-w */}
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center">
+                    <div className="relative">
+                      <div className="w-16 h-16 rounded-full bg-orange-200 flex items-center justify-center overflow-hidden">
+                        {/* Replace with actual user image */}
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-orange-700">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.125h15.002M9.75 21.75l-3 1.5-3-1.5m9.75 0l3 1.5 3-1.5M9.375 6a9.375 9.375 0 0116.875-3.75m-16.875 3.75l1.5-7.5m15-7.5l-1.5 7.5m-15 6.75a2.25 2.25 0 002.25 2.25m13.5 0a2.25 2.25 0 002.25-2.25m-16.5 0a2.25 2.25 0 012.25-2.25m13.5 0a2.25 2.25 0 012.25 2.25" />
+                        </svg>
+                      </div>
+                      <button className="absolute bottom-0 right-0 bg-white rounded-full shadow-sm p-1 text-gray-500 hover:text-gray-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l-6.585 6.585a2.121 2.121 0 00-1.414.615l-1.93-1.93a2.121 2.121 0 00-.615-1.414l6.585-6.585a2.121 2.121 0 003 0 2.121 2.121 0 000 3zM12 17.768h.008v.008H12v-.008z" />
+                        </svg>
+                      </button>
+                    </div>
+                    <div className="ml-4">
+                      <h3 className="text-lg font-semibold text-gray-800">Olayimika Oluwasegun</h3>
+                      <p className="text-sm text-gray-500">olayimikaoluwasegun@gmail.com</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setShowViewModal(false)} className="text-gray-500 hover:text-gray-700 focus:outline-none">
+                    <svg className="h-6 w-6 fill-current" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"></path></svg>
+                  </button>
+                </div>
 
-      <div className="mb-6 p-4 bg-white rounded-md border border-gray-200">
-        <div className="md:grid md:grid-cols-2 md:items-start md:gap-6 mb-4"> {/* Flex layout for label and text */}
-          <div>
-            <h4 className="text-sm font-semibold text-gray-700">Update Personal Details</h4>
-          </div>
-          <p className="text-xs text-gray-500 md:mt-1">Lorem ipsum dolor sit amet consectetur. Purus odio porttitor dignissim orci non odio porttitor dignissim orci non purus purus. Nunc nisl ut</p>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="firstname" className="block text-xs font-medium text-gray-600 mb-1">Firstname</label>
-            <input type="text" id="firstname" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" value="Olayimika" readOnly />
-          </div>
-          <div>
-            <label htmlFor="lastname" className="block text-xs font-medium text-gray-600 mb-1">Lastname</label>
-            <input type="text" id="lastname" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" value="Segun" readOnly />
-          </div>
-          <div className="col-span-2">
-            <label htmlFor="email" className="block text-xs font-medium text-gray-600 mb-1">Email Address</label>
-            <input type="email" id="email" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" value="olayimikaoluwasegun@gmail.com" readOnly />
-          </div>
-          <div>
-            <label htmlFor="phone" className="block text-xs font-medium text-gray-600 mb-1">Phone Number</label>
-            <div className="flex items-center border border-gray-300 rounded-md">
-              <div className="px-3 py-2 bg-gray-100 text-sm text-gray-700 rounded-l-md">
-                <select className="focus:outline-none">
-                  <option>🇳🇬</option>
-                  {/* Add more country codes */}
-                </select>
+                <div className="mb-6 p-4 bg-white rounded-md border border-gray-200">
+                  <div className="md:grid md:grid-cols-2 md:items-start md:gap-6 mb-4"> {/* Flex layout for label and text */}
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-700">Update Personal Details</h4>
+                    </div>
+                    <p className="text-xs text-gray-500 md:mt-1">Lorem ipsum dolor sit amet consectetur. Purus odio porttitor dignissim orci non odio porttitor dignissim orci non purus purus. Nunc nisl ut</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="firstname" className="block text-xs font-medium text-gray-600 mb-1">Firstname</label>
+                      <input type="text" id="firstname" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" value="Olayimika" readOnly />
+                    </div>
+                    <div>
+                      <label htmlFor="lastname" className="block text-xs font-medium text-gray-600 mb-1">Lastname</label>
+                      <input type="text" id="lastname" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" value="Segun" readOnly />
+                    </div>
+                    <div className="col-span-2">
+                      <label htmlFor="email" className="block text-xs font-medium text-gray-600 mb-1">Email Address</label>
+                      <input type="email" id="email" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" value="olayimikaoluwasegun@gmail.com" readOnly />
+                    </div>
+                    <div>
+                      <label htmlFor="phone" className="block text-xs font-medium text-gray-600 mb-1">Phone Number</label>
+                      <div className="flex items-center border border-gray-300 rounded-md">
+                        <div className="px-3 py-2 bg-gray-100 text-sm text-gray-700 rounded-l-md">
+                          <select className="focus:outline-none">
+                            <option>🇳🇬</option>
+                            {/* Add more country codes */}
+                          </select>
+                        </div>
+                        <input type="tel" id="phone" className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none" value="08101831001" readOnly />
+                      </div>
+                    </div>
+                    <div className="col-span-2 flex md:flex-row gap-4 flex-col justify-end">
+                    <Link href="/NewAccount"
+              className="bg-white text-orange-500 border-1 border-orange-500  rounded-md py-2 px-4 text-sm font-medium focus:outline-none focus:shadow-outline-orange active:bg-orange-700"
+            >
+              Create Bank Account
+            </Link>
+                      <button className="bg-orange-500 hover:bg-orange-600 text-white rounded-md py-2 px-4 text-sm font-medium focus:outline-none focus:shadow-outline-orange active:bg-orange-700">
+                        Edit Changes
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+
               </div>
-              <input type="tel" id="phone" className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none" value="08101831001" readOnly />
             </div>
-          </div>
-          <div className="col-span-2 flex md:flex-row gap-4 flex-col justify-end">
-          <Link href="/NewAccount"
-      className="bg-white text-orange-500 border-1 border-orange-500  rounded-md py-2 px-4 text-sm font-medium focus:outline-none focus:shadow-outline-orange active:bg-orange-700"
-    >
-      Create Bank Account
-    </Link>
-            <button className="bg-orange-500 hover:bg-orange-600 text-white rounded-md py-2 px-4 text-sm font-medium focus:outline-none focus:shadow-outline-orange active:bg-orange-700">
-              Edit Changes
-            </button>
-          </div>
-        </div>
-      </div>
-
-     
-    </div>
-  </div>
-)}
+          )}
         </div>
       </div>
     </div>
