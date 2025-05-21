@@ -726,7 +726,7 @@ const AccountDetails = () => {
                         <RateAdjustmentForm  setShowModal = {setShowModal}
                             modalFormData = {modalFormData}
                             handleModalChange = {handleModalChange}
-                            handleSelectChange = {handleSelectChange}
+                            // handleSelectChange = {handleSelectChange}
                             handleSave = {handleSave} /> 
                     </div>
                         )}
