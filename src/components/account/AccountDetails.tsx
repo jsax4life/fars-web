@@ -330,7 +330,7 @@ const AccountDetails = () => {
     };
 
     return (
-        <div className="flex flex-col md:flex-row h-screen bg-gray-100 overflow-hidden">
+        <div className="flex flex-col md:flex-row h-screen bg-gray-100 ">
             <div className="hidden md:block fixed h-full w-64">
                 <Sidebar />
             </div>

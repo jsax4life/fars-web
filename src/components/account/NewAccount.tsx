@@ -87,8 +87,8 @@ const NewAccount = () => {
     const [formData, setFormData] = useState<FormData>({});
     const [showModal, setShowModal] = useState(false);
     const [modalFormData, setModalFormData] = useState<ModalFormData>({
-      fromDate: '', // Initialize From Date
-        toDate: '',   // Initialize To Date
+        fromDate: '',
+        toDate: '',
         localCheques: '',
         intraStateCheques: '',
         upCountryCheques: '',
@@ -109,7 +109,7 @@ const NewAccount = () => {
         exChargeType: '',
         creditInterestRate: '',
         whtRate: '',
-});
+    });
 
     const handleModalChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value, type } = event.target;
@@ -191,7 +191,7 @@ const NewAccount = () => {
                             <div>
                                 <label htmlFor="accountCodeVersion" className="block text-sm font-medium text-gray-700">Account Code Verifier</label>
                                 <select id="accountCodeVersion" name="accountCodeVersion" value={formData.accountCodeVersion || ""} onChange={handleChange} className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm">
-                                    <option>Select Verifier</option>
+                                    <option value="">Select Verifier</option>
                                 </select>
                             </div>
                             <div>
@@ -199,29 +199,33 @@ const NewAccount = () => {
                                 <input type="text" id="accountName" name="accountName" value={formData.accountName || ""} onChange={handleChange} className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" />
                             </div>
                             <div>
+                                <label htmlFor="accountShortName" className="block text-sm font-medium text-gray-700">Account Short Name</label>
+                                <input type="text" id="accountShortName" name="accountShortName" value={formData.accountShortName || ""} onChange={handleChange} className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" />
+                            </div>
+                            <div>
                                 <label htmlFor="locationOffline" className="block text-sm font-medium text-gray-700">Location/Office</label>
                                 <input type="text" id="locationOffline" name="locationOffline" value={formData.locationOffline || ""} onChange={handleChange} className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" />
                             </div>
-                            <div></div>
                             <div>
                                 <label htmlFor="revenueType" className="block text-sm font-medium text-gray-700">Account Type</label>
                                 <select id="revenueType" name="revenueType" value={formData.revenueType || ""} onChange={handleChange} className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm">
-                                    <option>Select Type</option>
+                                    <option value="">Select Type</option>
                                 </select>
                             </div>
                             <div>
                                 <label htmlFor="currency" className="block text-sm font-medium text-gray-700">Currency</label>
                                 <select id="currency" name="currency" value={formData.currency || ""} onChange={handleChange} className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm">
-                                    <option>Select Currency</option>
+                                    <option value="">Select Currency</option>
                                 </select>
                             </div>
                             <div>
                                 <label htmlFor="transactionTeam" className="block text-sm font-medium text-gray-700">Transaction Type</label>
                                 <select id="transactionTeam" name="transactionTeam" value={formData.transactionTeam || ""} onChange={handleChange} className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm">
-                                    <option>Select Type</option>
+                                    <option value="">Select Type</option>
                                 </select>
                             </div>
                             <div className="flex items-center space-x-2">
+                                <input type="checkbox" id="chequeNo" name="chequeNo" checked={formData.chequeNo || false} onChange={handleChange} className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded" />
                                 <label htmlFor="chequeNo" className="block text-sm font-medium text-gray-700">Cheque No</label>
                                 <input type="text" className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" disabled={!formData.chequeNo} />
                             </div>
@@ -236,10 +240,9 @@ const NewAccount = () => {
                             <div>
                                 <label htmlFor="orderBy" className="block text-sm font-medium text-gray-700">Order By</label>
                                 <select id="orderBy" name="orderBy" value={formData.orderBy || ""} onChange={handleChange} className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm">
-                                    <option>Select Option</option>
+                                    <option value="">Select Option</option>
                                 </select>
                             </div>
-                            <div></div>
                         </div>
                     </div>
                 );
@@ -288,12 +291,13 @@ const NewAccount = () => {
                             <div className="col-span-3">
                                 <label htmlFor="cotConvenantFrequency" className="block text-sm font-medium text-gray-700">CAMF Covenant Frequency</label>
                                 <select id="cotConvenantFrequency" name="cotConvenantFrequency" value={formData.cotConvenantFrequency || ""} onChange={handleChange} className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm">
-                                    <option>Select Frequency</option>
+                                    <option value="">Select Frequency</option>
                                 </select>
                             </div>
                             <div className="col-span-3">
                                 <label htmlFor="chargeCOTOnTurnoverShortfall" className="block text-sm font-medium text-gray-700">Charge CAMF on Turnover Shortfall</label>
                                 <select id="chargeCOTOnTurnoverShortfall" name="chargeCOTOnTurnoverShortfall" value={formData.chargeCOTOnTurnoverShortfall || ""} onChange={handleChange} className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm">
+                                    <option value="">Select Option</option>
                                     <option value="yes">Yes</option>
                                     <option value="no">No</option>
                                 </select>
@@ -330,7 +334,7 @@ const NewAccount = () => {
                             <div className="col-span-3">
                                 <label htmlFor="exChangeType" className="block text-sm font-medium text-gray-700">Ex. Charge Type.</label>
                                 <select id="exChangeType" name="exChangeType" value={formData.exChangeType || ""} onChange={handleChange} className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm">
-                                    <option>Select Type</option>
+                                    <option value="">Select Type</option>
                                 </select>
                             </div>
                         </div>
@@ -384,12 +388,16 @@ const NewAccount = () => {
                             <div>
                                 <label htmlFor="leadBank" className="block text-sm font-medium text-gray-700">Bank Name</label>
                                 <select id="leadBank" name="leadBank" value={formData.leadBank || ""} onChange={handleChange} className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm">
-                                    <option>Select Bank</option>
+                                    <option value="">Select Bank</option>
                                 </select>
                             </div>
                             <div>
                                 <label htmlFor="street" className="block text-sm font-medium text-gray-700">Street</label>
                                 <input type="text" id="street" name="street" value={formData.street || ""} onChange={handleChange} className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" />
+                            </div>
+                            <div>
+                                <label htmlFor="street2" className="block text-sm font-medium text-gray-700">Street 2</label>
+                                <input type="text" id="street2" name="street2" value={formData.street2 || ""} onChange={handleChange} className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" />
                             </div>
                             <div>
                                 <label htmlFor="city" className="block text-sm font-medium text-gray-700">City</label>
@@ -402,8 +410,12 @@ const NewAccount = () => {
                             <div>
                                 <label htmlFor="country" className="block text-sm font-medium text-gray-700">Country</label>
                                 <select id="country" name="country" value={formData.country || ""} onChange={handleChange} className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm">
-                                    <option>Select Country</option>
+                                    <option value="">Select Country</option>
                                 </select>
+                            </div>
+                            <div>
+                                <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700">Zip Code</label>
+                                <input type="text" id="zipCode" name="zipCode" value={formData.zipCode || ""} onChange={handleChange} className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" />
                             </div>
                             <div>
                                 <label htmlFor="telephoneNo" className="block text-sm font-medium text-gray-700">Telephone No</label>
@@ -418,19 +430,23 @@ const NewAccount = () => {
                                 <input type="email" id="email" name="email" value={formData.email || ""} onChange={handleChange} className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" />
                             </div>
                             <div>
-                                <label htmlFor="swiftCode" className="block text-sm font-medium text-gray-700">Remark</label>
+                                <label htmlFor="swiftCode" className="block text-sm font-medium text-gray-700">Swift Code</label>
                                 <input type="text" id="swiftCode" name="swiftCode" value={formData.swiftCode || ""} onChange={handleChange} className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" />
+                            </div>
+                            <div>
+                                <label htmlFor="accountOfficer" className="block text-sm font-medium text-gray-700">Account Officer</label>
+                                <input type="text" id="accountOfficer" name="accountOfficer" value={formData.accountOfficer || ""} onChange={handleChange} className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" />
                             </div>
                             <div className="col-span-full">
                                 <div className="flex items-center space-x-4">
                                     <div className="flex items-center">
-                                        <input id="saturdayBanking" name="bankingPreference" type="radio" value="saturday" checked={formData.bankingPreference === "saturday"} onChange={handleChange} className="focus:ring-orange-500 h-4 w-4 text-orange-600 border-gray-300 text-gray-700" />
+                                        <input id="saturdayBanking" name="bankingPreference" type="radio" value="saturday" checked={formData.bankingPreference === "saturday"} onChange={handleChange} className="focus:ring-orange-500 h-4 w-4 text-orange-600 border-gray-300" />
                                         <label htmlFor="saturdayBanking" className="ml-2 block text-sm font-medium text-gray-700">
                                             Saturday Banking
                                         </label>
                                     </div>
                                     <div className="flex items-center">
-                                        <input id="sundayBanking" name="bankingPreference" type="radio" value="sunday" checked={formData.bankingPreference === "sunday"} onChange={handleChange} className="focus:ring-orange-500 h-4 w-4 text-orange-600 border-gray-300 text-gray-700" />
+                                        <input id="sundayBanking" name="bankingPreference" type="radio" value="sunday" checked={formData.bankingPreference === "sunday"} onChange={handleChange} className="focus:ring-orange-500 h-4 w-4 text-orange-600 border-gray-300" />
                                         <label htmlFor="sundayBanking" className="ml-2 block text-sm font-medium text-gray-700">
                                             Sunday Banking
                                         </label>
@@ -439,7 +455,7 @@ const NewAccount = () => {
                             </div>
                             <div className="col-span-full">
                                 <div className="flex items-center">
-                                    <input id="cotApplicable" name="cotApplicable" type="radio" value="yes" checked={formData.cotApplicable === "yes"} onChange={handleChange} className="focus:ring-orange-500 h-4 w-4 text-orange-600 border-gray-300 text-gray-700" />
+                                    <input id="cotApplicable" name="cotApplicable" type="radio" value="yes" checked={formData.cotApplicable === "yes"} onChange={handleChange} className="focus:ring-orange-500 h-4 w-4 text-orange-600 border-gray-300" />
                                     <label htmlFor="cotApplicable" className="ml-2 block text-sm font-medium text-gray-700">
                                         C.A.M.F. Applicable to International Transfer/Order
                                     </label>
@@ -465,7 +481,7 @@ const NewAccount = () => {
 
                     <div className="flex justify-between mt-6">
                         {step > 1 && (
-                            <button type="button" onClick={prevStep} className="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
+                            <button type="button" onClick={prevStep} className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
                                 Previous
                             </button>
                         )}
@@ -474,9 +490,9 @@ const NewAccount = () => {
                                 Next
                             </button>
                         ) : (
-                            <Link href="/Account" className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
+                            <button type="submit" className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
                                 Apply
-                            </Link>
+                            </button>
                         )}
                     </div>
                 </form>
@@ -484,12 +500,14 @@ const NewAccount = () => {
 
             {showModal && (
                 <div className="fixed inset-0 bg-black/50 overflow-y-auto z-50">
-            <RateAdjustmentForm  setShowModal = {setShowModal}
-                modalFormData = {modalFormData}
-                handleModalChange = {handleModalChange}
-                handleSelectChange = {handleSelectChange}
-                handleSave = {handleSave} /> 
-        </div>
+                    <RateAdjustmentForm  
+                        setShowModal={setShowModal}
+                        modalFormData={modalFormData}
+                        handleModalChange={handleModalChange}
+                        // handleSelectChange={handleSelectChange}
+                        handleSave={handleSave} 
+                    /> 
+                </div>
             )}
         </div>
     );

@@ -124,15 +124,15 @@ const AccountInformation = () => {
   const allFields: Field[] = [
     ...firstEightFields,
     { id: "transactionTeam", label: "Transaction Team", type: "text" },
-    { id: "chequeNo", label: "Cheque No", type: "checkbox" },
+    { id: "chequeNo", label: "Cheque No", type: "text" },
     { id: "postingBalance", label: "Posting Balance", type: "text" },
     { id: "orderBy", label: "Order By", type: "text" },
  
     { id: "returnChargeRate", label: "Return Charge Rate", type: "text" },
     { id: "returnChargeAmt", label: "Return Charge Amt", type: "text" },
 
-    { id: "totOfSCharge", label: "Total of S Charge", type: "text" },
-    { id: "totOfSChargeAmt", label: "Total of S Charge Amt", type: "text" },
+    // { id: "totOfSCharge", label: "Total of S Charge", type: "text" },
+    // { id: "totOfSChargeAmt", label: "Total of S Charge Amt", type: "text" },
     { id: "CAMFRate", label: "CAMF Rate", type: "text" },
     { id: "limitStartDate", label: "Limit Start Date", type: "date" },
     { id: "limitEndDate", label: "Limit End Date", type: "date" },
