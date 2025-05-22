@@ -32,7 +32,7 @@ interface ModalFormData {
     whtRate: string;
 }
 interface ContractViewModalProps {
-  contractData: ContractData | null; // <--- ADDED '| null' HERE
+  contractData: ContractData; // <--- ADDED '| null' HERE
   onClose: () => void;
   // ... other props
 }
