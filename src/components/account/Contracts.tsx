@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { FaSearch } from "react-icons/fa";
 import Sidebar from "@/components/utility/Sidebar";
 import Link from "next/link";
-import RateAdjustmentForm from "../account/RateAdjustment";
+import RateAdjustmentForm from "./RateAdjustment";
 import ContractViewModal from "../clients/ContractViewModal";
 import { ContractData, Fee } from "@/types/contractTypes";
 interface ModalFormData {
@@ -51,8 +51,8 @@ interface AccountData {
   report?: string;
 }
 
-const Account = () => {
-  const [activeAccountTab, setActiveAccountTab] = useState("Account");
+const Contracts = () => {
+  const [activeAccountTab, setActiveAccountTab] = useState("Contracts");
   const [accounts, setAccounts] = useState<AccountData[]>([
     { id: "1", entryDate: "02 - 04 - 2023", accountName: "Savings Account", accountNumber: "1234567890", accountType: "Savings", accountCode: "465,897.00", symbol: "NGN", bankName: "GTBank", bankAddress: "Lagos", status: "open" },
     { id: "2", entryDate: "02 - 04 - 2023", accountName: "Current Account", accountNumber: "0987654321", accountType: "Current", accountCode: "1,234,567.00", symbol: "USD", bankName: "Zenith Bank", bankAddress: "Abuja", status: "open" },
@@ -264,10 +264,10 @@ const Account = () => {
         <div className="bg-gray-100 min-h-full p-4 md:p-6">
           <div className="bg-white rounded-md shadow-md p-4 md:p-6">
             <div className="flex flex-col items-start gap-4 mb-4">
-              <div className="font-semibold text-black text-lg md:text-xl mr-4">Client Account Selection</div>
+              <div className="font-semibold text-black text-lg md:text-xl mr-4">Contract Selection</div>
               <div className="mb-4 overflow-x-auto">
                 <div className="flex whitespace-nowrap border-b border-gray-200">
-                  <button
+                  {/* <button
                     onClick={() => handleAccountTabChange("Account")}
                     className={`py-2 px-3 md:px-4 -mb-px font-semibold text-sm ${
                       activeAccountTab === "Account"
@@ -286,7 +286,7 @@ const Account = () => {
                     } focus:outline-none`}
                   >
                     Close Account
-                  </button>
+                  </button> */}
                   <button
                     onClick={() => handleAccountTabChange("Contracts")}
                     className={`py-2 px-3 md:px-4 -mb-px font-semibold text-sm ${
@@ -351,7 +351,7 @@ const Account = () => {
               </div>
             </div>
 
-            {activeAccountTab === "Account" && (
+            {/* {activeAccountTab === "Account" && (
               <>
                 <div className="overflow-x-auto">
                   <div className="max-h-[calc(100vh-300px)] overflow-y-auto">
@@ -450,9 +450,9 @@ const Account = () => {
                   Showing 1 to {getOpenAccounts().length} of {getOpenAccounts().length} entries
                 </div>
               </>
-            )}
+            )} */}
 
-            {activeAccountTab === "Close Account" && (
+            {/* {activeAccountTab === "Close Account" && (
               <>
                 <div className="overflow-x-auto">
                   <div className="max-h-[calc(100vh-300px)] overflow-y-auto">
@@ -501,7 +501,7 @@ const Account = () => {
                   Showing 1 to {getClosedAccounts().length} of {getClosedAccounts().length} entries
                 </div>
               </>
-            )}
+            )} */}
             
             {activeAccountTab === "Contracts" && (
               <>
@@ -681,4 +681,4 @@ const Account = () => {
   );
 };
 
-export default Account;
+export default Contracts;
