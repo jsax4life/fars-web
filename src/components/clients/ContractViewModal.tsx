@@ -7,7 +7,7 @@ interface ContractViewModalProps {
   contractData?: ContractData | null;
   onClose?: () => void;
     setShowViewModal: (show: boolean) => void;
-  viewedContract: ContractData;
+  viewedContract: ContractData | null;
 }
 
 const ContractViewModal: React.FC<ContractViewModalProps> = ({
@@ -62,7 +62,7 @@ const ContractViewModal: React.FC<ContractViewModalProps> = ({
       });
     }
   }, [viewedContract]);
-
+  
   // Don't render anything if viewedContract is null
   if (!viewedContract) {
     return null;
