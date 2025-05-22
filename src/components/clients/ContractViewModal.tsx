@@ -1,55 +1,12 @@
 "use client";
 
+import { ContractData } from "@/types/contractTypes";
 import React, { useState, useRef, useEffect } from "react";
 
-interface Fee {
-  product: string;
-  type: string;
-  rate: string;
-  vat: string;
-}
 interface ContractViewModalProps {
-    setShowViewModal: (show: boolean) => void; // This is the prop to close the modal
-    viewedContract: ContractData | null;
-}
-interface ContractData {
-  id: string;
-  loanId: string;
-  agreementDate: string;
-  borrower: string;
-  agreementType: string;
-  signedDate: string;
-  clearingDays: string;
-  locStateCountry: string;
-  returnChargeRate: string;
-  returnChargeLimit: string;
-  camf: string;
-  camfCovenantRate: string;
-  camfOffCovenantRate: string;
-  turnOverLimit: string;
-  camfCovenantFrequency: string;
-  chargeCAMFOnTurnoverShortfall: string;
-  creditInterestRate: string;
-  whtRate: string;
-  overdraftLimit: string;
-  drRate: string;
-  exRate: string;
-  exChangeType: string;
-  loanType: string;
-  loanInterestRate: string;
-  loanPenalRate: string;
-  loanContribution: string;
-  fees: Fee[];
-  loanIds: string[];
-  amounts: string[];
-  lcCommission: string;
-  preNegotiationRate: string;
-  postNegotiationRate: string;
-  note: string;
-}
-
-interface ContractViewModalProps {
-  setShowViewModal: (show: boolean) => void;
+  contractData?: ContractData | null;
+  onClose?: () => void;
+    setShowViewModal: (show: boolean) => void;
   viewedContract: ContractData | null;
 }
 
