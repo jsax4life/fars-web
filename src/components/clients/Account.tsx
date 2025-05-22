@@ -4,6 +4,71 @@ import React, { useState, useRef, useEffect } from "react";
 import { FaSearch } from "react-icons/fa";
 import Sidebar from "@/components/utility/Sidebar";
 import Link from "next/link";
+import RateAdjustmentForm from "../account/RateAdjustment";
+import ContractViewModal from "./ContractViewModal";
+
+interface ModalFormData {
+    fromDate: string;
+    toDate: string;
+    localCheques: string;
+    intraStateCheques: string;
+    upCountryCheques: string;
+    setAsPrevailingDays: boolean;
+    setParametersAsPrevailing: boolean;
+    camfFrequency: string;
+    camfOnShortfall: string;
+    camfCoverRate: string;
+    camfOCRate: string;
+    turnoverLimit: string;
+    currencyDescription: string;
+    rate: string;
+    retChgRate: string;
+    retChgLimit: string;
+    overdraftLimit: string;
+    drRate: string;
+    exRate: string;
+    exChargeType: string;
+    creditInterestRate: string;
+    whtRate: string;
+}
+
+interface ContractData {
+  id: string;
+  loanId: string;
+  agreementDate: string;
+  borrower: string;
+  agreementType: string;
+  signedDate: string;
+  bankName: string;
+  accountOfficer: string;
+  email: string;
+  swiftCode: string;
+  telephone: string;
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  fax: string;
+  locStateCountry: string;
+  returnChargeRate: string;
+  returnChargeLimit: string;
+  cotConvenantRate: string;
+  cotOffConvenantRate: string;
+  turnOverLimit: string;
+  cotConvenantFrequency: string;
+  chargeCOTOnTurnoverShortfall: string;
+  creditInterestRate: string;
+  vatWHTRate: string;
+  limitAmount: string;
+  drRate: string;
+  exRate: string;
+  exChangeType: string;
+  loanType: string;
+  loanInterestRate: string;
+  loanPenalRate: string;
+  loanContribution: string;
+}
 
 interface AccountData {
   id: string;
@@ -16,7 +81,7 @@ interface AccountData {
   bankName: string;
   bankAddress: string;
   status: "open" | "closed";
-  report?: string; // Added optional report field to AccountData
+  report?: string;
 }
 
 const Account = () => {
@@ -31,11 +96,97 @@ const Account = () => {
   const [selectedAccountForAction, setSelectedAccountForAction] = useState<AccountData | null>(null);
   const actionMenuRef = useRef<HTMLDivElement>(null);
   const actionButtonRefs = useRef<{[key: string]: HTMLButtonElement | null}>({});
-
-  // State for the reporting modal, adjusted for accounts
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewedContract, setViewedContract] = useState<ContractData | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportingAccount, setReportingAccount] = useState<AccountData | null>(null);
   const [reportContent, setReportContent] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [modalFormData, setModalFormData] = useState<ModalFormData>({
+    fromDate: '',
+    toDate: '',
+    localCheques: '',
+    intraStateCheques: '',
+    upCountryCheques: '',
+    setAsPrevailingDays: false,
+    setParametersAsPrevailing: false,
+    camfFrequency: '',
+    camfOnShortfall: '',
+    camfCoverRate: '',
+    camfOCRate: '',
+    turnoverLimit: '',
+    currencyDescription: '',
+    rate: '',
+    retChgRate: '',
+    retChgLimit: '',
+    overdraftLimit: '',
+    drRate: '',
+    exRate: '',
+    exChargeType: '',
+    creditInterestRate: '',
+    whtRate: '',
+  });
+const [contracts, setContracts] = useState<ContractData[]>([
+  {
+    id: "1",
+    loanId: "LOAN-001",
+    agreementDate: "2023-01-15",
+    borrower: "John Doe",
+    agreementType: "Personal Loan",
+    signedDate: "2023-01-20",
+    bankName: "GTBank",
+    accountOfficer: "Jane Smith",
+    email: "john.doe@example.com",
+    swiftCode: "GTBINGLA",
+    telephone: "08012345678",
+    street: "123 Main St",
+    city: "Lagos",
+    state: "Lagos",
+    zipCode: "100001",
+    country: "Nigeria",
+    fax: "012345678",
+    locStateCountry: "Lagos, Nigeria",
+    returnChargeRate: "5%",
+    returnChargeLimit: "₦50,000",
+    cotConvenantRate: "2%",
+    cotOffConvenantRate: "1.5%",
+    turnOverLimit: "₦1,000,000",
+    cotConvenantFrequency: "Monthly",
+    chargeCOTOnTurnoverShortfall: "Yes",
+    creditInterestRate: "15%",
+    vatWHTRate: "7.5%",
+    limitAmount: "₦5,000,000",
+    drRate: "20%",
+    exRate: "₦415/$",
+    exChangeType: "Spot",
+    loanType: "Term Loan",
+    loanInterestRate: "25%",
+    loanPenalRate: "5%",
+    loanContribution: "20%"
+  },
+  // Add more contracts as needed
+]);
+  const handleModalChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = event.target;
+
+    if (type === 'checkbox') {
+      const checked = (event.target as HTMLInputElement).checked;
+      setModalFormData(prevData => ({
+        ...prevData,
+        [name]: checked,
+      }));
+    } else {
+      setModalFormData(prevData => ({
+        ...prevData,
+        [name]: value,
+      }));
+    }
+  };
+
+  const handleSave = () => {
+    console.log("Modal data:", modalFormData);
+    setShowModal(false);
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -58,7 +209,6 @@ const Account = () => {
     console.log("Deleting account:", id);
     setAccounts(prevAccounts => prevAccounts.filter(account => account.id !== id));
     closeActionMenu();
-    // In a real application, you would also make an API call here.
   };
 
   const openActionMenu = (account: AccountData, event: React.MouseEvent<HTMLButtonElement>) => {
@@ -111,10 +261,9 @@ const Account = () => {
   const getOpenAccounts = () => accounts.filter(account => account.status === "open");
   const getClosedAccounts = () => accounts.filter(account => account.status === "closed");
 
-  // Account-specific report functions
   const handleCreateReportClick = (account: AccountData) => {
     setReportingAccount(account);
-    setReportContent(account.report || ""); // Pre-fill if a report already exists
+    setReportContent(account.report || "");
     setShowReportModal(true);
     closeActionMenu();
   };
@@ -134,7 +283,6 @@ const Account = () => {
     console.log("Viewing report for account:", account.accountName, account.report);
     if (account.report) {
       alert(`Opening/displaying report:\n\n${account.report}`);
-      // In a real app, you might render this in a dedicated modal or navigate
     } else {
       alert("No report available for this account.");
     }
@@ -174,6 +322,16 @@ const Account = () => {
                   >
                     Close Account
                   </button>
+                  <button
+                    onClick={() => handleAccountTabChange("Contracts")}
+                    className={`py-2 px-3 md:px-4 -mb-px font-semibold text-sm ${
+                      activeAccountTab === "Contracts"
+                        ? "border-b-2 border-orange-500 text-orange-500"
+                        : "text-gray-500 hover:text-orange-500"
+                    } focus:outline-none`}
+                  >
+                    Contracts
+                  </button>
                 </div>
               </div>
               <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-4 w-full mb-4">
@@ -201,9 +359,30 @@ const Account = () => {
                     className="w-full px-4 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:border-indigo-500 text-sm"
                   />
                 </div>
-                <Link href="/NewAccount" className="w-full md:w-auto bg-orange-500 text-white py-2 px-4 rounded-md hover:bg-orange-600 focus:outline-none text-sm">
-                  Create New
-                </Link>
+                {activeAccountTab === "Account" && (
+                  <Link
+                    href="/NewAccount"
+                    className="w-full md:w-auto px-4 py-2 bg-orange-500 text-white rounded-md shadow-sm hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 text-sm"
+                  >
+                    Create New Account
+                  </Link>
+                )}
+                {activeAccountTab === "Contracts" && (
+                  <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+                    <button
+                      onClick={() => setShowModal(true)}
+                      className="w-full md:w-auto px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                    >
+                      Rate Adjustment
+                    </button>
+                    <Link
+                      href="/NewContract"
+                      className="w-full md:w-auto px-4 py-2 bg-orange-500 text-white rounded-md shadow-sm hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 text-sm"
+                    >
+                      Create New Contract
+                    </Link>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -247,7 +426,7 @@ const Account = () => {
                                 onClick={(e) => openActionMenu(account, e)}
                               >
                                 <img
-                                  src="/Users/action.svg" // Consider a more generic icon if this isn't specific to "Users"
+                                  src="/Users/action.svg"
                                   alt="Dropdown Icon"
                                   className="w-4 h-4 z-0 md:w-5 md:h-5"
                                 />
@@ -260,10 +439,10 @@ const Account = () => {
                                 >
                                   <div className="py-1">
                                     <Link
-                                      href="/AccountDetails" // You might want to make this dynamic like `/AccountDetails/${account.id}`
+                                      href="/AccountDetails"
                                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
                                     >
-                                      View
+                                      View Account
                                     </Link>
                                     {account.report ? (
                                       <button
@@ -287,7 +466,7 @@ const Account = () => {
                                       Close Account
                                     </button>
                                     <button
-                                      onClick={() => handleDeleteAccount(account.id)} // Changed to handleDeleteAccount
+                                      onClick={() => handleDeleteAccount(account.id)}
                                       className="block px-4 py-2 text-sm text-red-700 hover:bg-gray-100 w-full text-left focus:outline-none"
                                     >
                                       Delete
@@ -358,6 +537,112 @@ const Account = () => {
                 </div>
               </>
             )}
+            
+            {activeAccountTab === "Contracts" && (
+              <>
+                <div className="overflow-x-auto">
+                  <div className="max-h-[calc(100vh-300px)] overflow-y-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50 sticky top-0">
+                        <tr>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">S/N</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account Name</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ">Account Number</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account Type</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account Code</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Symbol</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ">Bank Name</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ">Bank Address</th>
+                          <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {getOpenAccounts().map((account, index) => (
+                          <tr key={account.id}>
+                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
+                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">{account.entryDate}</td>
+                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">{account.accountName}</td>
+                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 ">{account.accountNumber}</td>
+                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 ">{account.accountType}</td>
+                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 ">{account.accountCode}</td>
+                            <td className="px-3 py-4 text-sm text-gray-500">{account.symbol}</td>
+                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 ">{account.bankName}</td>
+                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 ">{account.bankAddress}</td>
+                            <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 relative">
+                              <button
+                                ref={el => {
+                                  if (account.id) actionButtonRefs.current[account.id] = el;
+                                }}
+                                className="focus:outline-none z-0"
+                                onClick={(e) => openActionMenu(account, e)}
+                              >
+                                <img
+                                  src="/Users/action.svg"
+                                  alt="Dropdown Icon"
+                                  className="w-4 h-4 z-0 md:w-5 md:h-5"
+                                />
+                              </button>
+                              {isActionMenuOpen && selectedAccountForAction?.id === account.id && (
+                                <div
+                                  ref={actionMenuRef}
+                                  className="fixed z-50 bg-white rounded-md shadow-lg"
+                                  style={getPopupPosition()}
+                                >
+                                  <div className="py-1">
+                                 <button
+  onClick={() => {
+    // Find the contract associated with this account
+    const accountContract = contracts.find(c => c.id === account.id);
+    setViewedContract(accountContract || null);
+    setShowViewModal(true);
+  }}
+  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
+>
+  View Contract
+</button>
+                                    {account.report ? (
+                                      <button
+                                        onClick={() => handleViewReportClick(account)}
+                                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
+                                      >
+                                        View Report
+                                      </button>
+                                    ) : (
+                                      <button
+                                        onClick={() => handleCreateReportClick(account)}
+                                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
+                                      >
+                                        Create Report
+                                      </button>
+                                    )}
+                                    <button
+                                      onClick={() => handleCloseAccount(account.id)}
+                                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
+                                    >
+                                      Close Account
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteAccount(account.id)}
+                                      className="block px-4 py-2 text-sm text-red-700 hover:bg-gray-100 w-full text-left focus:outline-none"
+                                    >
+                                      Delete
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div className="mt-4 text-sm text-gray-500">
+                  Showing 1 to {getOpenAccounts().length} of {getOpenAccounts().length} entries
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -410,6 +695,22 @@ const Account = () => {
             </div>
           </div>
         </div>
+      )}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 overflow-y-auto z-50">
+          <RateAdjustmentForm  
+            setShowModal={setShowModal}
+            modalFormData={modalFormData}
+            handleModalChange={handleModalChange}
+            handleSave={handleSave} 
+          /> 
+        </div>
+      )}
+      {showViewModal && (
+        <ContractViewModal
+          setShowViewModal={setShowViewModal}
+          viewedContract={viewedContract}
+        />
       )}
     </div>
   );

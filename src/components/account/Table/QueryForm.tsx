@@ -40,15 +40,7 @@ const QueryForm = () => {
           />
           <span className="ml-2 text-gray-700 text-sm">Trans Matched</span>
         </label>
-        <label className="inline-flex items-center mr-2">
-          <input
-            type="radio"
-            className="form-radio text-orange-500 focus:ring-orange-500 h-5 w-5"
-            name="queryType"
-            value="Trash Bin"
-          />
-          <span className="ml-2 text-gray-700 text-sm">Trash Bin</span>
-        </label>
+       
       </div>
 
       <div className="max-h-[900px]  grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-4">

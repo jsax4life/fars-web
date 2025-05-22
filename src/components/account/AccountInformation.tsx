@@ -30,6 +30,7 @@ interface FormData {
   limitEndDate?: string;
   limitAmount?: string;
   leadBank?: "Select Bank" | string;
+  leadClient?: "Select Client" | string;
   shareHolding?: string;
   street?: string;
   street2?: string;
@@ -143,38 +144,13 @@ const AccountInformation = () => {
       type: "select",
       options: ["Select Bank"],
     },
-    { id: "shareHolding", label: "Share Holding", type: "text" },
-    { id: "street", label: "Street", type: "text" },
-    { id: "street2", label: "Street 2", type: "text" },
-    { id: "city", label: "City", type: "text" },
-    { id: "state", label: "State", type: "text" },
     {
-      id: "country",
-      label: "Country",
+      id: "leadClient",
+      label: "Client Name",
       type: "select",
-      options: ["Select Country"],
+      options: ["Select Client"],
     },
-    { id: "zipCode", label: "Zip Code", type: "text" },
-    { id: "telephoneNo", label: "Telephone No", type: "tel" },
-    { id: "faxNo", label: "Fax No", type: "tel" },
-    { id: "email", label: "Email", type: "email" },
-    { id: "swiftCode", label: "Remark", type: "text" },
-    { id: "accountOfficer", label: "Account Officer", type: "text" },
-    {
-      id: "bankingPreference",
-      label: "Banking Preference",
-      type: "radio",
-      options: [
-        { label: "Saturday", value: "saturday" },
-        { label: "Sunday", value: "sunday" },
-      ],
-    },
-    {
-      id: "CAMFApplicable",
-      label: "CAMF Applicable",
-      type: "radio",
-      options: [{ label: "Yes", value: "yes" }],
-    },
+   
     { id: "drRate", label: "Dr. Rate", type: "text" },
     { id: "exRate", label: "Ex. Rate", type: "text" },
     {

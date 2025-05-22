@@ -108,57 +108,107 @@ interface AssignedUser {
     avatar: string;
 }
 
+type AnalysisType = "CMF" | "ST Loan" | "LT Loan" | "Interest" | "Debit" | "Credit" | "Collateral" | "Fees" | null;
+
 const AccountDetails = () => {
     const [activeTab, setActiveTab] = useState("Entry");
     const [entryTransactions, setEntryTransactions] = useState<Transaction[]>([
         { sNo: "01", entryDate: "02-04-2023", transactionDate: "02-04-2023", valueDate: "02-04-2023", tellerNumber: "N/A", transactionDescription: "Principal LIQ...", transactionType: "Cash/Cheque", chequeNo: "Nil", originalValue: "44,897,985.89" },
         { sNo: "02", entryDate: "02-04-2023", transactionDate: "02-04-2023", valueDate: "02-04-2023", tellerNumber: "U000...", transactionDescription: "Debetuje baje...", transactionType: "Cash/Cheque", chequeNo: "Cash", originalValue: "100,000.00" },
-        // ... more entry data
     ]);
 
     const bankStatementTransactions: Transaction[] = [
         { no: "1", class: "Debit", transDate: "03-05-2025", valueDate: "03-05-2025", transactionDescription: "ATM Withdrawal", tellerNo: "N/A", chequeNo: "N/A", debit: "5,000.00", credit: "0.00", balance: "10,000.00", remarks: "" },
         { no: "2", class: "Credit", transDate: "04-05-2025", valueDate: "04-05-2025", transactionDescription: "Salary Deposit", tellerNo: "ABC123", chequeNo: "N/A", debit: "0.00", credit: "20,000.00", balance: "30,000.00", remarks: "" },
-        // ... more bank statement data
     ];
-        const queryTransactions: Transaction[] = [
+
+    const queryTransactions: Transaction[] = [
         { no: "1", class: "Debit", transDate: "03-05-2025", valueDate: "03-05-2025", transactionDescription: "ATM Withdrawal", tellerNo: "N/A", chequeNo: "N/A", debit: "5,000.00", credit: "0.00", balance: "10,000.00", remarks: "" },
         { no: "2", class: "Credit", transDate: "04-05-2025", valueDate: "04-05-2025", transactionDescription: "Salary Deposit", tellerNo: "ABC123", chequeNo: "N/A", debit: "0.00", credit: "20,000.00", balance: "30,000.00", remarks: "" },
-        // ... more bank statement data
     ];
 
     const reconstructedStatementTransactions: Transaction[] = [
         { no: "1", entryDate: "02-05-2025", transDate: "03-05-2025", valueDate: "03-05-2025", tellerNo: "N/A", transactionDescription: "Online Transfer", transType: "Debit", chequeNo: "N/A", originalValue: "2,500.00", debit: "2,500.00", credit: "0.00", balance: "7,500.00", currency: "NGN", confirmation: "Yes", cleared: "Yes", exchangeRate: "1.00", clearance: "Completed" },
         { no: "2", entryDate: "03-05-2025", transDate: "04-05-2025", valueDate: "04-05-2025", tellerNo: "DEF456", transactionDescription: "Mobile Recharge", transType: "Debit", chequeNo: "N/A", originalValue: "1,000.00", debit: "1,000.00", credit: "0.00", balance: "6,500.00", currency: "NGN", confirmation: "Yes", cleared: "Yes", exchangeRate: "1.00", clearance: "Completed" },
-        // ... more reconstructed statement data
     ];
 
     const cashBookTransactions: Transaction[] = [
         { no: "1", class: "Payment", transDate: "05-05-2025", transactionDescription: "Stationery Purchase", tellerNo: "GHI789", chequeNo: "1001", debit: "500.00", credit: "0.00", balance: "6,000.00", remarks: "Invoice #123" },
         { no: "2", class: "Receipt", transDate: "06-05-2025", transactionDescription: "Client Payment", tellerNo: "JKL012", chequeNo: "N/A", debit: "0.00", credit: "2,000.00", balance: "8,000.00", remarks: "Project Alpha" },
-        // ... more cash book data
     ];
 
     const transMatchedTransactions: Transaction[] = [
         { no: "1", src: "System A", class: "Match", transDate: "07-05-2025", transactionDescription: "Transaction ID 123", tellerNo: "MNO345", cheque: "N/A", debit: "1,500.00", credit: "1,500.00", balance: "9,500.00" },
         { no: "2", src: "System B", class: "Mismatch", transDate: "08-05-2025", transactionDescription: "Transaction Ref 456", tellerNo: "PQR678", cheque: "2002", debit: "750.00", credit: "0.00", balance: "8,750.00" },
-        // ... more trans matched data
     ];
 
+    // Analysis data
+    const cmfAnalysisData = [
+        { id: "1", date: "2023-01-01", description: "CMF Charge", amount: "1,500.00", rate: "0.5%", calculated: "750.00", status: "Applied" },
+        { id: "2", date: "2023-01-15", description: "CMF Adjustment", amount: "1,500.00", rate: "0.5%", calculated: "750.00", status: "Pending" },
+    ];
+
+    const stLoanAnalysisData = [
+        { id: "1", date: "2023-01-01", principal: "50,000.00", interestRate: "10%", days: "30", interest: "416.67", status: "Paid" },
+        { id: "2", date: "2023-02-01", principal: "50,000.00", interestRate: "10%", days: "28", interest: "388.89", status: "Pending" },
+    ];
+
+    const ltLoanAnalysisData = [
+        { id: "1", date: "2023-01-01", principal: "500,000.00", interestRate: "12%", term: "12 months", monthlyPayment: "44,432.90", remaining: "400,000.00" },
+        { id: "2", date: "2023-02-01", principal: "500,000.00", interestRate: "12%", term: "11 months", monthlyPayment: "44,432.90", remaining: "355,567.10" },
+    ];
+
+    const interestAnalysisData = [
+        { id: "1", period: "Jan 2023", creditBalance: "100,000.00", debitBalance: "50,000.00", interestRate: "5%", creditInterest: "416.67", debitInterest: "208.33", netInterest: "208.34" },
+        { id: "2", period: "Feb 2023", creditBalance: "120,000.00", debitBalance: "40,000.00", interestRate: "5%", creditInterest: "500.00", debitInterest: "166.67", netInterest: "333.33" },
+    ];
+
+    const debitAnalysisData = [
+        { id: "1", date: "2023-01-05", description: "Overdraft Charge", amount: "10,000.00", days: "5", rate: "0.05%", interest: "25.00" },
+        { id: "2", date: "2023-01-12", description: "Overdraft Charge", amount: "15,000.00", days: "3", rate: "0.05%", interest: "22.50" },
+    ];
+
+    const creditAnalysisData = [
+        { id: "1", date: "2023-01-31", description: "Credit Interest", balance: "100,000.00", days: "31", rate: "5%", interest: "424.66" },
+        { id: "2", date: "2023-02-28", description: "Credit Interest", balance: "120,000.00", days: "28", rate: "5%", interest: "460.27" },
+    ];
+
+    const collateralAnalysisData = [
+        { id: "1", date: "2023-01-01", description: "Cash Collateral", amount: "50,000.00", coverage: "125%", required: "40,000.00", status: "Adequate" },
+        { id: "2", date: "2023-02-01", description: "Cash Collateral", amount: "45,000.00", coverage: "112.5%", required: "40,000.00", status: "Adequate" },
+    ];
+
+    const feesAnalysisData = [
+        { id: "1", date: "2023-01-05", description: "Account Maintenance", amount: "1,000.00", frequency: "Monthly", status: "Applied" },
+        { id: "2", date: "2023-01-15", description: "Wire Transfer Fee", amount: "500.00", frequency: "Per Transaction", status: "Applied" },
+    ];
+
+    // Summary data for debit/credit analysis
+    const debitCreditSummaryData = [
+        { category: "Total Debit Interest", amount: "47.50" },
+        { category: "Total Credit Interest", amount: "884.93" },
+        { category: "Net Interest", amount: "837.43" },
+    ];
+      const summarizedTransactions: Transaction[] = [
+        { no: "1", src: "System A", class: "Match", transDate: "07-05-2025", transactionDescription: "Transaction ID 123", tellerNo: "MNO345", cheque: "N/A", debit: "1,500.00", credit: "1,500.00", balance: "9,500.00" },
+        { no: "2", src: "System B", class: "Mismatch", transDate: "08-05-2025", transactionDescription: "Transaction Ref 456", tellerNo: "PQR678", cheque: "2002", debit: "750.00", credit: "0.00", balance: "8,750.00" },
+        // ... more trans matched data
+    ];
     const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
     const [previewDocumentUrl, setPreviewDocumentUrl] = useState<string | null>(null);
     const [isUserListOpen, setIsUserListOpen] = useState(false);
     const [assignedUsers, setAssignedUsers] = useState<AssignedUser[]>([]);
     const [isUploadDropdownOpen, setIsUploadDropdownOpen] = useState(false);
-    
-        const [formData, setFormData] = useState<FormData>({});
-      const [step, setStep] = useState<number>(1);
+    const [isAnalysisDropdownOpen, setIsAnalysisDropdownOpen] = useState(false);
+    const [formData, setFormData] = useState<FormData>({});
+    const [step, setStep] = useState<number>(1);
     const [uploadType, setUploadType] = useState<"cashbook" | "bankstatement" | null>(null);
+    const [analysisType, setAnalysisType] = useState<AnalysisType>(null);
     const [isQueryModalOpen, setIsQueryModalOpen] = useState(false);
- const [showModal, setShowModal] = useState(false);
+    const [showModal, setShowModal] = useState(false);
     const [modalFormData, setModalFormData] = useState<ModalFormData>({
-      fromDate: '', // Initialize From Date
-        toDate: '',   // Initialize To Date
+        fromDate: '',
+        toDate: '',
         localCheques: '',
         intraStateCheques: '',
         upCountryCheques: '',
@@ -179,7 +229,7 @@ const AccountDetails = () => {
         exChargeType: '',
         creditInterestRate: '',
         whtRate: '',
-});
+    });
 
     const handleModalChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value, type } = event.target;
@@ -233,8 +283,12 @@ const AccountDetails = () => {
             }));
         }
     };
+
     const handleTabChange = (tab: string) => {
         setActiveTab(tab);
+        if (tab !== "Analysis") {
+            setAnalysisType(null);
+        }
     };
 
     const getTableDataAndHeaders = () => {
@@ -243,51 +297,141 @@ const AccountDetails = () => {
                 return {
                     headers: ["No.", "Class", "Trans Date", "Value Date", "Transaction Description", "Teller No.", "Cheque No.", "Debit", "Credit", "Balance", "Remarks"],
                     data: bankStatementTransactions,
+                    title: "Bank Statement"
                 };
             case "Reconstructed Statement":
                 return {
                     headers: ["No.", "Entry Date", "Trans Date", "Value Date", "Teller No", "Transaction Description", "Trans Type", "Cheque No", "Original Value", "Debit", "Credit", "Balance", "Curr.", "Conf.", "Clr", "Exch. Rate", "Clearance"],
                     data: reconstructedStatementTransactions,
+                    title: "Reconstructed Statement"
                 };
             case "Cash Book":
                 return {
                     headers: ["No.", "Class", "Trans Date", "Transaction Description", "Teller No.", "Cheque No.", "Debit", "Credit", "Balance", "Remarks"],
                     data: cashBookTransactions,
+                    title: "Cash Book"
                 };
             case "Trans Matched":
                 return {
                     headers: ["No.", "Src", "Class", "Trans Date", "Transaction Description", "Teller No.", "Cheque", "Debit", "Credit", "Balance"],
                     data: transMatchedTransactions,
+                    title: "Transaction Matching"
                 };
             case "Query":
                 return {
-                     headers: ["No.", "Class", "Trans Date", "Value Date", "Transaction Description", "Teller No.", "Cheque No.", "Debit", "Credit", "Balance", "Remarks"],
-                      data: queryTransactions,
+                    headers: ["No.", "Class", "Trans Date", "Value Date", "Transaction Description", "Teller No.", "Cheque No.", "Debit", "Credit", "Balance", "Remarks"],
+                    data: queryTransactions,
+                    title: "Query Results"
+                };
+            case "Analysis":
+                return getAnalysisTableData();
+            case "Summary":
+                return {
+                    headers: ["No.", "Category", "Amount"],
+                    data: summarizedTransactions,
+                    title: "Summary"
                 };
             default: // "Entry"
                 return {
                     headers: ["S/N", "Date", "Account Name", "Account Number", "Account Type", "Symbol", "Bank Name", "Bank Address"],
-                    data: entryTransactions.map(t => ({ ...t, date: t.entryDate })), // Map entryDate to a generic 'date' for the table
+                    data: entryTransactions.map(t => ({ ...t, date: t.entryDate })),
+                    title: "Account Entries"
                 };
         }
     };
 
-    const { headers, data } = getTableDataAndHeaders();
+    const getAnalysisTableData = () => {
+        if (!analysisType) return { headers: [], data: [], title: "Analysis" };
+
+        switch (analysisType) {
+            case "CMF":
+                return {
+                    headers: ["ID", "Date", "Description", "Amount", "Rate", "Calculated", "Status"],
+                    data: cmfAnalysisData,
+                    title: "CMF Analysis",
+                    showSummary: false
+                };
+            case "ST Loan":
+                return {
+                    headers: ["ID", "Date", "Principal", "Interest Rate", "Days", "Interest", "Status"],
+                    data: stLoanAnalysisData,
+                    title: "Short Term Loan Analysis",
+                    showSummary: false
+                };
+            case "LT Loan":
+                return {
+                    headers: ["ID", "Date", "Principal", "Interest Rate", "Term", "Monthly Payment", "Remaining"],
+                    data: ltLoanAnalysisData,
+                    title: "Long Term Loan Analysis",
+                    showSummary: false
+                };
+            case "Interest":
+                return {
+                    headers: ["ID", "Period", "Credit Balance", "Debit Balance", "Interest Rate", "Credit Interest", "Debit Interest", "Net Interest"],
+                    data: interestAnalysisData,
+                    title: "Interest Analysis",
+                    showSummary: false
+                };
+            case "Debit":
+                return {
+                    headers: ["ID", "Date", "Description", "Amount", "Days", "Rate", "Interest"],
+                    data: debitAnalysisData,
+                    title: "Debit Interest Analysis",
+                    showSummary: true,
+                    summaryData: debitCreditSummaryData,
+                    summaryTitle: "Debit Interest Summary"
+                };
+            case "Credit":
+                return {
+                    headers: ["ID", "Date", "Description", "Balance", "Days", "Rate", "Interest"],
+                    data: creditAnalysisData,
+                    title: "Credit Interest Analysis",
+                    showSummary: true,
+                    summaryData: debitCreditSummaryData,
+                    summaryTitle: "Credit Interest Summary"
+                };
+            case "Collateral":
+                return {
+                    headers: ["ID", "Date", "Description", "Amount", "Coverage", "Required", "Status"],
+                    data: collateralAnalysisData,
+                    title: "Collateral Analysis",
+                    showSummary: false
+                };
+            case "Fees":
+                return {
+                    headers: ["ID", "Date", "Description", "Amount", "Frequency", "Status"],
+                    data: feesAnalysisData,
+                    title: "Fees Analysis",
+                    showSummary: false
+                };
+            default:
+                return { headers: [], data: [], title: "Analysis" };
+        }
+    };
+
+    const { headers, data, title } = getTableDataAndHeaders();
 
     const handleUploadButtonClick = () => {
         setIsUploadDropdownOpen(!isUploadDropdownOpen);
+    };
+
+    const handleUploadAnalysisClick = () => {
+        setIsAnalysisDropdownOpen(!isAnalysisDropdownOpen);
     };
 
     const handleUploadOptionClick = (type: "cashbook" | "bankstatement") => {
         setUploadType(type);
         setIsUploadDropdownOpen(false);
         alert(`Initiating upload for ${type}`);
-        // In a real application, you would trigger the file upload dialog here
+    };
+
+    const handleAnalyzeOptionClick = (type: AnalysisType) => {
+        setAnalysisType(type);
+        setIsAnalysisDropdownOpen(false);
+        setActiveTab("Analysis");
     };
 
     const handleFilePreview = (filename: string) => {
-        // In a real application, you would fetch the actual document URL
-        // For this example, we'll just set a placeholder
         setPreviewDocumentUrl("/pdf-placeholder.pdf");
         setIsPreviewModalOpen(true);
     };
@@ -299,12 +443,10 @@ const AccountDetails = () => {
 
     const handleFileDownload = (filename: string) => {
         alert(`Downloading file: ${filename}`);
-        // Implement your file download logic here (e.g., trigger a download)
     };
 
     const handleFileDelete = (filename: string) => {
         alert(`Deleting file: ${filename}`);
-        // Implement your file deletion logic here (e.g., remove from state/storage)
         setEntryTransactions(prevTransactions =>
             prevTransactions.filter(transaction => transaction.transactionDescription !== filename)
         );
@@ -336,7 +478,6 @@ const AccountDetails = () => {
             </div>
 
             <div className="md:hidden bg-white shadow-sm p-4 flex items-center">
-                {/* Mobile menu button */}
                 <h1 className="text-xl font-semibold">Account</h1>
             </div>
 
@@ -344,7 +485,7 @@ const AccountDetails = () => {
                 <div className="bg-gray-100 min-h-full p-4 md:p-6">
                     <div className="bg-white rounded-md shadow-md p-4 md:p-6">
                         <div className="flex items-center justify-between mb-4">
-                            <h1 className=" text-gray-700 text-xl font-semibold">user.id Account</h1>
+                            <h1 className="text-gray-700 text-xl font-semibold">user.id Account</h1>
                             <div className="flex items-center space-x-3">
                                 <div className="flex -space-x-2">
                                     {assignedUsers.map((user) => (
@@ -366,7 +507,6 @@ const AccountDetails = () => {
                                     >
                                         <PlusIcon className="h-5 w-5" />
                                     </button>
-
                                 </div>
                                 {activeTab === "Entry" && (
                                     <div className="relative">
@@ -407,15 +547,72 @@ const AccountDetails = () => {
                                 )}
                             </div>
                         </div>
- <div className="flex justify-end mb-4">
-                            <button 
-                                type="button" 
-                                onClick={() => setShowModal(true)}
-                                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
-                            >
-                                Rate Adjustment
-                            </button>
-                        </div>
+
+                        {activeTab === "Analysis" && (
+                            <div className="flex justify-end mb-4">
+                                <div className="relative">
+                                    <button
+                                        onClick={handleUploadAnalysisClick}
+                                        className="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded focus:outline-none focus:shadow-outline-orange active:bg-orange-700"
+                                    >
+                                        Analyze
+                                    </button>
+                                    {isAnalysisDropdownOpen && (
+                                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-xl z-10">
+                                            <button
+                                                onClick={() => handleAnalyzeOptionClick("CMF")}
+                                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                                            >
+                                                CMF
+                                            </button>
+                                            <button
+                                                onClick={() => handleAnalyzeOptionClick("ST Loan")}
+                                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                                            >
+                                                Short Term Loan
+                                            </button>
+                                            <button
+                                                onClick={() => handleAnalyzeOptionClick("LT Loan")}
+                                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                                            >
+                                                Long Term Loan
+                                            </button>
+                                            <button
+                                                onClick={() => handleAnalyzeOptionClick("Interest")}
+                                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                                            >
+                                                Interest Analysis
+                                            </button>
+                                            <button
+                                                onClick={() => handleAnalyzeOptionClick("Debit")}
+                                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                                            >
+                                                Debit Interest
+                                            </button>
+                                            <button
+                                                onClick={() => handleAnalyzeOptionClick("Credit")}
+                                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                                            >
+                                                Credit Interest
+                                            </button>
+                                            <button
+                                                onClick={() => handleAnalyzeOptionClick("Collateral")}
+                                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                                            >
+                                                Cash Collateral
+                                            </button>
+                                            <button
+                                                onClick={() => handleAnalyzeOptionClick("Fees")}
+                                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                                            >
+                                                Fees
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
                         <AccountInformation />
 
                         <div className="mb-4 overflow-x-auto">
@@ -480,14 +677,32 @@ const AccountDetails = () => {
                                 >
                                     Query
                                 </button>
+                                <button
+                                    onClick={() => handleTabChange("Analysis")}
+                                    className={`py-2 px-3 md:px-4 -mb-px font-semibold text-sm ${
+                                        activeTab === "Analysis"
+                                            ? "border-b-2 border-orange-500 text-orange-500"
+                                            : "text-gray-500 hover:text-orange-500"
+                                        } focus:outline-none`}
+                                >
+                                    Analysis
+                                </button>
+                                <button
+                                    onClick={() => handleTabChange("Summary")}
+                                    className={`py-2 px-3 md:px-4 -mb-px font-semibold text-sm ${
+                                        activeTab === "Summary"
+                                            ? "border-b-2 border-orange-500 text-orange-500"
+                                            : "text-gray-500 hover:text-orange-500"
+                                        } focus:outline-none`}
+                                >
+                                    Summary
+                                </button>
                             </div>
                         </div>
+
                         {activeTab === "Entry" && (
                             <>
-
-
                                 <div>
-
                                     <h2 className="text-lg font-semibold text-gray-700 mb-2">Bank Statement</h2>
                                     <div className="bg-white rounded-md shadow-sm mb-3 border border-gray-200 overflow-y-auto max-h-48">
                                         {entryTransactions.map((transaction, index) => (
@@ -506,9 +721,6 @@ const AccountDetails = () => {
                                                     <h6 className="font-semibold text-gray-800">
                                                         Investment Contracts
                                                     </h6>
-                                                    <p className="text-gray-500 text-sm">
-                                                        investment contracts.pdf
-                                                    </p>
                                                     <p className="text-gray-500 text-sm">
                                                         by Kelechi David Eze, 17 days ago at 7:47 AM - 132.73 KB
                                                     </p>
@@ -609,11 +821,26 @@ const AccountDetails = () => {
                             </>
                         )}
                         {(activeTab === "Query" || activeTab === "Bank Statement" || activeTab === "Reconstructed Statement" || activeTab === "Cash Book" || activeTab === "Trans Matched") && (
+                            <div className="overflow-y-auto max-h-[600px] gap-4">
+                                <TransactionTable headers={headers} data={data} />
+                                 <button
+                                      
+                                        className="bg-orange-500 mt-4 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded focus:outline-none focus:shadow-outline-orange active:bg-orange-700"
+                                    >
+                                        Save Query
+                                    </button>
+                            </div>
+                        )}
+  {(activeTab === "Analyze" || activeTab === "Bank Statement" || activeTab === "Reconstructed Statement" || activeTab === "Cash Book" || activeTab === "Trans Matched") && (
                             <div className="overflow-y-auto max-h-[600px]">
                                 <TransactionTable headers={headers} data={data} />
                             </div>
                         )}
-
+                          {(activeTab === "Summary" || activeTab === "Bank Statement" || activeTab === "Reconstructed Statement" || activeTab === "Cash Book" || activeTab === "Trans Matched") && (
+                            <div className="overflow-y-auto max-h-[600px]">
+                                <TransactionTable headers={headers} data={data} />
+                            </div>
+                        )}
                         {/* {activeTab === "Query" && (
                             <div className="relative">
                                 <div className="overflow-x-auto">

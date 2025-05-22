@@ -6,77 +6,92 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 interface User {
-  id: string;
-  fullName: string;
-  country: string;
-  company: string;
-  address: string;
-  email: string;
-  contact: string;
-  state: string;
-  city: string;
-  action: string;
-  dateAdded: string;
+ id:  string;
+      bankName: string;
+      email: string;
+      swift: string;
+      officer: string;
+      street: string;
+      city: string;
+      state: string;
+      country: string;
+      zip:string;
+      phone: string;
+      fax: string;
+      dateAdded: string;
+      action: string;
   report?: string | null; // Add an optional report property
 }
 
-interface NewClient {
-  fullName: string;
-  country: string;
-  password: string;
-  company: string;
-  address: string;
-  email: string;
-  contact: string;
-  state: string;
-  city: string;
+interface NewBank {
+  bankName: string;
+      email: string;
+      officer: string;
+      swift: string;
+      password: string;
+      street: string;
+      city: string;
+      state: string;
+      country: string;
+      zip:string;
+      phone: string;
+      fax: string;
 }
 
-const ClientList = () => {
+const BankList = () => {
   const router = useRouter();
 
   const [users, setUsers] = useState<User[]>([
     {
       id: "01",
-      fullName: "Ashley",
-      country: "Nigeria",
-      company: "RHR",
-      address: "bambari",
-      email: "Admin@admin.com",
-      contact: "0888888888",
-      state: "FCT",
-      city: "Abj",
+      bankName: "Ashley",
+      email: "Nigeria",
+      officer: "RHR",
+      swift: "222",
+      street: "bambari",
+      city: "Admin@admin.com",
+      state: "0888888888",
+      country: "FCT",
+      zip: "Abj",
+      phone: "08122222222",
+      fax: "123",
       dateAdded: "Q2 - Q4 - 2023",
       action: "Active",
       report: null,
     },
     {
-      id: "02",
-      fullName: "John Doe",
-      country: "USA",
-      company: "Acme Corp",
-      address: "123 Main St",
-      email: "john.doe@example.com",
-      contact: "123-456-7890",
-      state: "CA",
-      city: "San Francisco",
-      dateAdded: "Q1 - Q3 - 2024",
-      action: "Inactive",
-      report: "report_john_doe.docx", // Example of a saved report
+      id: "01",
+      bankName: "Ashley",
+      email: "Nigeria",
+      officer: "RHR",
+      swift: "222",
+      street: "bambari",
+      city: "Admin@admin.com",
+      state: "0888888888",
+      country: "FCT",
+      zip: "Abj",
+      phone: "08122222222",
+      fax: "123",
+      dateAdded: "Q2 - Q4 - 2023",
+      action: "Active",
+      report: null,
     },
   ]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [newClient, setNewClient] = useState<NewClient>({
-    fullName: "",
-    country: "",
-    password: "",
-    company: "",
-    address: "",
-    email: "",
-    contact: "",
-    state: "",
-    city: "",
+  const [newBank, setNewBank] = useState<NewBank>({
+     bankName: "",
+      email: "",
+      officer: "",
+      swift: "",
+      password: "",
+      street: "",
+      city: "",
+      state: "",
+      country: "",
+      zip:"",
+      phone: "",
+      fax: "",
   });
 
   // Action menu state
@@ -99,7 +114,7 @@ const ClientList = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setNewClient({ ...newClient, [name]: value });
+    setNewBank({ ...newBank, [name]: value });
   };
 
   const handleDeactivationInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -112,16 +127,19 @@ const ClientList = () => {
     setShowCreateModal(false);
     setShowSuccessModal(true);
     // Reset form
-    setNewClient({
-      fullName: "",
-      country: "",
-      password: "",
-      company: "",
-      address: "",
+    setNewBank({
+     bankName: "",
       email: "",
-      contact: "",
-      state: "",
+      officer: "",
+      swift: "",
+      password: "",
+      street: "",
       city: "",
+      state: "",
+      country: "",
+      zip:"",
+      phone: "",
+      fax: "",
     });
   };
 
@@ -234,7 +252,7 @@ const ClientList = () => {
   const handleSaveReport = () => {
     if (reportingUser) {
       setUsers(users.map(u =>
-        u.id === reportingUser.id ? { ...u, report: `report_${reportingUser.fullName.replace(/\s+/g, '_').toLowerCase()}.docx` } : u
+        u.id === reportingUser.id ? { ...u, report: `report_${reportingUser.bankName.replace(/\s+/g, '_').toLowerCase()}.docx` } : u
       ));
       setShowReportModal(false);
       setReportContent("");
@@ -244,7 +262,7 @@ const ClientList = () => {
 
   const handleViewReportClick = (user: User) => {
     // In a real application, you would fetch and display the report content
-    console.log("Viewing report for:", user.fullName, user.report);
+    console.log("Viewing report for:", user.bankName, user.report);
     // For now, let's just open a new tab or show a modal with a message
     if (user.report) {
       alert(`Opening/displaying report: ${user.report}`);
@@ -271,7 +289,7 @@ const ClientList = () => {
 
         <div className="mb-6">
           <h2 className="text-[#363636] text-lg md:text-xl font-semibold">
-            Clients
+           Banks
           </h2>
         </div>
 
@@ -307,7 +325,7 @@ const ClientList = () => {
                 onClick={() => setShowCreateModal(true)}
                 className="bg-[#F36F2E] hover:bg-[#F36F2E] text-white py-2 px-4 rounded text-sm w-full sm:w-auto"
               >
-                Create Client
+                Create Bank
               </button>
               {/* <button
                 onClick={() => router.push("/RoleList")}
@@ -326,35 +344,45 @@ const ClientList = () => {
                     S/N
                   </th>
                   <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Fullname
+                    Bank Name
+                  </th>
+                    <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Email Address
+                  </th>
+                    <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Account Officer
+                  </th> 
+                   <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Swift Code
                   </th>
                   <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Country
-                  </th>
-                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ">
-                    Company name
-                  </th>
-                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ">
-                    Address
-                  </th>
-                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Email
-                  </th>
-                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Contact
-                  </th>
-                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ">
-                    State
+                    Street
                   </th>
                   <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ">
                     City
                   </th>
+                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ">
+                    State
+                  </th>
                   <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                   Country
+                  </th>
+                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Zip Code
+                  </th>
+                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ">
+                    Telephone
+                  </th>
+                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ">
+                    Fax No.
+                  </th>
+                <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Date Added
                   </th>
                   <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Action
                   </th>
+                   
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -364,28 +392,37 @@ const ClientList = () => {
                       {index + 1}
                     </td>
                     <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
-                      {user.fullName}
+                      {user.bankName}
                     </td>
                     <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
-                      {user.country}
-                    </td>
-                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 truncate max-w-[120px] ">
-                      {user.company}
-                    </td>
-                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 ">
-                      {user.address}
-                    </td>
-                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 ">
                       {user.email}
                     </td>
+                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 truncate max-w-[120px] ">
+                      {user.officer}
+                    </td>
+                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 ">
+                      {user.swift}
+                    </td>
+                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 ">
+                      {user.street}
+                    </td>
                     <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
-                      {user.contact}
+                      {user.city}
                     </td>
                     <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 ">
                       {user.state}
                     </td>
                     <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 ">
-                      {user.city}
+                      {user.country}
+                    </td>
+                      <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 ">
+                      {user.zip}
+                    </td>
+                      <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 ">
+                      {user.phone}
+                    </td>
+                      <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 ">
+                      {user.fax}
                     </td>
                     <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 ">
                       {user.dateAdded}
@@ -418,20 +455,20 @@ const ClientList = () => {
                               onClick={() => openViewModal(user)}
                               className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
                             >
-                              View Client Details
+                              View Bank Details
                             </button>
                             <Link
-                              href = "/ClientAccounts"
+                              href = "/BankAccounts"
                               className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
                             >
                               View Accounts
                             </Link>
-                            <Link
+                            {/* <Link
                               href = "/NewAccount"
                               className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
                             >
                               Create Account
-                            </Link>
+                            </Link> */}
                             {user.report ? (
                               <button
                                 onClick={() => handleViewReportClick(user)}
@@ -488,7 +525,7 @@ const ClientList = () => {
             <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg text-black font-semibold">Create New Client</h3>
+                  <h3 className="text-lg text-black font-semibold">Create New Bank</h3>
                   <button
                     onClick={() => setShowCreateModal(false)}
                     className="text-gray-500 hover:text-gray-700"
@@ -501,33 +538,23 @@ const ClientList = () => {
 
                 <div className="space-y-4 overflow-y-auto max-h-[calc(100vh-150px)]"> {/* Added scrollbar and max height */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Bank Name</label>
                     <input
                       type="text"
                       name="fullName"
-                      value={newClient.fullName}
+                      value={newBank.bankName}
                       onChange={handleInputChange}
                       placeholder="Enter Full name"
                       className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
                     />
                   </div>
-<div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                    <input
-                      type="text"
-                      name="password"
-                      value={newClient.password}
-                      onChange={handleInputChange}
-                      placeholder="Enter Password"
-                      className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-                    />
-                  </div>
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                     <input
                       type="text"
                       name="country"
-                      value={newClient.country}
+                      value={newBank.email}
                       onChange={handleInputChange}
                       placeholder="Enter Country"
                       className="w-full px-3 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
@@ -535,33 +562,33 @@ const ClientList = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Account Officer</label>
                     <input
                       type="text"
                       name="company"
-                      value={newClient.company}
+                      value={newBank.officer}
                       onChange={handleInputChange}
                       placeholder="Enter Company Name"
                       className="w-full px-3 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Swift Code</label>
                     <input
                       type="text"
                       name="address"
-                      value={newClient.address}
+                      value={newBank.swift}
                       onChange={handleInputChange}
                       placeholder="Enter Company Address"
                       className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
                     <input
                       type="email"
                       name="email"
-                      value={newClient.email}
+                      value={newBank.password}
                       onChange={handleInputChange}
                       placeholder="Enter Company Email"
                       className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
@@ -572,18 +599,18 @@ const ClientList = () => {
                     <input
                       type="tel"
                       name="contact"
-                      value={newClient.contact}
+                      value={newBank.phone}
                       onChange={handleInputChange}
                       placeholder="Enter Phone Number"
                       className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Street</label>
                     <input
                       type="text"
                       name="state"
-                      value={newClient.state}
+                      value={newBank.street}
                       onChange={handleInputChange}
                       placeholder="Enter State"
                       className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
@@ -594,23 +621,58 @@ const ClientList = () => {
                     <input
                       type="text"
                       name="city"
-                      value={newClient.city}
+                      value={newBank.city}
                       onChange={handleInputChange}
                       placeholder="Enter City"
                       className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
                     />
+                    </div>
+                    <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                    <input
+                      type="text"
+                      name="city"
+                      value={newBank.state}
+                      onChange={handleInputChange}
+                      placeholder="Enter City"
+                      className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
+                    />
+                    </div>
+                    <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                    <input
+                      type="text"
+                      name="city"
+                      value={newBank.country}
+                      onChange={handleInputChange}
+                      placeholder="Enter City"
+                      className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
+                    />
+                    
                   </div>
-
+ <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Zip Code</label>
+                    <input
+                      type="text"
+                      name="city"
+                      value={newBank.zip}
+                      onChange={handleInputChange}
+                      placeholder="Enter City"
+                      className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
+                    />
+                    
+                  </div>
 
                   <button
                     onClick={handleCreateUser}
                     className="w-full bg-[#F36F2E] text-white py-2 px-4 rounded-md hover:bg-[#E05C2B] transition-colors"
                   >
-                    Create Client
+                    Create Bank
                   </button>
                 </div>
               </div>
             </div>
+             
           )}
 
           {/* Report Modal */}
@@ -618,7 +680,7 @@ const ClientList = () => {
             <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg text-black font-semibold">Create Report for {reportingUser.fullName}</h3>
+                  <h3 className="text-lg text-black font-semibold">Create Report for {reportingUser.bankName}</h3>
                   <button
                     onClick={() => {
                       setShowReportModal(false);
@@ -778,13 +840,13 @@ const ClientList = () => {
             </div>
           )}
           {showViewModal && viewedUser && (
-           <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4">
-    <div className="bg-gray-50 p-6 rounded-md shadow-md w-full max-w-2xl">
+          <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4">
+    <div className="bg-gray-50 p-6 rounded-md shadow-md w-full max-w-2xl max-h-[90vh] overflow-y-auto"> {/* Added max-h-[90vh] and overflow-y-auto */}
         <div className="flex items-center justify-between mb-6">
             <div className="flex items-center">
                 <div className="relative">
                     <div className="w-16 h-16 rounded-full bg-orange-200 flex items-center justify-center overflow-hidden">
-                        {/* Replace with actual user image */}
+                        {/* Replace with actual bank logo or icon */}
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-orange-700">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.125h15.002M9.75 21.75l-3 1.5-3-1.5m9.75 0l3 1.5 3-1.5M9.375 6a9.375 9.375 0 0116.875-3.75m-16.875 3.75l1.5-7.5m15-7.5l-1.5 7.5m-15 6.75a2.25 2.25 0 002.25 2.25m13.5 0a2.25 2.25 0 002.25-2.25m-16.5 0a2.25 2.25 0 012.25-2.25m13.5 0a2.25 2.25 0 012.25 2.25" />
                         </svg>
@@ -796,8 +858,8 @@ const ClientList = () => {
                     </button>
                 </div>
                 <div className="ml-4">
-                    <h3 className="text-lg font-semibold text-gray-800">Olayimika Oluwasegun</h3>
-                    <p className="text-sm text-gray-500">olayimikaoluwasegun@gmail.com</p>
+                    <h3 className="text-lg font-semibold text-gray-800">Bank Name Here</h3>
+                    <p className="text-sm text-gray-500">bank.email@example.com</p>
                 </div>
             </div>
             <button onClick={() => setShowViewModal(false)} className="text-gray-500 hover:text-gray-700 focus:outline-none">
@@ -808,51 +870,58 @@ const ClientList = () => {
         <div className="mb-6 p-4 bg-white rounded-md border border-gray-200">
             <div className="md:grid md:grid-cols-2 md:items-start md:gap-6 mb-4">
                 <div>
-                    <h4 className="text-sm font-semibold text-gray-700">Update Personal Details</h4>
+                    <h4 className="text-sm font-semibold text-gray-700">Bank Details</h4>
                 </div>
-                <p className="text-xs text-gray-500 md:mt-1">Lorem ipsum dolor sit amet consectetur. Purus odio porttitor dignissim orci non odio porttitor dignissim orci non purus purus. Nunc nisl ut</p>
+                <p className="text-xs text-gray-500 md:mt-1">Review and update the essential information for your bank profile.</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <label htmlFor="fullname" className="block text-xs font-medium text-gray-600 mb-1">Fullname</label>
-                    <input type="text" id="fullname" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" placeholder="Enter full name" />
-                </div>
-                <div>
-                    <label htmlFor="country" className="block text-xs font-medium text-gray-600 mb-1">Country</label>
-                    <input type="text" id="country" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" placeholder="Enter country" />
-                </div>
-                <div className="col-span-1 md:col-span-2">
-                    <label htmlFor="companyName" className="block text-xs font-medium text-gray-600 mb-1">Company Name</label>
-                    <input type="text" id="companyName" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" placeholder="Enter company name" />
-                </div>
-                <div className="col-span-1 md:col-span-2">
-                    <label htmlFor="address" className="block text-xs font-medium text-gray-600 mb-1">Address</label>
-                    <input type="text" id="address" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" placeholder="Enter address" />
+                    <label htmlFor="bankName" className="block text-xs font-medium text-gray-600 mb-1">Bank Name</label>
+                    <input type="text" id="bankName" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" value="Example National Bank" readOnly />
                 </div>
                 <div>
-                    <label htmlFor="email" className="block text-xs font-medium text-gray-600 mb-1">Email</label>
-                    <input type="email" id="email" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" placeholder="Enter email" />
+                    <label htmlFor="accountOfficer" className="block text-xs font-medium text-gray-600 mb-1">Account Officer</label>
+                    <input type="text" id="accountOfficer" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" value="Jane Doe" readOnly />
+                </div>
+                <div className="col-span-2">
+                    <label htmlFor="email" className="block text-xs font-medium text-gray-600 mb-1">Email Address</label>
+                    <input type="email" id="email" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" value="bank.email@example.com" readOnly />
                 </div>
                 <div>
-                    <label htmlFor="contact" className="block text-xs font-medium text-gray-600 mb-1">Contact</label>
-                    <input type="text" id="contact" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" placeholder="Enter contact number" />
+                    <label htmlFor="swiftCode" className="block text-xs font-medium text-gray-600 mb-1">SWIFT Code</label>
+                    <input type="text" id="swiftCode" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" value="EXAMPLEBANK" readOnly />
                 </div>
                 <div>
-                    <label htmlFor="state" className="block text-xs font-medium text-gray-600 mb-1">State</label>
-                    <input type="text" id="state" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" placeholder="Enter state" />
+                    <label htmlFor="telephone" className="block text-xs font-medium text-gray-600 mb-1">Telephone</label>
+                    <input type="tel" id="telephone" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" value="+1234567890" readOnly />
+                </div>
+                <div className="col-span-2">
+                    <label htmlFor="street" className="block text-xs font-medium text-gray-600 mb-1">Street Address</label>
+                    <input type="text" id="street" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" value="123 Bank Street" readOnly />
                 </div>
                 <div>
                     <label htmlFor="city" className="block text-xs font-medium text-gray-600 mb-1">City</label>
-                    <input type="text" id="city" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" placeholder="Enter city" />
+                    <input type="text" id="city" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" value="Bankville" readOnly />
                 </div>
-                <div className="col-span-1 md:col-span-2 flex md:flex-row gap-4 flex-col justify-end mt-4">
-                    <Link href="/NewAccount"
-                        className="bg-white text-orange-500 border border-orange-500 rounded-md py-2 px-4 text-sm font-medium focus:outline-none focus:shadow-outline-orange active:bg-orange-700"
-                    >
-                        Create Bank Account
-                    </Link>
+                <div>
+                    <label htmlFor="state" className="block text-xs font-medium text-gray-600 mb-1">State/Province</label>
+                    <input type="text" id="state" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" value="Bankington" readOnly />
+                </div>
+                <div>
+                    <label htmlFor="zipCode" className="block text-xs font-medium text-gray-600 mb-1">Zip Code</label>
+                    <input type="text" id="zipCode" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" value="12345" readOnly />
+                </div>
+                <div>
+                    <label htmlFor="country" className="block text-xs font-medium text-gray-600 mb-1">Country</label>
+                    <input type="text" id="country" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" value="USA" readOnly />
+                </div>
+                 <div>
+                    <label htmlFor="fax" className="block text-xs font-medium text-gray-600 mb-1">Fax</label>
+                    <input type="tel" id="fax" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" value="+1234567891" readOnly />
+                </div>
+                <div className="col-span-2 flex md:flex-row gap-4 flex-col justify-end">
                     <button className="bg-orange-500 hover:bg-orange-600 text-white rounded-md py-2 px-4 text-sm font-medium focus:outline-none focus:shadow-outline-orange active:bg-orange-700">
-                        Save Changes
+                        Edit Changes
                     </button>
                 </div>
             </div>
@@ -866,4 +935,4 @@ const ClientList = () => {
   );
 };
 
-export default ClientList;
+export default BankList;
