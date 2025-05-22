@@ -78,7 +78,7 @@ const ContractViewModal: React.FC<ContractViewModalProps> = ({
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    const updatedFees = contractForm.fees.map((fee, i) =>
+    const updatedFees = contractForm.fees?.map((fee, i) =>
       i === index ? { ...fee, [name]: value } : fee
     );
     setContractForm((prev) => ({ ...prev, fees: updatedFees }));
@@ -87,20 +87,20 @@ const ContractViewModal: React.FC<ContractViewModalProps> = ({
   const handleAddFee = () => {
     setContractForm((prev) => ({
       ...prev,
-      fees: [...prev.fees, { product: "", type: "", rate: "", vat: "" }],
+      // fees: [...prev.fees, { product: "", type: "", rate: "", vat: "" }],
     }));
   };
 
   const handleRemoveFee = (index: number) => {
     setContractForm((prev) => ({
       ...prev,
-      fees: prev.fees.filter((_, i) => i !== index),
+      fees: prev.fees?.filter((_, i) => i !== index),
     }));
   };
 
   const handleLoanIdChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
-    const updatedLoanIds = contractForm.loanIds.map((loanId, i) =>
+    const updatedLoanIds = contractForm.loanIds?.map((loanId, i) =>
       i === index ? value : loanId
     );
     setContractForm((prev) => ({ ...prev, loanIds: updatedLoanIds }));
@@ -109,20 +109,20 @@ const ContractViewModal: React.FC<ContractViewModalProps> = ({
   const handleAddLoanId = () => {
     setContractForm((prev) => ({
       ...prev,
-      loanIds: [...prev.loanIds, ""],
+      // loanIds: [...prev.loanIds, ""],
     }));
   };
 
   const handleRemoveLoanId = (index: number) => {
     setContractForm((prev) => ({
       ...prev,
-      loanIds: prev.loanIds.filter((_, i) => i !== index),
+      loanIds: prev.loanIds?.filter((_, i) => i !== index),
     }));
   };
 
   const handleAmountChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
-    const updatedAmounts = contractForm.amounts.map((amount, i) =>
+    const updatedAmounts = contractForm.amounts?.map((amount, i) =>
       i === index ? value : amount
     );
     setContractForm((prev) => ({ ...prev, amounts: updatedAmounts }));
@@ -131,14 +131,14 @@ const ContractViewModal: React.FC<ContractViewModalProps> = ({
   const handleAddAmount = () => {
     setContractForm((prev) => ({
       ...prev,
-      amounts: [...prev.amounts, ""],
+      // amounts: [...prev.amounts, ""],
     }));
   };
 
   const handleRemoveAmount = (index: number) => {
     setContractForm((prev) => ({
       ...prev,
-      amounts: prev.amounts.filter((_, i) => i !== index),
+      amounts: prev.amounts?.filter((_, i) => i !== index),
     }));
   };
 
@@ -572,7 +572,7 @@ const ContractViewModal: React.FC<ContractViewModalProps> = ({
             <div className="col-span-2">
               <h5 className="text-sm font-semibold text-gray-700 mt-4 mb-2">Fees</h5>
             </div>
-            {contractForm.fees.map((fee, index) => (
+            {contractForm.fees?.map((fee, index) => (
               <React.Fragment key={index}>
                 <div className="col-span-2 grid grid-cols-2 gap-4 border-t border-gray-200 pt-4 mt-4">
                   <div>
@@ -661,7 +661,7 @@ const ContractViewModal: React.FC<ContractViewModalProps> = ({
             <div className="col-span-2">
               <h5 className="text-sm font-semibold text-gray-700 mt-4 mb-2">Loan ID</h5>
             </div>
-            {contractForm.loanIds.map((loanId, index) => (
+            {contractForm.loanIds?.map((loanId, index) => (
               <div key={`loanId-${index}`} className="col-span-1 flex items-end gap-2">
                 <div className="flex-grow">
                   <label htmlFor={`loanId-${index}`} className="block text-xs font-medium text-gray-600 mb-1">
@@ -703,7 +703,7 @@ const ContractViewModal: React.FC<ContractViewModalProps> = ({
             <div className="col-span-2">
               <h5 className="text-sm font-semibold text-gray-700 mt-4 mb-2">Amount</h5>
             </div>
-            {contractForm.amounts.map((amount, index) => (
+            {contractForm.amounts?.map((amount, index) => (
               <div key={`amount-${index}`} className="col-span-1 flex items-end gap-2">
                 <div className="flex-grow">
                   <label htmlFor={`amount-${index}`} className="block text-xs font-medium text-gray-600 mb-1">

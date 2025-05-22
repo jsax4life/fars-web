@@ -33,24 +33,11 @@ export interface ContractData {
   loanInterestRate?: string;
   loanPenalRate?: string;
   loanContribution?: string;
-  fees: Fee[];
-  loanIds: string[];
-  amounts: string[];
+  fees?: Fee[];
+  loanIds?: string[];
+  amounts?: string[];
   lcCommission?: string;
   preNegotiationRate?: string;
   postNegotiationRate?: string;
   note?: string;
-  // If you still need these properties that were commented out
-  // from your original Account.tsx ContractData, add them here:
-  // bankName??: string;
-  // accountOfficer??: string;
-  // email??: string;
-  // swiftCode??: string;
-  // telephone??: string;
-  // street??: string;
-  // city??: string;
-  // state??: string;
-  // zipCode??: string;
-  // country??: string;
-  // fax??: string;
 }
