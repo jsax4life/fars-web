@@ -1,14 +1,6 @@
 {
   "compilerOptions": {
-    "baseUrl": ".", // THIS IS CRUCIAL
-    "paths": {
-      "@/components/*": ["components/*"],
-      "@/app/*": ["app/*"],
-      "@/types/*": ["src/types/*"] // <--- ENSURE THIS POINTS TO THE CORRECT LOCATION RELATIVE TO baseUrl
-      // If your src folder is at the root, then "src/types/*" is likely correct.
-      // If your types folder is directly under the root, it might be "types/*".
-      // Double check your project structure.
-    },
+
     "target": "ES2017",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
@@ -27,7 +19,9 @@
         "name": "next"
       }
     ],
-    
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]
