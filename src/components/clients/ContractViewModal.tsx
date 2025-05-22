@@ -4,7 +4,7 @@ import { ContractData } from "@/types/contractTypes";
 import React, { useState, useRef, useEffect } from "react";
 
 interface ContractViewModalProps {
-  contractData?: ContractData;
+  contractData?: ContractData | null;
   onClose?: () => void;
     setShowViewModal: (show: boolean) => void;
   viewedContract: ContractData;
