@@ -31,36 +31,52 @@ interface ModalFormData {
     creditInterestRate: string;
     whtRate: string;
 }
-
-interface ContractData {
+interface ContractViewModalProps {
+  contractData: ContractData | null; // <--- ADDED '| null' HERE
+  onClose: () => void;
+  // ... other props
+}
+export interface Fee {
+  product: string;
+  type: string;
+  rate: string;
+  vat: string;
+}
+export interface ContractData {
   id: string;
   loanId: string;
   agreementDate: string;
   borrower: string;
   agreementType: string;
   signedDate: string;
-  bankName: string;
-  accountOfficer: string;
-  email: string;
-  swiftCode: string;
-  telephone: string;
-  street: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  country: string;
-  fax: string;
+  // Properties you originally had in Account.tsx
+  // bankName: string; // <-- You had this in Account.tsx ContractData, but not in ContractViewModal
+  // accountOfficer: string; // <-- You had this in Account.tsx ContractData, but not in ContractViewModal
+  // email: string; // <-- You had this in Account.tsx ContractData, but not in ContractViewModal
+  // swiftCode: string; // <-- You had this in Account.tsx ContractData, but not in ContractViewModal
+  // telephone: string; // <-- You had this in Account.tsx ContractData, but not in ContractViewModal
+  // street: string; // <-- You had this in Account.tsx ContractData, but not in ContractViewModal
+  // city: string; // <-- You had this in Account.tsx ContractData, but not in ContractViewModal
+  // state: string; // <-- You had this in Account.tsx ContractData, but not in ContractViewModal
+  // zipCode: string; // <-- You had this in Account.tsx ContractData, but not in ContractViewModal
+  // country: string; // <-- You had this in Account.tsx ContractData, but not in ContractViewModal
+  // fax: string; // <-- You had this in Account.tsx ContractData, but not in ContractViewModal
+
+
+  // Properties from ContractViewModal's ContractData
+  clearingDays: string; // Added from ContractViewModal
   locStateCountry: string;
   returnChargeRate: string;
   returnChargeLimit: string;
-  cotConvenantRate: string;
-  cotOffConvenantRate: string;
-  turnOverLimit: string;
-  cotConvenantFrequency: string;
-  chargeCOTOnTurnoverShortfall: string;
+  camf: string; // This was missing in Account.tsx's ContractData
+  camfCovenantRate: string; // This was missing
+  camfOffCovenantRate: string; // This was missing
+  turnOverLimit: string; // This was missing
+  camfCovenantFrequency: string; // This was missing
+  chargeCAMFOnTurnoverShortfall: string; // This was missing
   creditInterestRate: string;
-  vatWHTRate: string;
-  limitAmount: string;
+  whtRate: string;
+  overdraftLimit: string;
   drRate: string;
   exRate: string;
   exChangeType: string;
@@ -68,6 +84,13 @@ interface ContractData {
   loanInterestRate: string;
   loanPenalRate: string;
   loanContribution: string;
+  fees: Fee[]; // This was missing
+  loanIds: string[]; // This was missing
+  amounts: string[]; // This was missing
+  lcCommission: string; // This was missing
+  preNegotiationRate: string; // This was missing
+  postNegotiationRate: string; // This was missing
+  note: string; // This was missing
 }
 
 interface AccountData {
@@ -126,46 +149,45 @@ const Account = () => {
     creditInterestRate: '',
     whtRate: '',
   });
-const [contracts, setContracts] = useState<ContractData[]>([
-  {
-    id: "1",
-    loanId: "LOAN-001",
-    agreementDate: "2023-01-15",
-    borrower: "John Doe",
-    agreementType: "Personal Loan",
-    signedDate: "2023-01-20",
-    bankName: "GTBank",
-    accountOfficer: "Jane Smith",
-    email: "john.doe@example.com",
-    swiftCode: "GTBINGLA",
-    telephone: "08012345678",
-    street: "123 Main St",
-    city: "Lagos",
-    state: "Lagos",
-    zipCode: "100001",
-    country: "Nigeria",
-    fax: "012345678",
-    locStateCountry: "Lagos, Nigeria",
-    returnChargeRate: "5%",
-    returnChargeLimit: "₦50,000",
-    cotConvenantRate: "2%",
-    cotOffConvenantRate: "1.5%",
-    turnOverLimit: "₦1,000,000",
-    cotConvenantFrequency: "Monthly",
-    chargeCOTOnTurnoverShortfall: "Yes",
-    creditInterestRate: "15%",
-    vatWHTRate: "7.5%",
-    limitAmount: "₦5,000,000",
-    drRate: "20%",
-    exRate: "₦415/$",
-    exChangeType: "Spot",
-    loanType: "Term Loan",
-    loanInterestRate: "25%",
-    loanPenalRate: "5%",
-    loanContribution: "20%"
-  },
-  // Add more contracts as needed
-]);
+ const [contracts, setContracts] = useState<ContractData[]>([
+    {
+      id: "1",
+      loanId: "LOAN-001",
+      agreementDate: "2023-01-15",
+      borrower: "John Doe",
+      agreementType: "Personal Loan",
+      signedDate: "2023-01-20",
+      // Add all missing properties here, matching the new ContractData interface
+      clearingDays: "2",
+      locStateCountry: "Lagos, Nigeria",
+      returnChargeRate: "5%",
+      returnChargeLimit: "₦50,000",
+      camf: "Active", // Example
+      camfCovenantRate: "2%",
+      camfOffCovenantRate: "1.5%",
+      turnOverLimit: "₦1,000,000",
+      camfCovenantFrequency: "Monthly",
+      chargeCAMFOnTurnoverShortfall: "Yes",
+      creditInterestRate: "15%",
+      whtRate: "7.5%",
+      overdraftLimit: "₦5,000,000",
+      drRate: "20%",
+      exRate: "₦415/$",
+      exChangeType: "Spot",
+      loanType: "Term Loan",
+      loanInterestRate: "25%",
+      loanPenalRate: "5%",
+      loanContribution: "20%",
+      fees: [{ product: "Setup", type: "Flat", rate: "1%", vat: "7.5%" }], // Example
+      loanIds: ["LID-001", "LID-002"], // Example
+      amounts: ["100000", "200000"], // Example
+      lcCommission: "0.5%",
+      preNegotiationRate: "2%",
+      postNegotiationRate: "3%",
+      note: "Sample contract note.",
+    },
+    // Add more contracts as needed, ensuring all fields are present
+  ]);
   const handleModalChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = event.target;
 
@@ -706,12 +728,12 @@ const [contracts, setContracts] = useState<ContractData[]>([
           /> 
         </div>
       )}
-      {showViewModal && (
-        <ContractViewModal
-          setShowViewModal={setShowViewModal}
-          viewedContract={viewedContract}
-        />
-      )}
+    {showViewModal && viewedContract && (
+                <ContractViewModal
+                    setShowViewModal={setShowViewModal} // Matches prop name in modal component
+                    viewedContract={viewedContract}     // Matches prop name in modal component
+                />
+            )}
     </div>
   );
 };

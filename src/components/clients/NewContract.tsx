@@ -5,6 +5,23 @@ import Sidebar from "@/components/utility/Sidebar"; // Adjust path if needed
 import { useRouter } from "next/navigation"; // Import useRouter
 import RateAdjustmentForm from "../account/RateAdjustment";
 
+// Define an interface for a single fee entry
+interface Fee {
+    product: string;
+    feeType: string;
+    rate: string;
+    vat: string;
+}
+
+// Define an interface for a Loan ID entry
+interface LoanIdEntry {
+    loanId: string;
+}
+
+// Define an interface for an Amount entry
+interface AmountEntry {
+    amount: string;
+}
 
 interface FormData {
     accountNumber?: string;
@@ -53,13 +70,22 @@ interface FormData {
     agreementDate?: string;
     agreementType?: string;
     signedDate?: string;
-    loanID?: string;
+    // loanID?: string; // This will now be part of the loanIds array
     faxNo?: string;
     email?: string;
     swiftCode?: string;
     accountOfficer?: string;
     bankingPreference?: "saturday" | "sunday";
     cotApplicable?: "yes";
+    // Existing New Fields
+    fees?: Fee[]; // Array to handle multiple fees
+    lcCommission?: string;
+    preNegotiationRate?: string;
+    postNegotiationRate?: string;
+    note?: string;
+    // Newly added fields
+    loanIds?: LoanIdEntry[]; // Array to handle multiple Loan IDs
+    amounts?: AmountEntry[]; // Array to handle multiple Amounts
 }
 
 interface ModalFormData {
@@ -88,7 +114,11 @@ interface ModalFormData {
 }
 
 const NewAccount = () => {
-    const [formData, setFormData] = useState<FormData>({});
+    const [formData, setFormData] = useState<FormData>({
+        fees: [{ product: '', feeType: '', rate: '', vat: '' }], // Initialize with one empty fee
+        loanIds: [{ loanId: '' }], // Initialize with one empty Loan ID
+        amounts: [{ amount: '' }], // Initialize with one empty Amount
+    });
     const [showModal, setShowModal] = useState(false);
     const [modalFormData, setModalFormData] = useState<ModalFormData>({
         fromDate: '',
@@ -139,7 +169,7 @@ const NewAccount = () => {
         setShowModal(false);
     };
 
-    const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target;
 
         if (type === "checkbox") {
@@ -154,6 +184,82 @@ const NewAccount = () => {
             }));
         }
     };
+
+    // Functions for Fees
+    const handleFeeChange = (index: number, e: ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        const newFees = formData.fees ? [...formData.fees] : [];
+        newFees[index] = { ...newFees[index], [name]: value };
+        setFormData((prevState) => ({
+            ...prevState,
+            fees: newFees,
+        }));
+    };
+
+    const addFee = () => {
+        setFormData((prevState) => ({
+            ...prevState,
+            fees: [...(prevState.fees || []), { product: '', feeType: '', rate: '', vat: '' }],
+        }));
+    };
+
+    const removeFee = (index: number) => {
+        setFormData((prevState) => ({
+            ...prevState,
+            fees: (prevState.fees || []).filter((_, i) => i !== index),
+        }));
+    };
+
+    // Functions for Loan IDs
+    const handleLoanIdChange = (index: number, e: ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        const newLoanIds = formData.loanIds ? [...formData.loanIds] : [];
+        newLoanIds[index] = { ...newLoanIds[index], [name]: value };
+        setFormData((prevState) => ({
+            ...prevState,
+            loanIds: newLoanIds,
+        }));
+    };
+
+    const addLoanId = () => {
+        setFormData((prevState) => ({
+            ...prevState,
+            loanIds: [...(prevState.loanIds || []), { loanId: '' }],
+        }));
+    };
+
+    const removeLoanId = (index: number) => {
+        setFormData((prevState) => ({
+            ...prevState,
+            loanIds: (prevState.loanIds || []).filter((_, i) => i !== index),
+        }));
+    };
+
+    // Functions for Amounts
+    const handleAmountChange = (index: number, e: ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        const newAmounts = formData.amounts ? [...formData.amounts] : [];
+        newAmounts[index] = { ...newAmounts[index], [name]: value };
+        setFormData((prevState) => ({
+            ...prevState,
+            amounts: newAmounts,
+        }));
+    };
+
+    const addAmount = () => {
+        setFormData((prevState) => ({
+            ...prevState,
+            amounts: [...(prevState.amounts || []), { amount: '' }],
+        }));
+    };
+
+    const removeAmount = (index: number) => {
+        setFormData((prevState) => ({
+            ...prevState,
+            amounts: (prevState.amounts || []).filter((_, i) => i !== index),
+        }));
+    };
+
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
@@ -298,12 +404,9 @@ const NewAccount = () => {
                                         <option value="termLoan">Term Loan</option>
                                     </select>
                                 </div>
+                                {/* Removed individual loanID field here as it's now handled by the dynamic Loan IDs section */}
                                 {formData.loanType === "shortTerm" && (
                                     <>
-                                        <div>
-                                            <label htmlFor="loanID" className="block text-sm font-medium text-gray-700">Loan ID</label>
-                                            <input type="text" id="loanID" name="loanID" value={formData.loanID || ""} onChange={handleChange} className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" />
-                                        </div>
                                         <div>
                                             <label htmlFor="loanInterestRate" className="block text-sm font-medium text-gray-700">Interest Rate</label>
                                             <input type="text" id="loanInterestRate" name="loanInterestRate" value={formData.loanInterestRate || ""} onChange={handleChange} className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" />
@@ -316,10 +419,7 @@ const NewAccount = () => {
                                 )}
                                 {formData.loanType === "termLoan" && (
                                     <>
-                                        <div>
-                                            <label htmlFor="loanID" className="block text-sm font-medium text-gray-700">Loan ID</label>
-                                            <input type="text" id="loanID" name="loanID" value={formData.loanID || ""} onChange={handleChange} className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" />
-                                        </div>
+                                        {/* Removed individual loanID field here as it's now handled by the dynamic Loan IDs section */}
                                         <div>
                                             <label htmlFor="loanInterestRate" className="block text-sm font-medium text-gray-700">Interest Rate</label>
                                             <input type="text" id="loanInterestRate" name="loanInterestRate" value={formData.loanInterestRate || ""} onChange={handleChange} className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" />
@@ -335,6 +435,178 @@ const NewAccount = () => {
                                     </>
                                 )}
                             </div>
+
+                            {/* --- Fees Section (Existing) --- */}
+                            <h2 className="text-xl font-semibold mb-6 text-gray-800">Fees</h2>
+                            {formData.fees?.map((fee, index) => (
+                                <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-x-6 gap-y-4 mb-4 border p-4 rounded-md relative">
+                                    <h3 className="col-span-4 text-lg font-medium text-gray-700 mb-2">Fee #{index + 1}</h3>
+                                    <div>
+                                        <label htmlFor={`product-${index}`} className="block text-sm font-medium text-gray-700">Product</label>
+                                        <input
+                                            type="text"
+                                            id={`product-${index}`}
+                                            name="product"
+                                            value={fee.product}
+                                            onChange={(e) => handleFeeChange(index, e)}
+                                            className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor={`feeType-${index}`} className="block text-sm font-medium text-gray-700">Fee type</label>
+                                        <input
+                                            type="text"
+                                            id={`feeType-${index}`}
+                                            name="feeType"
+                                            value={fee.feeType}
+                                            onChange={(e) => handleFeeChange(index, e)}
+                                            className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor={`rate-${index}`} className="block text-sm font-medium text-gray-700">Rate</label>
+                                        <input
+                                            type="text"
+                                            id={`rate-${index}`}
+                                            name="rate"
+                                            value={fee.rate}
+                                            onChange={(e) => handleFeeChange(index, e)}
+                                            className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor={`vat-${index}`} className="block text-sm font-medium text-gray-700">VAT</label>
+                                        <input
+                                            type="text"
+                                            id={`vat-${index}`}
+                                            name="vat"
+                                            value={fee.vat}
+                                            onChange={(e) => handleFeeChange(index, e)}
+                                            className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                                        />
+                                    </div>
+                                    {formData.fees && formData.fees.length > 1 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => removeFee(index)}
+                                            className="absolute top-2 right-2 p-1 text-red-600 hover:text-red-800"
+                                            title="Remove Fee"
+                                        >
+                                            &times;
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                            <div className="flex justify-end mb-6">
+                                <button
+                                    type="button"
+                                    onClick={addFee}
+                                    className="inline-flex items-center px-3 py-1 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                                >
+                                    Add Another Fee
+                                </button>
+                            </div>
+
+                            {/* --- Loan ID Section (New) --- */}
+                            <h2 className="text-xl font-semibold mb-6 text-gray-800">Loan ID</h2>
+                            {formData.loanIds?.map((loanIdEntry, index) => (
+                                <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mb-4 border p-4 rounded-md relative">
+                                    <h3 className="col-span-2 text-lg font-medium text-gray-700 mb-2">Loan ID #{index + 1}</h3>
+                                    <div>
+                                        <label htmlFor={`loanId-${index}`} className="block text-sm font-medium text-gray-700">Loan ID</label>
+                                        <input
+                                            type="text"
+                                            id={`loanId-${index}`}
+                                            name="loanId"
+                                            value={loanIdEntry.loanId}
+                                            onChange={(e) => handleLoanIdChange(index, e)}
+                                            className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                                        />
+                                    </div>
+                                    {formData.loanIds && formData.loanIds.length > 1 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => removeLoanId(index)}
+                                            className="absolute top-2 right-2 p-1 text-red-600 hover:text-red-800"
+                                            title="Remove Loan ID"
+                                        >
+                                            &times;
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                            <div className="flex justify-end mb-6">
+                                <button
+                                    type="button"
+                                    onClick={addLoanId}
+                                    className="inline-flex items-center px-3 py-1 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                                >
+                                    Add Another Loan ID
+                                </button>
+                            </div>
+
+                            {/* --- Amount Section (New) --- */}
+                            <h2 className="text-xl font-semibold mb-6 text-gray-800">Amount</h2>
+                            {formData.amounts?.map((amountEntry, index) => (
+                                <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mb-4 border p-4 rounded-md relative">
+                                    <h3 className="col-span-2 text-lg font-medium text-gray-700 mb-2">Amount #{index + 1}</h3>
+                                    <div>
+                                        <label htmlFor={`amount-${index}`} className="block text-sm font-medium text-gray-700">Amount</label>
+                                        <input
+                                            type="text"
+                                            id={`amount-${index}`}
+                                            name="amount"
+                                            value={amountEntry.amount}
+                                            onChange={(e) => handleAmountChange(index, e)}
+                                            className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                                        />
+                                    </div>
+                                    {formData.amounts && formData.amounts.length > 1 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => removeAmount(index)}
+                                            className="absolute top-2 right-2 p-1 text-red-600 hover:text-red-800"
+                                            title="Remove Amount"
+                                        >
+                                            &times;
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                            <div className="flex justify-end mb-6">
+                                <button
+                                    type="button"
+                                    onClick={addAmount}
+                                    className="inline-flex items-center px-3 py-1 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                                >
+                                    Add Another Amount
+                                </button>
+                            </div>
+
+                            {/* --- Letter of Credit Section (Existing) --- */}
+                            <h2 className="text-xl font-semibold mb-6 text-gray-800">Letter of Credit</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4 mb-6">
+                                <div>
+                                    <label htmlFor="lcCommission" className="block text-sm font-medium text-gray-700">LC commission</label>
+                                    <input type="text" id="lcCommission" name="lcCommission" value={formData.lcCommission || ""} onChange={handleChange} className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" />
+                                </div>
+                                <div>
+                                    <label htmlFor="preNegotiationRate" className="block text-sm font-medium text-gray-700">Pre-Negotiation rate</label>
+                                    <input type="text" id="preNegotiationRate" name="preNegotiationRate" value={formData.preNegotiationRate || ""} onChange={handleChange} className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" />
+                                </div>
+                                <div>
+                                    <label htmlFor="postNegotiationRate" className="block text-sm font-medium text-gray-700">Post-Negotiation rate</label>
+                                    <input type="text" id="postNegotiationRate" name="postNegotiationRate" value={formData.postNegotiationRate || ""} onChange={handleChange} className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" />
+                                </div>
+                            </div>
+
+                            {/* --- Note Section (Existing) --- */}
+                            <h2 className="text-xl font-semibold mb-6 text-gray-800">Note</h2>
+                            <div className="mb-6">
+                                <label htmlFor="note" className="block text-sm font-medium text-gray-700">Note</label>
+                                <textarea id="note" name="note" rows={4} value={formData.note || ""} onChange={handleChange} className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"></textarea>
+                            </div>
+
                         </div>
                     </div>
 
