@@ -311,6 +311,25 @@ const NewAccount = () => {
                                     <input type="date" id="signedDate" name="signedDate" value={formData.signedDate || ""} onChange={handleChange} className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" />
                                 </div>
                             </div>
+                             <h3 className="text-lg font-semibold mb-4 text-gray-700">Select Client and Bank</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-1 gap-x-6 gap-y-4 mb-6">
+                                
+                               
+                                <div className="col-span-3">
+                                    <label htmlFor="exChangeType" className="block text-sm font-medium text-gray-700">Bank Name</label>
+                                    <select id="exChangeType" name="exChangeType" value={formData.exChangeType || ""} onChange={handleChange} className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm">
+                                        <option value="">Select Bank</option>
+                                        {/* Add more options as needed */}
+                                    </select>
+                                </div>
+                                <div className="col-span-3">
+                                    <label htmlFor="exChangeType" className="block text-sm font-medium text-gray-700">Client Name</label>
+                                    <select id="exChangeType" name="exChangeType" value={formData.exChangeType || ""} onChange={handleChange} className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm">
+                                        <option value="">Select Client</option>
+                                        {/* Add more options as needed */}
+                                    </select>
+                                </div>
+                            </div>
                             <h2 className="text-xl font-semibold mb-6 text-gray-800">Clearing Days</h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4 mb-6">
                                 <div>
@@ -573,7 +592,7 @@ const NewAccount = () => {
                                     )}
                                 </div>
                             ))}
-                            <div className="flex justify-end mb-6">
+                            {/* <div className="flex justify-end mb-6">
                                 <button
                                     type="button"
                                     onClick={addAmount}
@@ -581,7 +600,7 @@ const NewAccount = () => {
                                 >
                                     Add Another Amount
                                 </button>
-                            </div>
+                            </div> */}
 
                             {/* --- Letter of Credit Section (Existing) --- */}
                             <h2 className="text-xl font-semibold mb-6 text-gray-800">Letter of Credit</h2>

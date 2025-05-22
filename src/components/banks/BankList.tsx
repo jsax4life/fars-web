@@ -28,7 +28,7 @@ interface NewBank {
       email: string;
       officer: string;
       swift: string;
-      password: string;
+      // password: string;
       street: string;
       city: string;
       state: string;
@@ -84,7 +84,7 @@ const BankList = () => {
       email: "",
       officer: "",
       swift: "",
-      password: "",
+      // password: "",
       street: "",
       city: "",
       state: "",
@@ -132,7 +132,7 @@ const BankList = () => {
       email: "",
       officer: "",
       swift: "",
-      password: "",
+      // password: "",
       street: "",
       city: "",
       state: "",
@@ -457,12 +457,12 @@ const BankList = () => {
                             >
                               View Bank Details
                             </button>
-                            <Link
+                            {/* <Link
                               href = "/BankAccounts"
                               className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
                             >
                               View Accounts
-                            </Link>
+                            </Link> */}
                             {/* <Link
                               href = "/NewAccount"
                               className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
@@ -486,7 +486,7 @@ const BankList = () => {
                             )}
                             <button
                               onClick={() => handleDeleteUser(user.id)}
-                              className="block px-4 py-2 text-sm text-gray-700 border-gray-700 text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
+                              className="block px-4 py-2 text-sm text-gray-700 border-gray-700  hover:bg-gray-100 w-full text-left focus:outline-none"
                             >
                               Delete
                             </button>
@@ -583,7 +583,7 @@ const BankList = () => {
                       className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
                     />
                   </div>
-                  <div>
+                  {/* <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
                     <input
                       type="email"
@@ -593,7 +593,7 @@ const BankList = () => {
                       placeholder="Enter Company Email"
                       className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
                     />
-                  </div>
+                  </div> */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                     <input
