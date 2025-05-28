@@ -34,7 +34,7 @@ const Sidebar = () => {
     { name: "Staff Management", icon: '/sidebar/6.svg', path: '/UserList' },
     { name: "Bank Management", icon: '/sidebar/7.svg', path: '/BankList' },
      { name: "Contract Management", icon: '/sidebar/9.svg', path: '/Contracts' },
-      { name: "Analysis", icon: '/sidebar/8.svg', path: '#' },
+      { name: "Analysis", icon: '/sidebar/1.svg', path: '#' },
     { name: "Classification", icon: '/sidebar/8.svg', path: '/Classification' },
     { name: "Help", icon: '/sidebar/10.svg', path: '/help' },
   ];
