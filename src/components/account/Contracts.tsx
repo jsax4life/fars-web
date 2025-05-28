@@ -334,12 +334,13 @@ const Contracts = () => {
                 )}
                 {activeAccountTab === "Contracts" && (
                   <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
-                    <button
+                    {/* <button
                       onClick={() => setShowModal(true)}
                       className="w-full md:w-auto px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
                     >
                       Rate Adjustment
-                    </button>
+                    </button> */}
+                    
                     <Link
                       href="/NewContract"
                       className="w-full md:w-auto px-4 py-2 bg-orange-500 text-white rounded-md shadow-sm hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 text-sm"
@@ -566,6 +567,12 @@ const Contracts = () => {
 >
   View Contract
 </button>
+ <button
+                      onClick={() => setShowModal(true)}
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
+                    >
+                      Rate Adjustment
+                    </button>
                                     {account.report ? (
                                       <button
                                         onClick={() => handleViewReportClick(account)}

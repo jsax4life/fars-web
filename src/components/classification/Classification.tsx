@@ -312,14 +312,12 @@ const Classification = () => {
                 >
                   Description
                 </label>
-                <input
-                  type="text"
-                  id="description"
-                  name="description"
-                  value={newClassification.description}
-                  className="mt-1 block w-full border border-gray-300 rounded-md text-black shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm bg-gray-100"
-                  readOnly
-                />
+              <textarea
+  id="description"
+  name="description"
+  value={newClassification.description}
+  className="mt-1 block w-full border border-gray-300 rounded-md text-black shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm bg-gray-100"
+></textarea>
               </div>
               <div className="mb-6">
                 <label
@@ -411,14 +409,12 @@ const Classification = () => {
                 >
                   Description
                 </label>
-                <input
-                  type="text"
-                  id="edit-description"
-                  name="description"
-                  value={newClassification.description}
-                  className="mt-1 block w-full border border-gray-300 rounded-md text-black shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm bg-gray-100"
-                  readOnly
-                />
+                <textarea
+  id="description"
+  name="description"
+  value={newClassification.description}
+  className="mt-1 block w-full border border-gray-300 rounded-md text-black shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm bg-gray-100"
+></textarea>
               </div>
               <div className="mb-6">
                 <label
