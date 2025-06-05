@@ -74,7 +74,7 @@ export const useClients = () => {
     }) => {
         try {
             // call create account api
-            const request = await api.post(Endpoints.createuser, {
+            const request = await api.post(Endpoints.createClient, {
                 ...data,
                 avatarUrl: 'https://gravatar.com/avatar/48c3863a0f03a81d67916d28fdaa0ea6?s=400&d=mp&r=pg',
             })

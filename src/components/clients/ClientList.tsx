@@ -86,11 +86,34 @@ const ClientList = () => {
     setDeactivationReason({ ...deactivationReason, [name]: value });
   };
 
-  const handleCreateUser = () => {
+  const handleCreateUser = async () => {
     // Here you would typically send data to an API
-    setShowCreateModal(false);
-    setShowSuccessModal(true);
-    // Reset form
+    setIsLoading(true);
+    await createClient({
+      firstName: newClient.fullName.split(" ")[0],
+      lastName: newClient.fullName.split(" ")[1] || "",
+      country: newClient.country,
+      companyName: newClient.company,
+      address: newClient.address,
+      email: newClient.email,
+      phone: newClient.contact,
+      state: newClient.state,
+      city: newClient.city,
+    }).then((response) => {
+        if (response) {
+          setUsers([...users, response]);
+          setShowCreateModal(false);
+          setShowSuccessModal(true);
+        } else {
+          console.error("Failed to create client");
+        }
+      })
+      .catch((error) => {
+        console.error("Error creating client:", error);
+      })
+      .finally(() => {
+        setIsLoading(false);
+         // Reset form
     setNewClient({
       fullName: "",
       country: "",
@@ -102,6 +125,8 @@ const ClientList = () => {
       state: "",
       city: "",
     });
+      });
+   
   };
 
   const closeActionMenu = () => {
@@ -238,7 +263,6 @@ const ClientList = () => {
     const fetchClients = async () => {
       try {
         const clients = await getClients();
-        console.log("Fetched clients:", clients);
         if (!clients || clients.length === 0) {
           console.warn("No clients found or failed to fetch clients.");
           setUsers([]);
@@ -645,6 +669,7 @@ const ClientList = () => {
 
 
                   <button
+                    disabled={isLoading}
                     onClick={handleCreateUser}
                     className="w-full bg-[#F36F2E] text-white py-2 px-4 rounded-md hover:bg-[#E05C2B] transition-colors"
                   >
@@ -805,8 +830,7 @@ const ClientList = () => {
                 <div className="mb-4">
                   <h3 className="text-lg font-semibold text-green-600">Successful</h3>
                   <p className="text-gray-600 mt-2">
-                    Lorem ipsum dolor sit amet consectetur. Tellus pulvinar cras sed
-                    posuere duis. Velit euismod quis sed ut quis.
+                    The client has been successfully created.
                   </p>
                 </div>
 
