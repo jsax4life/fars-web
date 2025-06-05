@@ -1,4 +1,3 @@
-
 const Endpoints = {
     login: '/api/auth/login',
     register: '/auth/sign-up',
@@ -11,13 +10,18 @@ const Endpoints = {
     verifyPin: '/account/verify-pin/',
     updateAccount: '/api/users/',
     createuser: '/api/users',
-    logOut: '/auth/logout',
     profile: '/api/auth/profile',
     account: '/account',
     users: '/api/users',
     deactivateUser: '/api/users/deactivate/',
     activateUser: '/api/users/activate/',
-}
+
+    // Added Client Endpoints
+    createClient: '/api/clients',
+    getAllClients: '/api/clients',
+    getClientById: '/api/clients/',
+    updateClientById: '/api/clients/',
+    deleteClientById: '/api/clients/',
+};
 
 export default Endpoints;
-
