@@ -22,6 +22,13 @@ const Endpoints = {
     getClientById: '/api/clients/',
     updateClientById: '/api/clients/',
     deleteClientById: '/api/clients/',
+
+    // Classification Endpoints
+    createClassification: '/api/classifications',
+    getAllClassifications: '/api/classifications',
+    getClassificationById: '/api/classifications/',
+    updateClassificationById: '/api/classifications/',
+    deleteClassificationById: '/api/classifications/',
 };
 
 export default Endpoints;
