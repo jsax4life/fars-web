@@ -67,23 +67,11 @@ const ClientList = () => {
   const [reportContent, setReportContent] = useState("");
   const [reportingUser, setReportingUser] = useState<Client | null>(null);
 
-  // Deactivation flow states
-  const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
-  const [showDeactivateForm, setShowDeactivateForm] = useState(false);
-  const [deactivationReason, setDeactivationReason] = useState({
-    title: "",
-    message: "",
-  });
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [deleteUser, setDeleteUser] = useState<Client | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setNewClient({ ...newClient, [name]: value });
-  };
-
-  const handleDeactivationInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setDeactivationReason({ ...deactivationReason, [name]: value });
   };
 
   const handleCreateUser = async () => {
@@ -100,44 +88,40 @@ const ClientList = () => {
       state: newClient.state,
       city: newClient.city,
     }).then((response) => {
-        if (response) {
-          setUsers([...users, response]);
-          setShowCreateModal(false);
-          setShowSuccessModal(true);
-        } else {
-          console.error("Failed to create client");
-        }
-      })
+      if (response) {
+        setUsers([...users, response]);
+        setShowCreateModal(false);
+        setShowSuccessModal(true);
+      } else {
+        console.error("Failed to create client");
+      }
+    })
       .catch((error) => {
         console.error("Error creating client:", error);
       })
       .finally(() => {
         setIsLoading(false);
-         // Reset form
-    setNewClient({
-      fullName: "",
-      country: "",
-      // password: "",
-      company: "",
-      address: "",
-      email: "",
-      contact: "",
-      state: "",
-      city: "",
-    });
+        // Reset form
+        setNewClient({
+          fullName: "",
+          country: "",
+          // password: "",
+          company: "",
+          address: "",
+          email: "",
+          contact: "",
+          state: "",
+          city: "",
+        });
       });
-   
+
   };
 
   const closeActionMenu = () => {
     setIsActionMenuOpen(false);
     setSelectedUserForAction(null);
   };
-  const handleDeactivateUser = (userId: string) => {
-    setSelectedUserId(userId);
-    setShowDeactivateConfirm(true);
-    closeActionMenu();
-  };
+
 
   const handleViewUser = (user: Client) => {
     console.log("Viewing user:", user);
@@ -191,37 +175,26 @@ const ClientList = () => {
     };
   };
   const handleDeleteUser = (userId: string) => {
-    console.log("Deleting user:", userId);
-    setUsers(users.filter((user) => user.id !== userId));
-    closeActionMenu();
-    // Implement your delete logic here, e.g., show a confirmation modal and then call an API
-  };
-
-  const handleConfirmDeactivate = () => {
-    setShowDeactivateConfirm(false);
-    setShowDeactivateForm(true);
-  };
-
-  const handleSubmitDeactivation = () => {
-    // Update user status
-    if (selectedUserId) {
-      setUsers(
-        users.map((user) =>
-          user.id === selectedUserId ? { ...user, action: "Inactive" } : user
-        )
-      );
+    if (userId) {
+      setIsLoading(true);
+      deleteClient(userId).then((response) => {
+        if (response) {
+          setUsers(users.filter(user => user.id !== userId));
+          setDeleteUser(null);
+          closeActionMenu();
+        } else {
+          console.error("Failed to delete client");
+        }
+      })
+        .catch((error) => {
+          console.error("Error deleting client:", error);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
     }
-
-    // Show success message
-    setShowDeactivateForm(false);
-    setShowSuccessModal(true);
-
-    // Reset form
-    setDeactivationReason({
-      title: "",
-      message: "",
-    });
   };
+
 
   const openViewModal = (user: Client) => {
     setViewedUser(user);
@@ -280,6 +253,37 @@ const ClientList = () => {
   }, []);
 
   const cleanedSearchQuery = searchQuery.toLowerCase().trim();
+
+  const handleSaveEdit = async () => {
+    if (!viewedUser) return;
+    setIsLoading(true);
+    await updateClient(viewedUser.id, {
+      firstName: viewedUser.firstName,
+      lastName: viewedUser.lastName,
+      companyName: viewedUser.companyName,
+      email: viewedUser.email,
+      address: viewedUser.address,
+      phone: viewedUser.phone,
+      country: viewedUser.country,
+      state: viewedUser.state,
+      city: viewedUser.city,
+    }).then((response) => {
+      if (response) {
+        setUsers(users.map(user => user.id === response.id ? response : user));
+        // setShowViewModal(false);
+        // setShowSuccessModal(true);
+      } else {
+        console.error("Failed to update client");
+      }
+    })
+      .catch((error) => {
+        console.error("Error updating client:", error);
+      })
+      .finally(() => {
+        setIsLoading(false);
+        // setViewedUser(null);
+      });
+  }
 
 
   return (
@@ -508,7 +512,7 @@ const ClientList = () => {
                               </button>
                             )} */}
                             <button
-                              onClick={() => handleDeleteUser(user.id)}
+                              onClick={() => setDeleteUser(user)}
                               className="block px-4 py-2 text-sm text-gray-700 border-gray-700 text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
                             >
                               Delete
@@ -732,82 +736,36 @@ const ClientList = () => {
             </div>
           )}
 
-          {/* Deactivate Confirmation Modal */}
-          {showDeactivateConfirm && (
+          {/* Delete Confirmation Modal */}
+          {deleteUser && (
             <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-                <div className="mb-4">
-                  <h3 className="text-lg font-semibold">Lorem ipsum dolor sit amet consectetur.</h3>
-                  <p className="text-gray-600 mt-2">
-                    Lectus neque ut vestibulum molestie tincidunt.
-                  </p>
-                </div>
-
-                <div className="flex justify-end space-x-4 mt-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg text-black font-semibold">Delete Client</h3>
                   <button
-                    onClick={() => setShowDeactivateConfirm(false)}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    onClick={() => setDeleteUser(null)}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <p className="text-gray-700 mb-4">Are you sure you want to delete {deleteUser.firstName} {deleteUser.lastName}?</p>
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => setDeleteUser(null)}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 mr-2"
                   >
                     Cancel
                   </button>
                   <button
-                    onClick={handleConfirmDeactivate}
-                    className="px-4 py-2 bg-[#F36F2E] text-white rounded-md text-sm font-medium hover:bg-[#E05C2B]"
+                    disabled={isLoading}
+                    onClick={() => handleDeleteUser(deleteUser.id)}
+                    className="px-4 py-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700"
                   >
-                    Deactivate
+                    Delete
                   </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Deactivation Reason Form */}
-          {showDeactivateForm && (
-            <div className="fixed inset-0 bg-black bg-opacity-0 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold">Deactivation Reason</h3>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Reason Title</label>
-                    <input
-                      type="text"
-                      name="title"
-                      value={deactivationReason.title}
-                      onChange={handleDeactivationInputChange}
-                      placeholder="Enter Reason Title"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
-                    <textarea
-                      name="message"
-                      value={deactivationReason.message}
-                      onChange={handleDeactivationInputChange}
-                      placeholder="Enter Message Here"
-                      rows={4}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-                    />
-                  </div>
-
-                  <div className="border-t border-gray-200 pt-4 flex justify-end space-x-4">
-                    <button
-                      onClick={() => setShowDeactivateForm(false)}
-                      className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleSubmitDeactivation}
-                      className="px-4 py-2 bg-[#F36F2E] text-white rounded-md text-sm font-medium hover:bg-[#E05C2B]"
-                    >
-                      Send
-                    </button>
-                  </div>
                 </div>
               </div>
             </div>
@@ -862,8 +820,8 @@ const ClientList = () => {
                       </button>
                     </div>
                     <div className="ml-4">
-                      <h3 className="text-lg font-semibold text-gray-800">Olayimika Oluwasegun</h3>
-                      <p className="text-sm text-gray-500">olayimikaoluwasegun@gmail.com</p>
+                      <h3 className="text-lg font-semibold text-gray-800">{viewedUser.firstName} {viewedUser.lastName}</h3>
+                      <p className="text-sm text-gray-500">{viewedUser.email}</p>
                     </div>
                   </div>
                   <button onClick={() => setShowViewModal(false)} className="text-gray-500 hover:text-gray-700 focus:outline-none">
@@ -880,36 +838,77 @@ const ClientList = () => {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label htmlFor="fullname" className="block text-xs font-medium text-gray-600 mb-1">Fullname</label>
-                      <input type="text" id="fullname" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" placeholder="Enter full name" />
+                      <label htmlFor="firstName" className="block text-xs font-medium text-gray-600 mb-1">Fullname</label>
+                      <input
+                        value={viewedUser.firstName}
+                        onChange={(e) => setViewedUser({ ...viewedUser, firstName: e.target.value })}
+                        type="text"
+                        id="firstName"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" placeholder="Enter full name" />
                     </div>
                     <div>
-                      <label htmlFor="country" className="block text-xs font-medium text-gray-600 mb-1">Country</label>
-                      <input type="text" id="country" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" placeholder="Enter country" />
+                      <label htmlFor="lastName" className="block text-xs font-medium text-gray-600 mb-1">Fullname</label>
+                      <input
+                        value={viewedUser.lastName}
+                        onChange={(e) => setViewedUser({ ...viewedUser, lastName: e.target.value })}
+                        type="text"
+                        id="lastName"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" placeholder="Enter full name" />
+                    </div>
+                    <div className="col-span-1 md:col-span-2">
+                      <label htmlFor="email" className="block text-xs font-medium text-gray-600 mb-1">Email</label>
+                      <input
+                        value={viewedUser.email}
+                        onChange={(e) => setViewedUser({ ...viewedUser, email: e.target.value })}
+                        type="email"
+                        id="email"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" placeholder="Enter email" />
                     </div>
                     <div className="col-span-1 md:col-span-2">
                       <label htmlFor="companyName" className="block text-xs font-medium text-gray-600 mb-1">Company Name</label>
-                      <input type="text" id="companyName" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" placeholder="Enter company name" />
+                      <input
+                        value={viewedUser.companyName}
+                        onChange={(e) => setViewedUser({ ...viewedUser, companyName: e.target.value })}
+                        type="text"
+                        id="companyName"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" placeholder="Enter company name" />
                     </div>
                     <div className="col-span-1 md:col-span-2">
                       <label htmlFor="address" className="block text-xs font-medium text-gray-600 mb-1">Address</label>
-                      <input type="text" id="address" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" placeholder="Enter address" />
+                      <input
+                        value={viewedUser.address}
+                        onChange={(e) => setViewedUser({ ...viewedUser, address: e.target.value })}
+                        type="text"
+                        id="address"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" placeholder="Enter address" />
                     </div>
                     <div>
-                      <label htmlFor="email" className="block text-xs font-medium text-gray-600 mb-1">Email</label>
-                      <input type="email" id="email" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" placeholder="Enter email" />
+                      <label htmlFor="country" className="block text-xs font-medium text-gray-600 mb-1">Country</label>
+                      <input
+                        value={viewedUser.country}
+                        onChange={(e) => setViewedUser({ ...viewedUser, country: e.target.value })}
+                        type="text" id="country" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" placeholder="Enter country" />
                     </div>
                     <div>
                       <label htmlFor="contact" className="block text-xs font-medium text-gray-600 mb-1">Contact</label>
-                      <input type="text" id="contact" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" placeholder="Enter contact number" />
+                      <input
+                        value={viewedUser.phone}
+                        onChange={(e) => setViewedUser({ ...viewedUser, phone: e.target.value })}
+                        type="text" id="contact" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" placeholder="Enter contact number" />
                     </div>
                     <div>
                       <label htmlFor="state" className="block text-xs font-medium text-gray-600 mb-1">State</label>
-                      <input type="text" id="state" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" placeholder="Enter state" />
+                      <input
+                        value={viewedUser.state}
+                        onChange={(e) => setViewedUser({ ...viewedUser, state: e.target.value })}
+                        type="text" id="state" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" placeholder="Enter state" />
                     </div>
                     <div>
                       <label htmlFor="city" className="block text-xs font-medium text-gray-600 mb-1">City</label>
-                      <input type="text" id="city" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" placeholder="Enter city" />
+                      <input
+                        value={viewedUser.city}
+                        onChange={(e) => setViewedUser({ ...viewedUser, city: e.target.value })}
+                        type="text" id="city" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" placeholder="Enter city" />
                     </div>
                     <div className="col-span-1 md:col-span-2 flex md:flex-row gap-4 flex-col justify-end mt-4">
                       <Link href="/NewAccount"
@@ -917,7 +916,10 @@ const ClientList = () => {
                       >
                         Create Bank Account
                       </Link>
-                      <button className="bg-orange-500 hover:bg-orange-600 text-white rounded-md py-2 px-4 text-sm font-medium focus:outline-none focus:shadow-outline-orange active:bg-orange-700">
+                      <button
+                        onClick={() => handleSaveEdit()}
+                        disabled={isLoading}
+                        className="bg-orange-500 hover:bg-orange-600 text-white rounded-md py-2 px-4 text-sm font-medium focus:outline-none focus:shadow-outline-orange active:bg-orange-700">
                         Save Changes
                       </button>
                     </div>

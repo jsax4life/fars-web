@@ -49,9 +49,8 @@ export const useClients = () => {
         try {
             // call delete account api
             const request = await api.delete(Endpoints.deleteClientById + id)
-
-            if (request?.message) {
-                toast.success(request?.message);
+            if (request) {
+                toast.success('Client deleted successfully!');
                 return true;
             }
             return false;
