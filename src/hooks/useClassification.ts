@@ -28,6 +28,7 @@ export const useClassifications = () => {
     const getClassifications = async () => {
         try {
             const request = await api.get(Endpoints.getAllClassifications);
+            console.log("Classifications fetched:", request); // Optional: for debugging
             if (request) {
                 return request;
             }

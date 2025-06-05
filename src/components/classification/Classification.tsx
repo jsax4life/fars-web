@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Sidebar from "../utility/Sidebar";
 import { FiX } from "react-icons/fi";
+import { useClassifications } from "@/hooks/useClassification";
 
 interface Classification {
   code: string;
@@ -18,6 +19,7 @@ const classificationCodes: string[] = Array.from(
 const categories: string[] = ["Debit", "Credit"];
 
 const Classification = () => {
+  const {getClassifications, updateClassification, deleteClassification} = useClassifications();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
   const [newClassification, setNewClassification] = useState<Classification>({
@@ -37,6 +39,14 @@ const Classification = () => {
   const actionButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
+    // getClassifications().then((data) => {
+    //   console.log("Fetched classifications:", data);
+    //   if (data) {
+    //     // setClassifications(data);
+    //   }
+    // }).catch((error) => {
+    //   console.error("Failed to fetch classifications:", error);
+    // });
     const initialData: Classification[] = [
       {
         code: "Code 1",
