@@ -29,6 +29,13 @@ const Endpoints = {
     getClassificationById: '/api/classifications/',
     updateClassificationById: '/api/classifications/',
     deleteClassificationById: '/api/classifications/',
+
+    // Bank Account Endpoints
+    createBankAccount: '/api/bank-accounts',
+    getAllBankAccounts: '/api/bank-accounts',
+    getBankAccountById: '/api/bank-accounts/',
+    updateBankAccountById: '/api/bank-accounts/',
+    deleteBankAccountById: '/api/bank-accounts/'
 };
 
 export default Endpoints;
