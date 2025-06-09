@@ -6,30 +6,31 @@ import Sidebar from "@/components/utility/Sidebar";
 import Link from "next/link";
 import RateAdjustmentForm from "../account/RateAdjustment";
 import ContractViewModal from "./ContractViewModal";
+import { useBankAccounts } from "@/hooks/useBankAccount";
 
 interface ModalFormData {
-    fromDate: string;
-    toDate: string;
-    localCheques: string;
-    intraStateCheques: string;
-    upCountryCheques: string;
-    setAsPrevailingDays: boolean;
-    setParametersAsPrevailing: boolean;
-    camfFrequency: string;
-    camfOnShortfall: string;
-    camfCoverRate: string;
-    camfOCRate: string;
-    turnoverLimit: string;
-    currencyDescription: string;
-    rate: string;
-    retChgRate: string;
-    retChgLimit: string;
-    overdraftLimit: string;
-    drRate: string;
-    exRate: string;
-    exChargeType: string;
-    creditInterestRate: string;
-    whtRate: string;
+  fromDate: string;
+  toDate: string;
+  localCheques: string;
+  intraStateCheques: string;
+  upCountryCheques: string;
+  setAsPrevailingDays: boolean;
+  setParametersAsPrevailing: boolean;
+  camfFrequency: string;
+  camfOnShortfall: string;
+  camfCoverRate: string;
+  camfOCRate: string;
+  turnoverLimit: string;
+  currencyDescription: string;
+  rate: string;
+  retChgRate: string;
+  retChgLimit: string;
+  overdraftLimit: string;
+  drRate: string;
+  exRate: string;
+  exChargeType: string;
+  creditInterestRate: string;
+  whtRate: string;
 }
 
 interface ContractData {
@@ -85,6 +86,7 @@ interface AccountData {
 }
 
 const Account = () => {
+  const { getBankAccounts } = useBankAccounts()
   const [activeAccountTab, setActiveAccountTab] = useState("Account");
   const [accounts, setAccounts] = useState<AccountData[]>([
     { id: "1", entryDate: "02 - 04 - 2023", accountName: "Savings Account", accountNumber: "1234567890", accountType: "Savings", accountCode: "465,897.00", symbol: "NGN", bankName: "GTBank", bankAddress: "Lagos", status: "open" },
@@ -95,7 +97,7 @@ const Account = () => {
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   const [selectedAccountForAction, setSelectedAccountForAction] = useState<AccountData | null>(null);
   const actionMenuRef = useRef<HTMLDivElement>(null);
-  const actionButtonRefs = useRef<{[key: string]: HTMLButtonElement | null}>({});
+  const actionButtonRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({});
   const [showViewModal, setShowViewModal] = useState(false);
   const [viewedContract, setViewedContract] = useState<ContractData | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
@@ -126,46 +128,46 @@ const Account = () => {
     creditInterestRate: '',
     whtRate: '',
   });
-const [contracts, setContracts] = useState<ContractData[]>([
-  {
-    id: "1",
-    loanId: "LOAN-001",
-    agreementDate: "2023-01-15",
-    borrower: "John Doe",
-    agreementType: "Personal Loan",
-    signedDate: "2023-01-20",
-    bankName: "GTBank",
-    accountOfficer: "Jane Smith",
-    email: "john.doe@example.com",
-    swiftCode: "GTBINGLA",
-    telephone: "08012345678",
-    street: "123 Main St",
-    city: "Lagos",
-    state: "Lagos",
-    zipCode: "100001",
-    country: "Nigeria",
-    fax: "012345678",
-    locStateCountry: "Lagos, Nigeria",
-    returnChargeRate: "5%",
-    returnChargeLimit: "₦50,000",
-    cotConvenantRate: "2%",
-    cotOffConvenantRate: "1.5%",
-    turnOverLimit: "₦1,000,000",
-    cotConvenantFrequency: "Monthly",
-    chargeCOTOnTurnoverShortfall: "Yes",
-    creditInterestRate: "15%",
-    vatWHTRate: "7.5%",
-    limitAmount: "₦5,000,000",
-    drRate: "20%",
-    exRate: "₦415/$",
-    exChangeType: "Spot",
-    loanType: "Term Loan",
-    loanInterestRate: "25%",
-    loanPenalRate: "5%",
-    loanContribution: "20%"
-  },
-  // Add more contracts as needed
-]);
+  const [contracts, setContracts] = useState<ContractData[]>([
+    {
+      id: "1",
+      loanId: "LOAN-001",
+      agreementDate: "2023-01-15",
+      borrower: "John Doe",
+      agreementType: "Personal Loan",
+      signedDate: "2023-01-20",
+      bankName: "GTBank",
+      accountOfficer: "Jane Smith",
+      email: "john.doe@example.com",
+      swiftCode: "GTBINGLA",
+      telephone: "08012345678",
+      street: "123 Main St",
+      city: "Lagos",
+      state: "Lagos",
+      zipCode: "100001",
+      country: "Nigeria",
+      fax: "012345678",
+      locStateCountry: "Lagos, Nigeria",
+      returnChargeRate: "5%",
+      returnChargeLimit: "₦50,000",
+      cotConvenantRate: "2%",
+      cotOffConvenantRate: "1.5%",
+      turnOverLimit: "₦1,000,000",
+      cotConvenantFrequency: "Monthly",
+      chargeCOTOnTurnoverShortfall: "Yes",
+      creditInterestRate: "15%",
+      vatWHTRate: "7.5%",
+      limitAmount: "₦5,000,000",
+      drRate: "20%",
+      exRate: "₦415/$",
+      exChangeType: "Spot",
+      loanType: "Term Loan",
+      loanInterestRate: "25%",
+      loanPenalRate: "5%",
+      loanContribution: "20%"
+    },
+    // Add more contracts as needed
+  ]);
   const handleModalChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = event.target;
 
@@ -289,6 +291,14 @@ const [contracts, setContracts] = useState<ContractData[]>([
     closeActionMenu();
   };
 
+  useEffect(() => {
+    getBankAccounts().then((data) => {
+      console.log("Fetched bank accounts:", data);
+    }).catch((error) => {
+      console.error("Error fetching bank accounts:", error);
+    });
+  }, [])
+
   return (
     <div className="flex flex-col md:flex-row h-screen bg-gray-100 overflow-hidden">
       <div className="hidden md:block fixed h-full w-64">
@@ -304,31 +314,28 @@ const [contracts, setContracts] = useState<ContractData[]>([
                 <div className="flex whitespace-nowrap border-b border-gray-200">
                   <button
                     onClick={() => handleAccountTabChange("Account")}
-                    className={`py-2 px-3 md:px-4 -mb-px font-semibold text-sm ${
-                      activeAccountTab === "Account"
-                        ? "border-b-2 border-orange-500 text-orange-500"
-                        : "text-gray-500 hover:text-orange-500"
-                    } focus:outline-none`}
+                    className={`py-2 px-3 md:px-4 -mb-px font-semibold text-sm ${activeAccountTab === "Account"
+                      ? "border-b-2 border-orange-500 text-orange-500"
+                      : "text-gray-500 hover:text-orange-500"
+                      } focus:outline-none`}
                   >
                     Account
                   </button>
                   <button
                     onClick={() => handleAccountTabChange("Close Account")}
-                    className={`py-2 px-3 md:px-4 -mb-px font-semibold text-sm ${
-                      activeAccountTab === "Close Account"
-                        ? "border-b-2 border-orange-500 text-orange-500"
-                        : "text-gray-500 hover:text-orange-500"
-                    } focus:outline-none`}
+                    className={`py-2 px-3 md:px-4 -mb-px font-semibold text-sm ${activeAccountTab === "Close Account"
+                      ? "border-b-2 border-orange-500 text-orange-500"
+                      : "text-gray-500 hover:text-orange-500"
+                      } focus:outline-none`}
                   >
                     Close Account
                   </button>
                   <button
                     onClick={() => handleAccountTabChange("Contracts")}
-                    className={`py-2 px-3 md:px-4 -mb-px font-semibold text-sm ${
-                      activeAccountTab === "Contracts"
-                        ? "border-b-2 border-orange-500 text-orange-500"
-                        : "text-gray-500 hover:text-orange-500"
-                    } focus:outline-none`}
+                    className={`py-2 px-3 md:px-4 -mb-px font-semibold text-sm ${activeAccountTab === "Contracts"
+                      ? "border-b-2 border-orange-500 text-orange-500"
+                      : "text-gray-500 hover:text-orange-500"
+                      } focus:outline-none`}
                   >
                     Contracts
                   </button>
@@ -537,7 +544,7 @@ const [contracts, setContracts] = useState<ContractData[]>([
                 </div>
               </>
             )}
-            
+
             {activeAccountTab === "Contracts" && (
               <>
                 <div className="overflow-x-auto">
@@ -590,17 +597,17 @@ const [contracts, setContracts] = useState<ContractData[]>([
                                   style={getPopupPosition()}
                                 >
                                   <div className="py-1">
-                                 <button
-  onClick={() => {
-    // Find the contract associated with this account
-    const accountContract = contracts.find(c => c.id === account.id);
-    setViewedContract(accountContract || null);
-    setShowViewModal(true);
-  }}
-  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
->
-  View Contract
-</button>
+                                    <button
+                                      onClick={() => {
+                                        // Find the contract associated with this account
+                                        const accountContract = contracts.find(c => c.id === account.id);
+                                        setViewedContract(accountContract || null);
+                                        setShowViewModal(true);
+                                      }}
+                                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
+                                    >
+                                      View Contract
+                                    </button>
                                     {account.report ? (
                                       <button
                                         onClick={() => handleViewReportClick(account)}
@@ -698,12 +705,12 @@ const [contracts, setContracts] = useState<ContractData[]>([
       )}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 overflow-y-auto z-50">
-          <RateAdjustmentForm  
+          <RateAdjustmentForm
             setShowModal={setShowModal}
             modalFormData={modalFormData}
             handleModalChange={handleModalChange}
-            handleSave={handleSave} 
-          /> 
+            handleSave={handleSave}
+          />
         </div>
       )}
       {showViewModal && (
