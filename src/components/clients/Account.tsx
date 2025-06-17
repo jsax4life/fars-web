@@ -299,7 +299,7 @@ const [contracts, setContracts] = useState<ContractData[]>([
         <div className="bg-gray-100 min-h-full p-4 md:p-6">
           <div className="bg-white rounded-md shadow-md p-4 md:p-6">
             <div className="flex flex-col items-start gap-4 mb-4">
-              <div className="font-semibold text-black text-lg md:text-xl mr-4">Client Account Selection</div>
+              <div className="font-semibold text-black text-lg md:text-xl mr-4">Client Account</div>
               <div className="mb-4 overflow-x-auto">
                 <div className="flex whitespace-nowrap border-b border-gray-200">
                   <button
@@ -442,7 +442,7 @@ const [contracts, setContracts] = useState<ContractData[]>([
                                       href="/AccountDetails"
                                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
                                     >
-                                      View Account
+                                      View Details
                                     </Link>
                                     {account.report ? (
                                       <button
