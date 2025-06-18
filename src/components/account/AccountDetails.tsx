@@ -299,11 +299,11 @@ const AccountDetails = () => {
                     data: bankStatementTransactions,
                     title: "Bank Statement"
                 };
-            case "Reconstructed Statement":
+            case "Classified Statement":
                 return {
                     headers: ["No.", "Entry Date", "Trans Date", "Value Date", "Teller No", "Transaction Description", "Trans Type", "Cheque No", "Original Value", "Debit", "Credit", "Balance", "Curr.", "Conf.", "Clr", "Exch. Rate", "Clearance"],
                     data: reconstructedStatementTransactions,
-                    title: "Reconstructed Statement"
+                    title: "Classified Statement"
                 };
             case "Cash Book":
                 return {
@@ -638,14 +638,14 @@ const AccountDetails = () => {
                                     Bank Statement
                                 </button>
                                 <button
-                                    onClick={() => handleTabChange("Reconstructed Statement")}
+                                    onClick={() => handleTabChange("Classified Statement")}
                                     className={`py-2 px-3 md:px-4 -mb-px font-semibold text-sm ${
-                                        activeTab === "Reconstructed Statement"
+                                        activeTab === "Classified Statement"
                                             ? "border-b-2 border-orange-500 text-orange-500"
                                             : "text-gray-500 hover:text-orange-500"
                                         } focus:outline-none`}
                                 >
-                                    Reconstructed Statement
+                                    Classified Statement
                                 </button>
                                 <button
                                     onClick={() => handleTabChange("Cash Book")}
@@ -820,7 +820,7 @@ const AccountDetails = () => {
                                 </div>
                             </>
                         )}
-                        {(activeTab === "Query" || activeTab === "Bank Statement" || activeTab === "Reconstructed Statement" || activeTab === "Cash Book" || activeTab === "Trans Matched") && (
+                        {(activeTab === "Query" || activeTab === "Bank Statement" || activeTab === "Classified Statement" || activeTab === "Cash Book" || activeTab === "Trans Matched") && (
                             <div className="overflow-y-auto max-h-[600px] gap-4">
                                 <TransactionTable headers={headers} data={data} />
                                  <button
@@ -831,12 +831,12 @@ const AccountDetails = () => {
                                     </button>
                             </div>
                         )}
-  {(activeTab === "Analyze" || activeTab === "Bank Statement" || activeTab === "Reconstructed Statement" || activeTab === "Cash Book" || activeTab === "Trans Matched") && (
+  {(activeTab === "Analyze" || activeTab === "Bank Statement" || activeTab === "Classified Statement" || activeTab === "Cash Book" || activeTab === "Trans Matched") && (
                             <div className="overflow-y-auto max-h-[600px]">
                                 <TransactionTable headers={headers} data={data} />
                             </div>
                         )}
-                          {(activeTab === "Summary" || activeTab === "Bank Statement" || activeTab === "Reconstructed Statement" || activeTab === "Cash Book" || activeTab === "Trans Matched") && (
+                          {(activeTab === "Summary" || activeTab === "Bank Statement" || activeTab === "Classified Statement" || activeTab === "Cash Book" || activeTab === "Trans Matched") && (
                             <div className="overflow-y-auto max-h-[600px]">
                                 <TransactionTable headers={headers} data={data} />
                             </div>

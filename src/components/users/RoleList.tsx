@@ -1,16 +1,18 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import Link from "next/link";
 import Sidebar from "../utility/Sidebar";
-import { useRouter } from "next/navigation";
+
 
 const RoleList = () => {
-  const router = useRouter();
+  // Removed useRouter as it's Next.js specific
+  // const router = useRouter(); 
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentRole, setCurrentRole] = useState("");
   const [roleTitle, setRoleTitle] = useState("");
+  // State for selected and available account codes
   const [selectedAccountCodes, setSelectedAccountCodes] = useState<string[]>([]);
   const [availableAccountCodes, setAvailableAccountCodes] = useState([
     { code: "ACC001", name: "Main Account" },
@@ -19,6 +21,17 @@ const RoleList = () => {
     { code: "ACC004", name: "Business Account" },
     { code: "ACC005", name: "Personal Account" },
   ]);
+
+  // New states for staff assignment
+  const [selectedStaffs, setSelectedStaffs] = useState<string[]>([]);
+  const [availableStaffs, setAvailableStaffs] = useState([
+    { id: "STAFF001", name: "John Doe" },
+    { id: "STAFF002", name: "Jane Smith" },
+    { id: "STAFF003", name: "Peter Jones" },
+    { id: "STAFF004", name: "Alice Brown" },
+    { id: "STAFF005", name: "Robert Green" },
+  ]);
+
   const [permissions, setPermissions] = useState({
     accessOwnerInformation: false,
     accountsBalance: false,
@@ -61,12 +74,19 @@ const RoleList = () => {
   });
   const modalRef = useRef<HTMLDivElement>(null);
   const accountCodesDropdownRef = useRef<HTMLSelectElement>(null);
+  // Ref for the staff dropdown
+  const staffDropdownRef = useRef<HTMLSelectElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission here
-    console.log({ roleTitle, selectedAccountCodes, permissions });
+    // Handle form submission here, now including selectedStaffs
+    console.log({ roleTitle, selectedStaffs, selectedAccountCodes, permissions });
     setIsModalOpen(false);
+    // Reset form states after submission
+    setRoleTitle("");
+    setSelectedStaffs([]);
+    setSelectedAccountCodes([]);
+    setPermissions(Object.fromEntries(Object.keys(permissions).map(key => [key, false])) as typeof permissions); // Reset all permissions to false
   };
 
   const handleEditSubmit = (e: React.FormEvent) => {
@@ -87,6 +107,8 @@ const RoleList = () => {
     setCurrentRole(role);
     // For demo purposes, pre-select some account codes when editing
     setSelectedAccountCodes(["ACC001", "ACC003"]);
+    // Also pre-select some staff for demo when editing, if needed
+    // setSelectedStaffs(["STAFF001"]);
     setIsEditModalOpen(true);
   };
 
@@ -103,6 +125,23 @@ const RoleList = () => {
 
   const removeSelectedAccountCode = (codeToRemove: string) => {
     setSelectedAccountCodes(selectedAccountCodes.filter((code) => code !== codeToRemove));
+  };
+
+  // Handler for staff dropdown change
+  const handleStaffChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedId = e.target.value;
+    if (selectedId && !selectedStaffs.includes(selectedId)) {
+      setSelectedStaffs([...selectedStaffs, selectedId]);
+      // Reset dropdown to "None"
+      if (staffDropdownRef.current) {
+        staffDropdownRef.current.value = "";
+      }
+    }
+  };
+
+  // Handler to remove a selected staff
+  const removeSelectedStaff = (idToRemove: string) => {
+    setSelectedStaffs(selectedStaffs.filter((id) => id !== idToRemove));
   };
 
   // Close modal when clicking outside
@@ -131,7 +170,8 @@ const RoleList = () => {
         {/* Back Button */}
         <div className="mb-4 sm:mb-6">
           <button
-            onClick={() => router.back()}
+            // Removed router.back() as useRouter is not available
+            onClick={() => console.log("Back button clicked")} 
             className="flex items-center text-gray-600 hover:text-[#F36F2E] transition-colors"
           >
             <svg
@@ -218,6 +258,53 @@ const RoleList = () => {
                 </div>
 
                 <form onSubmit={handleSubmit}>
+                  {/* Staff Assignment Dropdown */}
+                  <div className="mb-4 sm:mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Assign Staff
+                    </label>
+                    <select
+                      ref={staffDropdownRef}
+                      onChange={handleStaffChange}
+                      className="w-full px-3 py-2 border text-gray-700 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F36F2E] focus:border-transparent h-auto min-h-[42px]"
+                      value={""} // Controlled component, reset value after selection
+                    >
+                      <option value="" disabled hidden>None</option>
+                      {availableStaffs.map((staff) => (
+                        // Only show staff not yet selected
+                        !selectedStaffs.includes(staff.id) && (
+                          <option key={staff.id} value={staff.id}>
+                            {staff.name}
+                          </option>
+                        )
+                      ))}
+                    </select>
+                    {selectedStaffs.length > 0 && (
+                      <div className="mt-2">
+                        <p className="text-xs font-medium text-gray-700">Selected Staff:</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {selectedStaffs.map((id) => {
+                            const staff = availableStaffs.find((s) => s.id === id);
+                            return (
+                              <span key={id} className="inline-flex items-center text-xs text-gray-700 bg-gray-100 px-2 py-1 rounded">
+                                {staff ? staff.name : id}
+                                <button
+                                  type="button"
+                                  onClick={() => removeSelectedStaff(id)}
+                                  className="ml-1 text-gray-400 hover:text-gray-600 focus:outline-none"
+                                >
+                                  <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="mb-4 sm:mb-6">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Role Title <span className="text-red-500">*</span>
@@ -232,6 +319,7 @@ const RoleList = () => {
                     />
                   </div>
 
+                  {/* Account Codes dropdown (commented out in original, kept as is) */}
                   {/* <div className="mb-4 sm:mb-6">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Account Codes</label>
                     <select
@@ -336,7 +424,8 @@ const RoleList = () => {
                   </button>
                 </div>
 
-                <form onSubmit={handleEditSubmit}> 
+                <form onSubmit={handleEditSubmit}>
+                  {/* Note: Account Codes section is commented out in original code, maintaining that here. */}
                   {/* <div className="mb-4 sm:mb-6">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Account Codes</label>
                     <select
