@@ -43,3 +43,4 @@ export interface ContractData {
   rateAdjustments?: any;
   documents?: any;
 }
+
