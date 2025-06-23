@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { FaSearch } from "react-icons/fa";
 import Sidebar from "@/components/utility/Sidebar";
 import Link from "next/link";
+import Navbar from "../nav/Navbar";
 
 interface AccountData {
   id: string;
@@ -146,8 +147,10 @@ const Account = () => {
       <div className="hidden md:block fixed h-full w-64">
         <Sidebar />
       </div>
-
+<div className="flex-1 overflow-auto ">
+                       <div className = "mb-4  md:ml-64"><Navbar /></div>
       <div className="flex-1 md:ml-64 overflow-auto mt-16 md:mt-0">
+          
         <div className="bg-gray-100 min-h-full p-4 md:p-6">
           <div className="bg-white rounded-md shadow-md p-4 md:p-6">
             <div className="flex flex-col items-start gap-4 mb-4">
@@ -411,6 +414,7 @@ const Account = () => {
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 };

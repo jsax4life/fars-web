@@ -5,6 +5,7 @@ import Sidebar from "../utility/Sidebar";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import WordEditor from "../utility/TextEditor";
+import Navbar from "../nav/Navbar";
 
 interface User {
   id: string;
@@ -266,26 +267,16 @@ const BankList = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
+      <div className="flex min-h-screen bg-gray-50">
+          <Sidebar />
+           
+                       
+                        
+         
+        <main className="flex-1  overflow-auto">
+         <div className = "mb-4"><Navbar /></div>
 
-      <div className="flex-1 p-4 md:p-6 mt-16 md:mt-0 overflow-x-hidden">
-        <div className="mb-6">
-          <h1 className="text-[#363636] text-xl md:text-2xl font-bold">
-            Hi, Olayimmika
-          </h1>
-          <p className="text-gray-500 text-sm md:text-base">
-            June 18th 2023 - 08:34 am
-          </p>
-        </div>
-
-        <div className="mb-6">
-          <h2 className="text-[#363636] text-lg md:text-xl font-semibold">
-            Banks
-          </h2>
-        </div>
-
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="bg-white rounded-lg p-4 sm:p-6 lg:p-8 shadow overflow-hidden">
           <div className="p-4 border-b border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex flex-col sm:flex-row w-full md:w-auto gap-2 sm:gap-4">
               <div className="relative w-full sm:w-auto">
@@ -866,8 +857,9 @@ const BankList = () => {
 </div>
           )}
         </div>
+      </main>
       </div>
-    </div>
+ 
   );
 };
 

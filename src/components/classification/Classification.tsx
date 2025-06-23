@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Sidebar from "../utility/Sidebar";
 import { FiX } from "react-icons/fi";
 import { useClassifications } from "@/hooks/useClassification";
+import Navbar from "../nav/Navbar";
 
 interface Classification {
   code: string;
@@ -174,9 +175,10 @@ const Classification = () => {
       <div className="md:block fixed h-full w-64">
         <Sidebar />
       </div>
-
-      {/* Main content area */}
+      <div className="flex-1 overflow-auto ">
+               <div className = "mb-4  md:ml-64"><Navbar /></div>
       <div className="flex-1 overflow-auto mt-16 md:mt-0 md:ml-64">
+        
         <div className="bg-gray-100 min-h-full p-4 md:p-6">
           <div className="bg-white rounded-md shadow-md p-4 md:p-6">
             <div className="flex flex-col gap-4">
@@ -468,6 +470,7 @@ const Classification = () => {
         </div>
       )}
     </div>
+      </div>
   );
 };
 

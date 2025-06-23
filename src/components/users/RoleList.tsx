@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Sidebar from "../utility/Sidebar";
+import Navbar from "../nav/Navbar";
 
 
 const RoleList = () => {
@@ -165,36 +166,11 @@ const RoleList = () => {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-
+  <div className="flex-1 md:mt-0">
+              <div className = "mb-4"><Navbar /></div>
+              
       <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
-        {/* Back Button */}
-        <div className="mb-4 sm:mb-6">
-          <button
-            // Removed router.back() as useRouter is not available
-            onClick={() => console.log("Back button clicked")} 
-            className="flex items-center text-gray-600 hover:text-[#F36F2E] transition-colors"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5 mr-1"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-700">Admin</h2>
-          </button>
-
-          {/* Greeting and Date */}
-          <div className="mt-2">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Hi, Olayimmika</h1>
-            <p className="text-gray-500 text-xs sm:text-sm">June 18th 2023 - 08:34 am</p>
-          </div>
-        </div>
+    
 
         {/* Admin Section */}
         <div className="mb-6">
@@ -515,8 +491,11 @@ const RoleList = () => {
             </div>
           </div>
         )}
+        
       </main>
+      </div>
     </div>
+
   );
 };
 
