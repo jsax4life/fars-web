@@ -40,4 +40,7 @@ export interface ContractData {
   preNegotiationRate?: string;
   postNegotiationRate?: string;
   note?: string;
+  rateAdjustments?: any;
+  documents?: any;
 }
+

@@ -1,42 +1,55 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import Sidebar from "../utility/Sidebar";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import WordEditor from "../utility/TextEditor";
 
 interface User {
- id:  string;
-      bankName: string;
-      email: string;
-      swift: string;
-      officer: string;
-      street: string;
-      city: string;
-      state: string;
-      country: string;
-      zip:string;
-      phone: string;
-      fax: string;
-      dateAdded: string;
-      action: string;
-  report?: string | null; // Add an optional report property
+  id: string;
+  bankName: string;
+  email: string;
+  swift: string;
+  officer: string;
+  street: string;
+  city: string;
+  state: string;
+  country: string;
+  zip: string;
+  phone: string;
+  fax: string;
+  dateAdded: string;
+  action: string;
+  report?: string | null;
 }
 
 interface NewBank {
   bankName: string;
-      email: string;
-      officer: string;
-      swift: string;
-      // password: string;
-      street: string;
-      city: string;
-      state: string;
-      country: string;
-      zip:string;
-      phone: string;
-      fax: string;
+  email: string;
+  officer: string;
+  swift: string;
+  street: string;
+  city: string;
+  state: string;
+  country: string;
+  zip: string;
+  phone: string;
+  fax: string;
 }
+
+interface Bank {
+  firstName: string;
+  lastName: string;
+  companyName: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  state: string;
+  country: string;
+}
+
 
 const BankList = () => {
   const router = useRouter();
@@ -60,7 +73,7 @@ const BankList = () => {
       report: null,
     },
     {
-      id: "01",
+      id: "02",
       bankName: "Ashley",
       email: "Nigeria",
       officer: "RHR",
@@ -77,33 +90,27 @@ const BankList = () => {
       report: null,
     },
   ]);
+
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [newBank, setNewBank] = useState<NewBank>({
-     bankName: "",
-      email: "",
-      officer: "",
-      swift: "",
-      // password: "",
-      street: "",
-      city: "",
-      state: "",
-      country: "",
-      zip:"",
-      phone: "",
-      fax: "",
+    bankName: "",
+    email: "",
+    officer: "",
+    swift: "",
+    street: "",
+    city: "",
+    state: "",
+    country: "",
+    zip: "",
+    phone: "",
+    fax: "",
   });
 
-  // Action menu state
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   const [selectedUserForAction, setSelectedUserForAction] = useState<User | null>(null);
-
-  // Report Modal State
   const [showReportModal, setShowReportModal] = useState(false);
-  const [reportContent, setReportContent] = useState("");
   const [reportingUser, setReportingUser] = useState<User | null>(null);
-
-  // Deactivation flow states
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
   const [showDeactivateForm, setShowDeactivateForm] = useState(false);
   const [deactivationReason, setDeactivationReason] = useState({
@@ -111,6 +118,11 @@ const BankList = () => {
     message: "",
   });
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewedUser, setViewedUser] = useState<User | null>(null);
+
+  const actionMenuRef = useRef<HTMLDivElement>(null);
+  const actionButtonRefs = useRef<{[key: string]: HTMLButtonElement | null}>({});
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -123,21 +135,18 @@ const BankList = () => {
   };
 
   const handleCreateUser = () => {
-    // Here you would typically send data to an API
     setShowCreateModal(false);
     setShowSuccessModal(true);
-    // Reset form
     setNewBank({
-     bankName: "",
+      bankName: "",
       email: "",
       officer: "",
       swift: "",
-      // password: "",
       street: "",
       city: "",
       state: "",
       country: "",
-      zip:"",
+      zip: "",
       phone: "",
       fax: "",
     });
@@ -147,6 +156,7 @@ const BankList = () => {
     setIsActionMenuOpen(false);
     setSelectedUserForAction(null);
   };
+
   const handleDeactivateUser = (userId: string) => {
     setSelectedUserId(userId);
     setShowDeactivateConfirm(true);
@@ -156,12 +166,8 @@ const BankList = () => {
   const handleViewUser = (user: User) => {
     console.log("Viewing user:", user);
     closeActionMenu();
-    // Implement your view logic here, e.g., open a modal or navigate to a details page
   };
-  const actionMenuRef = useRef<HTMLDivElement>(null);
-  const actionButtonRefs = useRef<{[key: string]: HTMLButtonElement | null}>({});
 
-  // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (actionMenuRef.current && !actionMenuRef.current.contains(event.target as Node)) {
@@ -174,22 +180,17 @@ const BankList = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-  // View User Modal State
-  const [showViewModal, setShowViewModal] = useState(false);
-  const [viewedUser, setViewedUser] = useState<User | null>(null);
 
   const openActionMenu = (user: User, event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     setSelectedUserForAction(user);
     setIsActionMenuOpen(true);
 
-    // Store the button reference
     if (user.id) {
       actionButtonRefs.current[user.id] = event.currentTarget;
     }
   };
 
-  // Calculate position for the popup
   const getPopupPosition = () => {
     if (!selectedUserForAction?.id || !actionButtonRefs.current[selectedUserForAction.id]) {
       return { top: 0, left: 0 };
@@ -201,14 +202,14 @@ const BankList = () => {
     const rect = button.getBoundingClientRect();
     return {
       top: rect.bottom + window.scrollY,
-      left: rect.right + window.scrollX - 130, // Adjust 130 to match your popup width
+      left: rect.right + window.scrollX - 130,
     };
   };
+
   const handleDeleteUser = (userId: string) => {
     console.log("Deleting user:", userId);
     setUsers(users.filter((user) => user.id !== userId));
     closeActionMenu();
-    // Implement your delete logic here, e.g., show a confirmation modal and then call an API
   };
 
   const handleConfirmDeactivate = () => {
@@ -217,7 +218,6 @@ const BankList = () => {
   };
 
   const handleSubmitDeactivation = () => {
-    // Update user status
     if (selectedUserId) {
       setUsers(
         users.map((user) =>
@@ -226,11 +226,8 @@ const BankList = () => {
       );
     }
 
-    // Show success message
     setShowDeactivateForm(false);
     setShowSuccessModal(true);
-
-    // Reset form
     setDeactivationReason({
       title: "",
       message: "",
@@ -249,24 +246,19 @@ const BankList = () => {
     closeActionMenu();
   };
 
-  const handleSaveReport = () => {
+  const handleSaveReport = (fileName: string, content: string) => {
     if (reportingUser) {
       setUsers(users.map(u =>
-        u.id === reportingUser.id ? { ...u, report: `report_${reportingUser.bankName.replace(/\s+/g, '_').toLowerCase()}.docx` } : u
+        u.id === reportingUser.id ? { ...u, report: fileName } : u
       ));
       setShowReportModal(false);
-      setReportContent("");
       setReportingUser(null);
     }
   };
 
   const handleViewReportClick = (user: User) => {
-    // In a real application, you would fetch and display the report content
-    console.log("Viewing report for:", user.bankName, user.report);
-    // For now, let's just open a new tab or show a modal with a message
     if (user.report) {
       alert(`Opening/displaying report: ${user.report}`);
-      // You might use window.open or a modal here to display/edit the report
     } else {
       alert("No report available.");
     }
@@ -289,7 +281,7 @@ const BankList = () => {
 
         <div className="mb-6">
           <h2 className="text-[#363636] text-lg md:text-xl font-semibold">
-           Banks
+            Banks
           </h2>
         </div>
 
@@ -327,12 +319,6 @@ const BankList = () => {
               >
                 Create Bank
               </button>
-              {/* <button
-                onClick={() => router.push("/RoleList")}
-                className="bg-[#fff] hover:bg-gray-300 text-[#F36F2E] border-[#F36F2E] border-2 py-2 px-4 rounded text-sm w-full sm:w-auto"
-              >
-                Upload
-              </button> */}
             </div>
           </div>
 
@@ -346,43 +332,42 @@ const BankList = () => {
                   <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Bank Name
                   </th>
-                    <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Email Address
                   </th>
-                    <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Account Officer
                   </th> 
-                   <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Swift Code
                   </th>
                   <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Street
                   </th>
-                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ">
+                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     City
                   </th>
-                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ">
+                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     State
                   </th>
                   <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                   Country
+                    Country
                   </th>
                   <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Zip Code
                   </th>
-                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ">
+                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Telephone
                   </th>
-                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ">
+                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Fax No.
                   </th>
-                <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Date Added
                   </th>
                   <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Action
                   </th>
-                   
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -397,34 +382,34 @@ const BankList = () => {
                     <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
                       {user.email}
                     </td>
-                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 truncate max-w-[120px] ">
+                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 truncate max-w-[120px]">
                       {user.officer}
                     </td>
-                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 ">
+                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
                       {user.swift}
                     </td>
-                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 ">
+                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
                       {user.street}
                     </td>
                     <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
                       {user.city}
                     </td>
-                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 ">
+                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
                       {user.state}
                     </td>
-                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 ">
+                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
                       {user.country}
                     </td>
-                      <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 ">
+                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
                       {user.zip}
                     </td>
-                      <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 ">
+                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
                       {user.phone}
                     </td>
-                      <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 ">
+                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
                       {user.fax}
                     </td>
-                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 ">
+                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
                       {user.dateAdded}
                     </td>
                     <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 relative">
@@ -457,18 +442,6 @@ const BankList = () => {
                             >
                               View Bank Details
                             </button>
-                            {/* <Link
-                              href = "/BankAccounts"
-                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
-                            >
-                              View Accounts
-                            </Link> */}
-                            {/* <Link
-                              href = "/NewAccount"
-                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
-                            >
-                              Create Account
-                            </Link> */}
                             {user.report ? (
                               <button
                                 onClick={() => handleViewReportClick(user)}
@@ -479,14 +452,14 @@ const BankList = () => {
                             ) : (
                               <button
                                 onClick={() => handleCreateReportClick(user)}
-                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
+                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                               >
                                 Create Report
                               </button>
                             )}
                             <button
                               onClick={() => handleDeleteUser(user.id)}
-                              className="block px-4 py-2 text-sm text-gray-700 border-gray-700  hover:bg-gray-100 w-full text-left focus:outline-none"
+                              className="block px-4 py-2 text-sm text-gray-700 border-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
                             >
                               Delete
                             </button>
@@ -500,7 +473,6 @@ const BankList = () => {
             </table>
           </div>
 
-          {/* Pagination Section */}
           <div className="px-4 py-3 bg-white border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-sm text-gray-700">
               Showing <span className="font-medium">1</span> to{" "}
@@ -520,7 +492,6 @@ const BankList = () => {
             </div>
           </div>
 
-          {/* Create User Modal */}
           {showCreateModal && (
             <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
@@ -536,15 +507,15 @@ const BankList = () => {
                   </button>
                 </div>
 
-                <div className="space-y-4 overflow-y-auto max-h-[calc(100vh-150px)]"> {/* Added scrollbar and max height */}
+                <div className="space-y-4 overflow-y-auto max-h-[calc(100vh-150px)]">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Bank Name</label>
                     <input
                       type="text"
-                      name="fullName"
+                      name="bankName"
                       value={newBank.bankName}
                       onChange={handleInputChange}
-                      placeholder="Enter Full name"
+                      placeholder="Enter Bank Name"
                       className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
                     />
                   </div>
@@ -553,10 +524,10 @@ const BankList = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                     <input
                       type="text"
-                      name="country"
+                      name="email"
                       value={newBank.email}
                       onChange={handleInputChange}
-                      placeholder="Enter Country"
+                      placeholder="Enter Email"
                       className="w-full px-3 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
                     />
                   </div>
@@ -565,10 +536,10 @@ const BankList = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Account Officer</label>
                     <input
                       type="text"
-                      name="company"
+                      name="officer"
                       value={newBank.officer}
                       onChange={handleInputChange}
-                      placeholder="Enter Company Name"
+                      placeholder="Enter Account Officer"
                       className="w-full px-3 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
                     />
                   </div>
@@ -576,29 +547,18 @@ const BankList = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Swift Code</label>
                     <input
                       type="text"
-                      name="address"
+                      name="swift"
                       value={newBank.swift}
                       onChange={handleInputChange}
-                      placeholder="Enter Company Address"
+                      placeholder="Enter Swift Code"
                       className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
                     />
                   </div>
-                  {/* <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={newBank.password}
-                      onChange={handleInputChange}
-                      placeholder="Enter Company Email"
-                      className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-                    />
-                  </div> */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                     <input
                       type="tel"
-                      name="contact"
+                      name="phone"
                       value={newBank.phone}
                       onChange={handleInputChange}
                       placeholder="Enter Phone Number"
@@ -609,10 +569,10 @@ const BankList = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Street</label>
                     <input
                       type="text"
-                      name="state"
+                      name="street"
                       value={newBank.street}
                       onChange={handleInputChange}
-                      placeholder="Enter State"
+                      placeholder="Enter Street"
                       className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
                     />
                   </div>
@@ -626,41 +586,50 @@ const BankList = () => {
                       placeholder="Enter City"
                       className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
                     />
-                    </div>
-                    <div>
+                  </div>
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
                     <input
                       type="text"
-                      name="city"
+                      name="state"
                       value={newBank.state}
                       onChange={handleInputChange}
-                      placeholder="Enter City"
+                      placeholder="Enter State"
                       className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
                     />
-                    </div>
-                    <div>
+                  </div>
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
                     <input
                       type="text"
-                      name="city"
+                      name="country"
                       value={newBank.country}
                       onChange={handleInputChange}
-                      placeholder="Enter City"
+                      placeholder="Enter Country"
                       className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
                     />
-                    
                   </div>
- <div>
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Zip Code</label>
                     <input
                       type="text"
-                      name="city"
+                      name="zip"
                       value={newBank.zip}
                       onChange={handleInputChange}
-                      placeholder="Enter City"
+                      placeholder="Enter Zip Code"
                       className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
                     />
-                    
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Fax</label>
+                    <input
+                      type="text"
+                      name="fax"
+                      value={newBank.fax}
+                      onChange={handleInputChange}
+                      placeholder="Enter Fax"
+                      className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
+                    />
                   </div>
 
                   <button
@@ -672,62 +641,29 @@ const BankList = () => {
                 </div>
               </div>
             </div>
-             
           )}
 
-          {/* Report Modal */}
           {showReportModal && reportingUser && (
-            <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg text-black font-semibold">Create Report for {reportingUser.bankName}</h3>
-                  <button
-                    onClick={() => {
-                      setShowReportModal(false);
-                      setReportingUser(null);
-                      setReportContent("");
-                    }}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-                <div>
-                  <label htmlFor="report-content" className="block text-sm font-medium text-gray-700 mb-1">Report Content</label>
-                  <textarea
-                    id="report-content"
-                    value={reportContent}
-                    onChange={(e) => setReportContent(e.target.value)}
-                    rows={8}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-                    placeholder="Write your report here..."
-                  />
-                </div>
-                <div className="mt-4 flex justify-end">
-                  <button
-                    onClick={() => {
-                      setShowReportModal(false);
-                      setReportingUser(null);
-                      setReportContent("");
-                    }}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 mr-2"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleSaveReport}
-                    className="px-4 py-2 bg-[#F36F2E] text-white rounded-md text-sm font-medium hover:bg-[#E05C2B]"
-                  >
-                    Save
-                  </button>
-                </div>
-              </div>
-            </div>
+            <WordEditor 
+              onSave={handleSaveReport}
+              onClose={() => {
+                setShowReportModal(false);
+                setReportingUser(null);
+              }}
+              user={{
+                firstName: reportingUser.bankName,
+                lastName: "",
+                companyName: "",
+                email: reportingUser.email,
+                phone: reportingUser.phone,
+                address: reportingUser.street,
+                city: reportingUser.city,
+                state: reportingUser.state,
+                country: reportingUser.country
+              }}
+            />
           )}
 
-          {/* Deactivate Confirmation Modal */}
           {showDeactivateConfirm && (
             <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
@@ -756,9 +692,8 @@ const BankList = () => {
             </div>
           )}
 
-          {/* Deactivation Reason Form */}
           {showDeactivateForm && (
-            <div className="fixed inset-0 bg-black bg-opacity-0 flex items-center justify-center z-50 p-4">
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
                 <div className="mb-6">
                   <h3 className="text-lg font-semibold">Deactivation Reason</h3>
@@ -793,6 +728,7 @@ const BankList = () => {
                     <button
                       onClick={() => setShowDeactivateForm(false)}
                       className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                   
                     >
                       Cancel
                     </button>
