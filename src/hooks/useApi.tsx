@@ -15,7 +15,7 @@ interface ApiContextType {
 const ApiContext = createContext<ApiContextType | null>(null);
 
 // API Base URL
-const API_BASE_URL = "http://fars-api-env.eba-rfmzrjse.eu-west-2.elasticbeanstalk.com";
+const API_BASE_URL = "http://server.adegoroyefadareandco.org";
 
 
 export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
