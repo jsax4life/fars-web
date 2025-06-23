@@ -7,6 +7,7 @@ import Link from "next/link";
 import RateAdjustmentForm from "./RateAdjustment";
 import ContractViewModal from "../clients/ContractViewModal";
 import { ContractData, Fee } from "@/types/contractTypes";
+import Navbar from "../nav/Navbar";
 interface ModalFormData {
     fromDate: string;
     toDate: string;
@@ -260,8 +261,10 @@ const Contracts = () => {
         <Sidebar />
       </div>
 
-      <div className="flex-1 md:ml-64 overflow-auto mt-16 md:mt-0">
-        <div className="bg-gray-100 min-h-full p-4 md:p-6">
+      <div className="flex-1 md:ml-64 overflow-auto ">
+          <div className = "mb-4"><Navbar /></div>
+        
+        <div className="bg-gray-100 min-h-full p-4 md:p-6 mt-16 md:mt-0">
           <div className="bg-white rounded-md shadow-md p-4 md:p-6">
             <div className="flex flex-col items-start gap-4 mb-4">
               <div className="font-semibold text-black text-lg md:text-xl mr-4">Contract Selection</div>

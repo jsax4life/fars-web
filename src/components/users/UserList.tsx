@@ -7,6 +7,7 @@ import { useUsers } from "@/hooks/useUsers";
 import { useUserAuth } from "@/hooks/useUserAuth";
 import { User } from "@/types";
 import { formatRole, paginateItems } from "@/lib/utils";
+import Navbar from "../nav/Navbar";
 
 interface NewAdmin {
   fullName: string;
@@ -279,28 +280,16 @@ const UserList = () => {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
+       <div className="flex-1 md:mt-0">
+                    <div className = "mb-4"><Navbar /></div>
+                    
       {loading && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-[#2E2D2D] to-[#2E2D2D]/90">
           <img src="/loader.gif" alt="Loading..." className="h-20 w-20" />
         </div>
       )}
-      <div className="flex-1 p-4 md:p-6 mt-16 md:mt-0 overflow-x-hidden">
-        <div className="mb-6">
-          <h1 className="text-[#363636] text-xl md:text-2xl font-bold">
-            Hi, {user?.firstName} {user?.lastName}
-          </h1>
-          <p className="text-gray-500 text-sm md:text-base">
-            {new Date().toLocaleString("en-US", {
-              month: "long",
-              day: "numeric",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: true,
-            })}
-          </p>
-        </div>
-
+    <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
+    
         <div className="mb-6">
           <h2 className="text-[#363636] text-lg md:text-xl font-semibold">
             {formatRole(user?.role)}
@@ -973,6 +962,7 @@ const UserList = () => {
           )}
 
         </div>
+      </main>
       </div>
     </div>
   );

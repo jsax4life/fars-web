@@ -9,6 +9,7 @@ import { useUserAuth } from "@/hooks/useUserAuth";
 import { paginateItems } from "@/lib/utils";
 import { toast } from "react-toastify";
 import WordEditor from "../utility/TextEditor";
+import Navbar from "../nav/Navbar";
 
 interface Client {
   id: string;
@@ -301,23 +302,11 @@ const filteredUsers = paginateItems(
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-
+<div className="flex-1  mt-16 md:mt-0">
+        <div className = " "><Navbar /></div>
+        
       <div className="flex-1 p-4 md:p-6 mt-16 md:mt-0 overflow-x-hidden">
-        <div className="mb-6">
-          <h1 className="text-[#363636] text-xl md:text-2xl font-bold">
-            Hi, {user?.firstName || "User"}
-          </h1>
-          <p className="text-gray-500 text-sm md:text-base">
-            {new Date().toLocaleString("en-US", {
-              month: "long",
-              day: "numeric",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: true,
-            })}
-          </p>
-        </div>
+       
 
         <div className="mb-6">
           <h2 className="text-[#363636] text-lg md:text-xl font-semibold">
@@ -797,6 +786,7 @@ const filteredUsers = paginateItems(
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 };

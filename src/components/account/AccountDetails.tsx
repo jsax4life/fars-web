@@ -11,6 +11,7 @@ import Modal from "@/components/utility/Modal";
 import { PlusIcon } from "@heroicons/react/20/solid";
 import Image from "next/image";
 import RateAdjustmentForm from "./RateAdjustment";
+import Navbar from "../nav/Navbar";
 
 // Dummy user data for the dropdown
 const users = [
@@ -108,7 +109,7 @@ interface AssignedUser {
     avatar: string;
 }
 
-type AnalysisType = "CMF" | "ST Loan" | "LT Loan" | "Interest" | "Debit" | "Credit" | "Collateral" | "Fees" | null;
+// type AnalysisType = "CMF" | "ST Loan" | "LT Loan" | "Interest" | "Debit" | "Credit" | "Collateral" | "Fees" | null;
 
 const AccountDetails = () => {
     const [activeTab, setActiveTab] = useState("Entry");
@@ -142,68 +143,68 @@ const AccountDetails = () => {
         { no: "2", src: "System B", class: "Mismatch", transDate: "08-05-2025", transactionDescription: "Transaction Ref 456", tellerNo: "PQR678", cheque: "2002", debit: "750.00", credit: "0.00", balance: "8,750.00" },
     ];
 
-    // Analysis data
-    const cmfAnalysisData = [
-        { id: "1", date: "2023-01-01", description: "CMF Charge", amount: "1,500.00", rate: "0.5%", calculated: "750.00", status: "Applied" },
-        { id: "2", date: "2023-01-15", description: "CMF Adjustment", amount: "1,500.00", rate: "0.5%", calculated: "750.00", status: "Pending" },
-    ];
+    // // Analysis data
+    // const cmfAnalysisData = [
+    //     { id: "1", date: "2023-01-01", description: "CMF Charge", amount: "1,500.00", rate: "0.5%", calculated: "750.00", status: "Applied" },
+    //     { id: "2", date: "2023-01-15", description: "CMF Adjustment", amount: "1,500.00", rate: "0.5%", calculated: "750.00", status: "Pending" },
+    // ];
 
-    const stLoanAnalysisData = [
-        { id: "1", date: "2023-01-01", principal: "50,000.00", interestRate: "10%", days: "30", interest: "416.67", status: "Paid" },
-        { id: "2", date: "2023-02-01", principal: "50,000.00", interestRate: "10%", days: "28", interest: "388.89", status: "Pending" },
-    ];
+    // const stLoanAnalysisData = [
+    //     { id: "1", date: "2023-01-01", principal: "50,000.00", interestRate: "10%", days: "30", interest: "416.67", status: "Paid" },
+    //     { id: "2", date: "2023-02-01", principal: "50,000.00", interestRate: "10%", days: "28", interest: "388.89", status: "Pending" },
+    // ];
 
-    const ltLoanAnalysisData = [
-        { id: "1", date: "2023-01-01", principal: "500,000.00", interestRate: "12%", term: "12 months", monthlyPayment: "44,432.90", remaining: "400,000.00" },
-        { id: "2", date: "2023-02-01", principal: "500,000.00", interestRate: "12%", term: "11 months", monthlyPayment: "44,432.90", remaining: "355,567.10" },
-    ];
+    // const ltLoanAnalysisData = [
+    //     { id: "1", date: "2023-01-01", principal: "500,000.00", interestRate: "12%", term: "12 months", monthlyPayment: "44,432.90", remaining: "400,000.00" },
+    //     { id: "2", date: "2023-02-01", principal: "500,000.00", interestRate: "12%", term: "11 months", monthlyPayment: "44,432.90", remaining: "355,567.10" },
+    // ];
 
-    const interestAnalysisData = [
-        { id: "1", period: "Jan 2023", creditBalance: "100,000.00", debitBalance: "50,000.00", interestRate: "5%", creditInterest: "416.67", debitInterest: "208.33", netInterest: "208.34" },
-        { id: "2", period: "Feb 2023", creditBalance: "120,000.00", debitBalance: "40,000.00", interestRate: "5%", creditInterest: "500.00", debitInterest: "166.67", netInterest: "333.33" },
-    ];
+    // const interestAnalysisData = [
+    //     { id: "1", period: "Jan 2023", creditBalance: "100,000.00", debitBalance: "50,000.00", interestRate: "5%", creditInterest: "416.67", debitInterest: "208.33", netInterest: "208.34" },
+    //     { id: "2", period: "Feb 2023", creditBalance: "120,000.00", debitBalance: "40,000.00", interestRate: "5%", creditInterest: "500.00", debitInterest: "166.67", netInterest: "333.33" },
+    // ];
 
-    const debitAnalysisData = [
-        { id: "1", date: "2023-01-05", description: "Overdraft Charge", amount: "10,000.00", days: "5", rate: "0.05%", interest: "25.00" },
-        { id: "2", date: "2023-01-12", description: "Overdraft Charge", amount: "15,000.00", days: "3", rate: "0.05%", interest: "22.50" },
-    ];
+    // const debitAnalysisData = [
+    //     { id: "1", date: "2023-01-05", description: "Overdraft Charge", amount: "10,000.00", days: "5", rate: "0.05%", interest: "25.00" },
+    //     { id: "2", date: "2023-01-12", description: "Overdraft Charge", amount: "15,000.00", days: "3", rate: "0.05%", interest: "22.50" },
+    // ];
 
-    const creditAnalysisData = [
-        { id: "1", date: "2023-01-31", description: "Credit Interest", balance: "100,000.00", days: "31", rate: "5%", interest: "424.66" },
-        { id: "2", date: "2023-02-28", description: "Credit Interest", balance: "120,000.00", days: "28", rate: "5%", interest: "460.27" },
-    ];
+    // const creditAnalysisData = [
+    //     { id: "1", date: "2023-01-31", description: "Credit Interest", balance: "100,000.00", days: "31", rate: "5%", interest: "424.66" },
+    //     { id: "2", date: "2023-02-28", description: "Credit Interest", balance: "120,000.00", days: "28", rate: "5%", interest: "460.27" },
+    // ];
 
-    const collateralAnalysisData = [
-        { id: "1", date: "2023-01-01", description: "Cash Collateral", amount: "50,000.00", coverage: "125%", required: "40,000.00", status: "Adequate" },
-        { id: "2", date: "2023-02-01", description: "Cash Collateral", amount: "45,000.00", coverage: "112.5%", required: "40,000.00", status: "Adequate" },
-    ];
+    // const collateralAnalysisData = [
+    //     { id: "1", date: "2023-01-01", description: "Cash Collateral", amount: "50,000.00", coverage: "125%", required: "40,000.00", status: "Adequate" },
+    //     { id: "2", date: "2023-02-01", description: "Cash Collateral", amount: "45,000.00", coverage: "112.5%", required: "40,000.00", status: "Adequate" },
+    // ];
 
-    const feesAnalysisData = [
-        { id: "1", date: "2023-01-05", description: "Account Maintenance", amount: "1,000.00", frequency: "Monthly", status: "Applied" },
-        { id: "2", date: "2023-01-15", description: "Wire Transfer Fee", amount: "500.00", frequency: "Per Transaction", status: "Applied" },
-    ];
+    // const feesAnalysisData = [
+    //     { id: "1", date: "2023-01-05", description: "Account Maintenance", amount: "1,000.00", frequency: "Monthly", status: "Applied" },
+    //     { id: "2", date: "2023-01-15", description: "Wire Transfer Fee", amount: "500.00", frequency: "Per Transaction", status: "Applied" },
+    // ];
 
     // Summary data for debit/credit analysis
-    const debitCreditSummaryData = [
-        { category: "Total Debit Interest", amount: "47.50" },
-        { category: "Total Credit Interest", amount: "884.93" },
-        { category: "Net Interest", amount: "837.43" },
-    ];
-      const summarizedTransactions: Transaction[] = [
-        { no: "1", src: "System A", class: "Match", transDate: "07-05-2025", transactionDescription: "Transaction ID 123", tellerNo: "MNO345", cheque: "N/A", debit: "1,500.00", credit: "1,500.00", balance: "9,500.00" },
-        { no: "2", src: "System B", class: "Mismatch", transDate: "08-05-2025", transactionDescription: "Transaction Ref 456", tellerNo: "PQR678", cheque: "2002", debit: "750.00", credit: "0.00", balance: "8,750.00" },
-        // ... more trans matched data
-    ];
+    // const debitCreditSummaryData = [
+    //     { category: "Total Debit Interest", amount: "47.50" },
+    //     { category: "Total Credit Interest", amount: "884.93" },
+    //     { category: "Net Interest", amount: "837.43" },
+    // ];
+    //   const summarizedTransactions: Transaction[] = [
+    //     { no: "1", src: "System A", class: "Match", transDate: "07-05-2025", transactionDescription: "Transaction ID 123", tellerNo: "MNO345", cheque: "N/A", debit: "1,500.00", credit: "1,500.00", balance: "9,500.00" },
+    //     { no: "2", src: "System B", class: "Mismatch", transDate: "08-05-2025", transactionDescription: "Transaction Ref 456", tellerNo: "PQR678", cheque: "2002", debit: "750.00", credit: "0.00", balance: "8,750.00" },
+    //     // ... more trans matched data
+    // ];
     const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
     const [previewDocumentUrl, setPreviewDocumentUrl] = useState<string | null>(null);
     const [isUserListOpen, setIsUserListOpen] = useState(false);
     const [assignedUsers, setAssignedUsers] = useState<AssignedUser[]>([]);
     const [isUploadDropdownOpen, setIsUploadDropdownOpen] = useState(false);
-    const [isAnalysisDropdownOpen, setIsAnalysisDropdownOpen] = useState(false);
+    // const [isAnalysisDropdownOpen, setIsAnalysisDropdownOpen] = useState(false);
     const [formData, setFormData] = useState<FormData>({});
     const [step, setStep] = useState<number>(1);
     const [uploadType, setUploadType] = useState<"cashbook" | "bankstatement" | null>(null);
-    const [analysisType, setAnalysisType] = useState<AnalysisType>(null);
+    // const [analysisType, setAnalysisType] = useState<AnalysisType>(null);
     const [isQueryModalOpen, setIsQueryModalOpen] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [modalFormData, setModalFormData] = useState<ModalFormData>({
@@ -286,9 +287,7 @@ const AccountDetails = () => {
 
     const handleTabChange = (tab: string) => {
         setActiveTab(tab);
-        if (tab !== "Analysis") {
-            setAnalysisType(null);
-        }
+      
     };
 
     const getTableDataAndHeaders = () => {
@@ -323,14 +322,14 @@ const AccountDetails = () => {
                     data: queryTransactions,
                     title: "Query Results"
                 };
-            case "Analysis":
-                return getAnalysisTableData();
-            case "Summary":
-                return {
-                    headers: ["No.", "Category", "Amount"],
-                    data: summarizedTransactions,
-                    title: "Summary"
-                };
+            // case "Analysis":
+            //     return getAnalysisTableData();
+            // case "Summary":
+            //     return {
+            //         headers: ["No.", "Category", "Amount"],
+            //         data: summarizedTransactions,
+            //         title: "Summary"
+            //     };
             default: // "Entry"
                 return {
                     headers: ["S/N", "Date", "Account Name", "Account Number", "Account Type", "Symbol", "Bank Name", "Bank Address"],
@@ -340,74 +339,74 @@ const AccountDetails = () => {
         }
     };
 
-    const getAnalysisTableData = () => {
-        if (!analysisType) return { headers: [], data: [], title: "Analysis" };
+    // const getAnalysisTableData = () => {
+    //     if (!analysisType) return { headers: [], data: [], title: "Analysis" };
 
-        switch (analysisType) {
-            case "CMF":
-                return {
-                    headers: ["ID", "Date", "Description", "Amount", "Rate", "Calculated", "Status"],
-                    data: cmfAnalysisData,
-                    title: "CMF Analysis",
-                    showSummary: false
-                };
-            case "ST Loan":
-                return {
-                    headers: ["ID", "Date", "Principal", "Interest Rate", "Days", "Interest", "Status"],
-                    data: stLoanAnalysisData,
-                    title: "Short Term Loan Analysis",
-                    showSummary: false
-                };
-            case "LT Loan":
-                return {
-                    headers: ["ID", "Date", "Principal", "Interest Rate", "Term", "Monthly Payment", "Remaining"],
-                    data: ltLoanAnalysisData,
-                    title: "Long Term Loan Analysis",
-                    showSummary: false
-                };
-            case "Interest":
-                return {
-                    headers: ["ID", "Period", "Credit Balance", "Debit Balance", "Interest Rate", "Credit Interest", "Debit Interest", "Net Interest"],
-                    data: interestAnalysisData,
-                    title: "Interest Analysis",
-                    showSummary: false
-                };
-            case "Debit":
-                return {
-                    headers: ["ID", "Date", "Description", "Amount", "Days", "Rate", "Interest"],
-                    data: debitAnalysisData,
-                    title: "Debit Interest Analysis",
-                    showSummary: true,
-                    summaryData: debitCreditSummaryData,
-                    summaryTitle: "Debit Interest Summary"
-                };
-            case "Credit":
-                return {
-                    headers: ["ID", "Date", "Description", "Balance", "Days", "Rate", "Interest"],
-                    data: creditAnalysisData,
-                    title: "Credit Interest Analysis",
-                    showSummary: true,
-                    summaryData: debitCreditSummaryData,
-                    summaryTitle: "Credit Interest Summary"
-                };
-            case "Collateral":
-                return {
-                    headers: ["ID", "Date", "Description", "Amount", "Coverage", "Required", "Status"],
-                    data: collateralAnalysisData,
-                    title: "Collateral Analysis",
-                    showSummary: false
-                };
-            case "Fees":
-                return {
-                    headers: ["ID", "Date", "Description", "Amount", "Frequency", "Status"],
-                    data: feesAnalysisData,
-                    title: "Fees Analysis",
-                    showSummary: false
-                };
-            default:
-                return { headers: [], data: [], title: "Analysis" };
-        }
-    };
+    //     switch (analysisType) {
+    //         case "CMF":
+    //             return {
+    //                 headers: ["ID", "Date", "Description", "Amount", "Rate", "Calculated", "Status"],
+    //                 data: cmfAnalysisData,
+    //                 title: "CMF Analysis",
+    //                 showSummary: false
+    //             };
+    //         case "ST Loan":
+    //             return {
+    //                 headers: ["ID", "Date", "Principal", "Interest Rate", "Days", "Interest", "Status"],
+    //                 data: stLoanAnalysisData,
+    //                 title: "Short Term Loan Analysis",
+    //                 showSummary: false
+    //             };
+    //         case "LT Loan":
+    //             return {
+    //                 headers: ["ID", "Date", "Principal", "Interest Rate", "Term", "Monthly Payment", "Remaining"],
+    //                 data: ltLoanAnalysisData,
+    //                 title: "Long Term Loan Analysis",
+    //                 showSummary: false
+    //             };
+    //         case "Interest":
+    //             return {
+    //                 headers: ["ID", "Period", "Credit Balance", "Debit Balance", "Interest Rate", "Credit Interest", "Debit Interest", "Net Interest"],
+    //                 data: interestAnalysisData,
+    //                 title: "Interest Analysis",
+    //                 showSummary: false
+    //             };
+    //         case "Debit":
+    //             return {
+    //                 headers: ["ID", "Date", "Description", "Amount", "Days", "Rate", "Interest"],
+    //                 data: debitAnalysisData,
+    //                 title: "Debit Interest Analysis",
+    //                 showSummary: true,
+    //                 summaryData: debitCreditSummaryData,
+    //                 summaryTitle: "Debit Interest Summary"
+    //             };
+    //         case "Credit":
+    //             return {
+    //                 headers: ["ID", "Date", "Description", "Balance", "Days", "Rate", "Interest"],
+    //                 data: creditAnalysisData,
+    //                 title: "Credit Interest Analysis",
+    //                 showSummary: true,
+    //                 summaryData: debitCreditSummaryData,
+    //                 summaryTitle: "Credit Interest Summary"
+    //             };
+    //         case "Collateral":
+    //             return {
+    //                 headers: ["ID", "Date", "Description", "Amount", "Coverage", "Required", "Status"],
+    //                 data: collateralAnalysisData,
+    //                 title: "Collateral Analysis",
+    //                 showSummary: false
+    //             };
+    //         case "Fees":
+    //             return {
+    //                 headers: ["ID", "Date", "Description", "Amount", "Frequency", "Status"],
+    //                 data: feesAnalysisData,
+    //                 title: "Fees Analysis",
+    //                 showSummary: false
+    //             };
+    //         default:
+    //             return { headers: [], data: [], title: "Analysis" };
+    //     }
+    // };
 
     const { headers, data, title } = getTableDataAndHeaders();
 
@@ -415,9 +414,9 @@ const AccountDetails = () => {
         setIsUploadDropdownOpen(!isUploadDropdownOpen);
     };
 
-    const handleUploadAnalysisClick = () => {
-        setIsAnalysisDropdownOpen(!isAnalysisDropdownOpen);
-    };
+    // const handleUploadAnalysisClick = () => {
+    //     setIsAnalysisDropdownOpen(!isAnalysisDropdownOpen);
+    // };
 
     const handleUploadOptionClick = (type: "cashbook" | "bankstatement") => {
         setUploadType(type);
@@ -425,11 +424,11 @@ const AccountDetails = () => {
         alert(`Initiating upload for ${type}`);
     };
 
-    const handleAnalyzeOptionClick = (type: AnalysisType) => {
-        setAnalysisType(type);
-        setIsAnalysisDropdownOpen(false);
-        setActiveTab("Analysis");
-    };
+    // const handleAnalyzeOptionClick = (type: AnalysisType) => {
+    //     setAnalysisType(type);
+    //     setIsAnalysisDropdownOpen(false);
+    //     setActiveTab("Analysis");
+    // };
 
     const handleFilePreview = (filename: string) => {
         setPreviewDocumentUrl("/pdf-placeholder.pdf");
@@ -476,10 +475,9 @@ const AccountDetails = () => {
             <div className="hidden md:block fixed h-full w-64">
                 <Sidebar />
             </div>
-
-            <div className="md:hidden bg-white shadow-sm p-4 flex items-center">
-                <h1 className="text-xl font-semibold">Account</h1>
-            </div>
+<div className="flex-1  mt-16 md:mt-0">
+        <div className = "md:ml-64 "><Navbar /></div>
+        
 
             <div className="flex-1 md:ml-64 overflow-auto mt-16 md:mt-0">
                 <div className="bg-gray-100 min-h-full p-4 md:p-6">
@@ -548,7 +546,7 @@ const AccountDetails = () => {
                             </div>
                         </div>
 
-                        {activeTab === "Analysis" && (
+                        {/* {activeTab === "Analysis" && (
                             <div className="flex justify-end mb-4">
                                 <div className="relative">
                                     <button
@@ -611,7 +609,7 @@ const AccountDetails = () => {
                                     )}
                                 </div>
                             </div>
-                        )}
+                        )} */}
 
                         <AccountInformation />
 
@@ -677,7 +675,7 @@ const AccountDetails = () => {
                                 >
                                     Query
                                 </button>
-                                <button
+                                {/* <button
                                     onClick={() => handleTabChange("Analysis")}
                                     className={`py-2 px-3 md:px-4 -mb-px font-semibold text-sm ${
                                         activeTab === "Analysis"
@@ -696,7 +694,7 @@ const AccountDetails = () => {
                                         } focus:outline-none`}
                                 >
                                     Summary
-                                </button>
+                                </button> */}
                             </div>
                         </div>
 
@@ -958,6 +956,7 @@ const AccountDetails = () => {
                     </div>
                         )}
         </div>
+         </div>
     );
 };
 
