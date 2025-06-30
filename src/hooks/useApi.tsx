@@ -104,7 +104,7 @@ export const useApi = () => {
                     console.warn("Token expired. Please log in again.");
                     updateToken(null); // Clear token on error
                     //navigate to /
-                    window.location.href = "/"; // Redirect to login page
+                    if (token) window.location.href = "/"; // Redirect to login page
                 }
                 throw new Error(result.message || response.statusText);
             }
