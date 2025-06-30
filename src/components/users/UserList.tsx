@@ -45,7 +45,9 @@ const UserList = () => {
     reason: "",
   });
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-
+  const actionButtonRefs = useRef<{ [key: string]: HTMLButtonElement | null }>(
+    {}
+  );
   // Action menu state
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   const [selectedUserForAction, setSelectedUserForAction] = useState<User | null>(null);
@@ -100,7 +102,34 @@ const UserList = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+  const getPopupPosition = () => {
+    if (!selectedUserForAction?.id || !actionButtonRefs.current[selectedUserForAction.id]) {
+      return { top: 0, left: 0 };
+    }
 
+    const button = actionButtonRefs.current[selectedUserForAction.id];
+    if (!button) return { top: 0, left: 0 };
+
+    const rect = button.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    
+    // Calculate left position to prevent going off-screen
+    let left = rect.left + window.scrollX;
+    
+    // If the menu would go off the right side of the screen
+    if (left + 192 > viewportWidth) { // 192px is the width of the menu (48rem)
+      left = viewportWidth - 200; // Give some padding
+    }
+    // If the menu would go off the left side of the screen
+    else if (left < 0) {
+      left = 8; // Give some padding
+    }
+
+    return {
+      top: rect.bottom + window.scrollY,
+      left: left,
+    };
+  };
   const handleRoleChange = (userId: string, newRole: string) => {
     setLoading(true)
     updateUser(userId, { role: newRole.toUpperCase() }).then(() => {
@@ -122,6 +151,21 @@ const UserList = () => {
     const { name, value } = e.target;
     setDeactivationReason({ ...deactivationReason, [name]: value });
   };
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        actionMenuRef.current &&
+        !actionMenuRef.current.contains(event.target as Node)
+      ) {
+        closeActionMenu();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const openActionMenu = (user: User, event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
@@ -442,29 +486,37 @@ const UserList = () => {
                       {new Date(user.createdAt).toLocaleString()}
                     </td>
                     <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 relative">
-                      <button
-                        ref={actionButtonRef}
-                        className="focus:outline-none"
-                        onClick={(e) => openActionMenu(user, e)}
-                      >
-                        <img
-                          src="/Users/action.svg"
-                          alt="Dropdown Icon"
-                          className="w-4 h-4 md:w-5 md:h-5"
-                        />
-                      </button>
+                     <button
+                           ref={(el: HTMLButtonElement | null) => {
+    if (el) {
+      actionButtonRefs.current[user.id] = el;
+    } else {
+      delete actionButtonRefs.current[user.id];
+    }
+  }}
+                          className="focus:outline-none"
+                          onClick={(e) => openActionMenu(user, e)}
+                        >
+                          <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
+                          </svg>
+                        </button>
 
                       {/* Action Popup */}
-                      {isActionMenuOpen && selectedUserForAction?.id === user.id && (
-                        <div
-                          ref={actionMenuRef}
-                          className="absolute right-0 z-5000 mt-2 w-40 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5"
-                        >
-                          <div className="py-1">
-                            <button
-                              onClick={() => openViewModal(user)}
-                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
-                            >
+                       {isActionMenuOpen && selectedUserForAction && (
+        <div
+          ref={actionMenuRef}
+          className="fixed z-50 mt-1 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5"
+          style={{
+            top: `${getPopupPosition().top}px`,
+            left: `${getPopupPosition().left}px`,
+          }}
+        >
+          <div className="py-1">
+            <button
+              onClick={() => openViewModal(selectedUserForAction)}
+              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+            >
                               View
                             </button>
                             <button
