@@ -35,7 +35,14 @@ const Endpoints = {
     getAllBankAccounts: '/api/bank-accounts',
     getBankAccountById: '/api/bank-accounts/',
     updateBankAccountById: '/api/bank-accounts/',
-    deleteBankAccountById: '/api/bank-accounts/'
+    deleteBankAccountById: '/api/bank-accounts/',
+
+    //Bank Endpoints
+    createBank: '/api/banks',
+    getAllBanks: '/api/banks',
+    getBankById: '/api/banks/',
+    updateBankById: '/api/banks/',
+    deleteBankById: '/api/banks/'
 };
 
 export default Endpoints;
