@@ -25,12 +25,7 @@ export const useBanks = () => {
         }
     }
 
-    const createBank = async (data: {
-        name: string,
-        accountNumber: string,
-        branch: string,
-        swiftCode?: string
-    }) => {
+    const createBank = async (data: any) => {
         try {
             const response = await api.post(Endpoints.createBank, data)
             toast.success('Bank created successfully!');

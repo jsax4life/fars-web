@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import Sidebar from "../utility/Sidebar";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -28,10 +34,10 @@ interface User {
 }
 
 interface NewBank {
-  bankName: string;
+  name: string;
   email: string;
   officer: string;
-  swift: string;
+  code: string;
   street: string;
   city: string;
   state: string;
@@ -41,22 +47,14 @@ interface NewBank {
   fax: string;
 }
 
-interface Bank {
-  firstName: string;
-  lastName: string;
-  companyName: string;
-  email: string;
-  phone: string;
-  address: string;
-  city: string;
-  state: string;
-  country: string;
-}
-
 const BankList = () => {
   const router = useRouter();
   const bank = useBanks();
   const [users, setUsers] = useState<User[]>([]);
+
+  // Loading and submission states
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
 
   // Search and Pagination state
   const [searchQuery, setSearchQuery] = useState("");
@@ -66,10 +64,10 @@ const BankList = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [newBank, setNewBank] = useState<NewBank>({
-    bankName: "",
+    name: "",
     email: "",
     officer: "",
-    swift: "",
+    code: "",
     street: "",
     city: "",
     state: "",
@@ -85,20 +83,25 @@ const BankList = () => {
   );
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportingUser, setReportingUser] = useState<User | null>(null);
-  const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
-  const [showDeactivateForm, setShowDeactivateForm] = useState(false);
   const [deactivationReason, setDeactivationReason] = useState({
     title: "",
     message: "",
   });
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+
+  // View and Edit Modal State
   const [showViewModal, setShowViewModal] = useState(false);
   const [viewedUser, setViewedUser] = useState<User | null>(null);
+  const [editableUser, setEditableUser] = useState<User | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   const actionMenuRef = useRef<HTMLDivElement>(null);
   const actionButtonRefs = useRef<{ [key: string]: HTMLButtonElement | null }>(
     {}
   );
+
+  // Delete confirmation state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -107,51 +110,57 @@ const BankList = () => {
     setNewBank({ ...newBank, [name]: value });
   };
 
-  // Search handler
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
-    setCurrentPage(1); // Reset to first page on new search
+    setCurrentPage(1);
   };
 
-  const handleDeactivationInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setDeactivationReason({ ...deactivationReason, [name]: value });
-  };
 
-  const handleCreateUser = () => {
-    setShowCreateModal(false);
-    setShowSuccessModal(true);
-    setNewBank({
-      bankName: "",
-      email: "",
-      officer: "",
-      swift: "",
-      street: "",
-      city: "",
-      state: "",
-      country: "",
-      zip: "",
-      phone: "",
-      fax: "",
-    });
+  // --- Handle Create Bank ---
+  const handleCreateUser = async () => {
+    // Prevent multiple submissions
+    if (isCreating) return;
+
+    setIsCreating(true);
+    try {
+      // NOTE: Ensure your useBanks() hook has a `createBank` method.
+      const createdBank = await bank.createBank(newBank);
+      if (createdBank) {
+        // Add new bank to the top of the list for immediate visibility
+        setUsers((prevUsers) => [createdBank, ...prevUsers]);
+
+        setShowCreateModal(false);
+        setShowSuccessModal(true); // Optionally show a success message
+        // Reset form
+        setNewBank({
+          name: "",
+          email: "",
+          officer: "",
+          code: "",
+          street: "",
+          city: "",
+          state: "",
+          country: "",
+          zip: "",
+          phone: "",
+          fax: "",
+        });
+      } else {
+        // Handle case where creation fails silently
+        console.error("Bank creation returned no data.");
+        // Optionally, show an error toast to the user here
+      }
+    } catch (error) {
+      console.error("Error creating bank:", error);
+      // Optionally, show an error toast to the user here
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const closeActionMenu = () => {
     setIsActionMenuOpen(false);
     setSelectedUserForAction(null);
-  };
-
-  const handleDeactivateUser = (userId: string) => {
-    setSelectedUserId(userId);
-    setShowDeactivateConfirm(true);
-    closeActionMenu();
-  };
-
-  const handleViewUser = (user: User) => {
-    console.log("Viewing user:", user);
-    closeActionMenu();
   };
 
   useEffect(() => {
@@ -201,38 +210,66 @@ const BankList = () => {
     };
   };
 
-  const handleDeleteUser = (userId: string) => {
-    console.log("Deleting user:", userId);
-    setUsers(users.filter((user) => user.id !== userId));
+  // --- Delete Flow ---
+  const handleDeleteClick = (userId: string) => {
+    setDeletingUserId(userId);
+    setShowDeleteConfirm(true);
     closeActionMenu();
   };
 
-  const handleConfirmDeactivate = () => {
-    setShowDeactivateConfirm(false);
-    setShowDeactivateForm(true);
-  };
-
-  const handleSubmitDeactivation = () => {
-    if (selectedUserId) {
-      setUsers(
-        users.map((user) =>
-          user.id === selectedUserId ? { ...user, action: "Inactive" } : user
-        )
-      );
+  const confirmDelete = () => {
+    if (deletingUserId) {
+      bank.deleteBank(deletingUserId).then((response) => {
+        if (response) {
+          console.log("Deleting user:", deletingUserId);
+          setUsers(users.filter((user) => user.id !== deletingUserId));
+          setShowDeleteConfirm(false);
+          setDeletingUserId(null);
+        } else {
+          console.error("Failed to delete bank");
+        }
+      }).catch((error) => {
+        console.error("Error deleting bank:", error);
+        // Optionally show an error toast to the user
+      });
     }
-
-    setShowDeactivateForm(false);
-    setShowSuccessModal(true);
-    setDeactivationReason({
-      title: "",
-      message: "",
-    });
   };
 
+  // --- Modal Logic ---
   const openViewModal = (user: User) => {
     setViewedUser(user);
+    setEditableUser({ ...user }); // Create a copy for editing
     setShowViewModal(true);
+    setIsEditMode(false); // Always start in view mode
     closeActionMenu();
+  };
+
+  const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (editableUser) {
+      const { name, value } = e.target;
+      setEditableUser({ ...editableUser, [name]: value });
+    }
+  };
+
+  const handleSaveChanges = () => {
+    if (editableUser) {
+      bank.updateBank(editableUser.id, editableUser).then((response) => {
+        if (response) {
+          // Update the main users list
+          setUsers(
+            users.map((user) =>
+              user.id === editableUser.id ? editableUser : user
+            )
+          );
+          // Update the user being viewed in the modal
+          setViewedUser(editableUser);
+          // Exit edit mode
+          setIsEditMode(false);
+        }
+      }).catch((error) => {
+        console.error("Error updating user:", error);
+      })
+    }
   };
 
   const handleCreateReportClick = (user: User) => {
@@ -262,12 +299,13 @@ const BankList = () => {
     closeActionMenu();
   };
 
+  // --- Fetch Initial Data ---
   useEffect(() => {
+    setIsLoading(true);
     bank
       .getBanks()
       .then((response) => {
         if (response) {
-          // console.log("Fetched banks:", response);
           setUsers(response);
         } else {
           console.error("Failed to fetch banks");
@@ -275,10 +313,12 @@ const BankList = () => {
       })
       .catch((error) => {
         console.error("Error fetching banks:", error);
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
-  }, []);
+  }, []); // Dependency on `bank` object from the hook
 
-  // Filtered users for search
   const filteredUsers = useMemo(() => {
     const query = searchQuery.toLowerCase();
     if (!query) {
@@ -293,7 +333,6 @@ const BankList = () => {
     );
   }, [users, searchQuery]);
 
-  // Pagination logic on filtered data
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
@@ -404,107 +443,115 @@ const BankList = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {currentItems.map((user, index) => (
-                  <tr key={user.id} className="relative">
-                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
-                      {indexOfFirstItem + index + 1}
-                    </td>
-                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
-                      {user.name}
-                    </td>
-                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
-                      {user.email || "N/A"}
-                    </td>
-                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 truncate max-w-[120px]">
-                      {user.officer || "N/A"}
-                    </td>
-                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
-                      {user.code || "N/A"}
-                    </td>
-                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
-                      {user.street || "N/A"}
-                    </td>
-                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
-                      {user.city || "N/A"}
-                    </td>
-                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
-                      {user.state || "N/A"}
-                    </td>
-                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
-                      {user.country || "N/A"}
-                    </td>
-                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
-                      {user.zip || "N/A"}
-                    </td>
-                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
-                      {user.phone || "N/A"}
-                    </td>
-                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
-                      {user.fax || "N/A"}
-                    </td>
-                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
-                      {formatDate(user.createdAt) || "N/A"}
-                    </td>
-                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 relative">
-                      <button
-                        ref={(el) => {
-                          if (user.id) actionButtonRefs.current[user.id] = el;
-                        }}
-                        className="focus:outline-none"
-                        onClick={(e) => openActionMenu(user, e)}
-                      >
-                        <img
-                          src="/Users/action.svg"
-                          alt="Dropdown Icon"
-                          className="w-4 h-4 md:w-5 md:h-5"
-                        />
-                      </button>
-                      {isActionMenuOpen &&
-                        selectedUserForAction?.id === user.id && (
-                          <div
-                            ref={actionMenuRef}
-                            className="fixed z-50 bg-white rounded-md shadow-lg"
-                            style={{
-                              top: `${getPopupPosition().top}px`,
-                              left: `${getPopupPosition().left}px`,
-                            }}
-                          >
-                            <div className="py-1">
-                              <button
-                                onClick={() => openViewModal(user)}
-                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
-                              >
-                                View Bank Details
-                              </button>
-                              {user.report ? (
-                                <button
-                                  onClick={() => handleViewReportClick(user)}
-                                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
-                                >
-                                  View Report
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={() =>
-                                    handleCreateReportClick(user)
-                                  }
-                                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                                >
-                                  Create Report
-                                </button>
-                              )}
-                              <button
-                                onClick={() => handleDeleteUser(user.id)}
-                                className="block px-4 py-2 text-sm text-gray-700 border-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </div>
-                        )}
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={14} className="px-6 py-4 text-center text-gray-500">
+                      Loading...
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  currentItems.map((user, index) => (
+                    <tr key={user.id} className="relative">
+                      <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
+                        {indexOfFirstItem + index + 1}
+                      </td>
+                      <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
+                        {user.name}
+                      </td>
+                      <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
+                        {user.email || "N/A"}
+                      </td>
+                      <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 truncate max-w-[120px]">
+                        {user.officer || "N/A"}
+                      </td>
+                      <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
+                        {user.code || "N/A"}
+                      </td>
+                      <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
+                        {user.street || "N/A"}
+                      </td>
+                      <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
+                        {user.city || "N/A"}
+                      </td>
+                      <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
+                        {user.state || "N/A"}
+                      </td>
+                      <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
+                        {user.country || "N/A"}
+                      </td>
+                      <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
+                        {user.zip || "N/A"}
+                      </td>
+                      <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
+                        {user.phone || "N/A"}
+                      </td>
+                      <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
+                        {user.fax || "N/A"}
+                      </td>
+                      <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
+                        {formatDate(user.createdAt) || "N/A"}
+                      </td>
+                      <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 relative">
+                        <button
+                          ref={(el) => {
+                            if (user.id) actionButtonRefs.current[user.id] = el;
+                          }}
+                          className="focus:outline-none"
+                          onClick={(e) => openActionMenu(user, e)}
+                        >
+                          <img
+                            src="/Users/action.svg"
+                            alt="Dropdown Icon"
+                            className="w-4 h-4 md:w-5 md:h-5"
+                          />
+                        </button>
+                        {isActionMenuOpen &&
+                          selectedUserForAction?.id === user.id && (
+                            <div
+                              ref={actionMenuRef}
+                              className="fixed z-50 bg-white rounded-md shadow-lg"
+                              style={{
+                                top: `${getPopupPosition().top}px`,
+                                left: `${getPopupPosition().left}px`,
+                              }}
+                            >
+                              <div className="py-1">
+                                <button
+                                  onClick={() => openViewModal(user)}
+                                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
+                                >
+                                  View Bank Details
+                                </button>
+                                {user.report ? (
+                                  <button
+                                    onClick={() => handleViewReportClick(user)}
+                                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
+                                  >
+                                    View Report
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() =>
+                                      handleCreateReportClick(user)
+                                    }
+                                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                                  >
+                                    Create Report
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => handleDeleteClick(user.id)}
+                                  className="block px-4 py-2 text-sm text-gray-700 border-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -540,6 +587,7 @@ const BankList = () => {
             </div>
           </div>
 
+          {/* Create Bank Modal */}
           {showCreateModal && (
             <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
@@ -575,8 +623,8 @@ const BankList = () => {
                     </label>
                     <input
                       type="text"
-                      name="bankName"
-                      value={newBank.bankName}
+                      name="name"
+                      value={newBank.name}
                       onChange={handleInputChange}
                       placeholder="Enter Bank Name"
                       className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
@@ -616,8 +664,8 @@ const BankList = () => {
                     </label>
                     <input
                       type="text"
-                      name="swift"
-                      value={newBank.swift}
+                      name="code"
+                      value={newBank.code}
                       onChange={handleInputChange}
                       placeholder="Enter Swift Code"
                       className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
@@ -717,176 +765,24 @@ const BankList = () => {
 
                   <button
                     onClick={handleCreateUser}
-                    className="w-full bg-[#F36F2E] text-white py-2 px-4 rounded-md hover:bg-[#E05C2B] transition-colors"
+                    disabled={isCreating}
+                    className="w-full bg-[#F36F2E] text-white py-2 px-4 rounded-md hover:bg-[#E05C2B] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Create Bank
+                    {isCreating ? "Creating..." : "Create Bank"}
                   </button>
                 </div>
               </div>
             </div>
           )}
 
-          {showReportModal && reportingUser && (
-            <WordEditor
-              onSave={handleSaveReport}
-              onClose={() => {
-                setShowReportModal(false);
-                setReportingUser(null);
-              }}
-              user={{
-                firstName: reportingUser.name,
-                lastName: "",
-                companyName: "",
-                email: reportingUser.email,
-                phone: reportingUser.phone,
-                address: reportingUser.street,
-                city: reportingUser.city,
-                state: reportingUser.state,
-                country: reportingUser.country,
-              }}
-            />
-          )}
-
-          {showDeactivateConfirm && (
-            <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-                <div className="mb-4">
-                  <h3 className="text-lg font-semibold">
-                    Lorem ipsum dolor sit amet consectetur.
-                  </h3>
-                  <p className="text-gray-600 mt-2">
-                    Lectus neque ut vestibulum molestie tincidunt.
-                  </p>
-                </div>
-
-                <div className="flex justify-end space-x-4 mt-6">
-                  <button
-                    onClick={() => setShowDeactivateConfirm(false)}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleConfirmDeactivate}
-                    className="px-4 py-2 bg-[#F36F2E] text-white rounded-md text-sm font-medium hover:bg-[#E05C2B]"
-                  >
-                    Deactivate
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {showDeactivateForm && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold">Deactivation Reason</h3>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Reason Title
-                    </label>
-                    <input
-                      type="text"
-                      name="title"
-                      value={deactivationReason.title}
-                      onChange={handleDeactivationInputChange}
-                      placeholder="Enter Reason Title"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Message
-                    </label>
-                    <textarea
-                      name="message"
-                      value={deactivationReason.message}
-                      onChange={handleDeactivationInputChange}
-                      placeholder="Enter Message Here"
-                      rows={4}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-                    />
-                  </div>
-
-                  <div className="border-t border-gray-200 pt-4 flex justify-end space-x-4">
-                    <button
-                      onClick={() => setShowDeactivateForm(false)}
-                      className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleSubmitDeactivation}
-                      className="px-4 py-2 bg-[#F36F2E] text-white rounded-md text-sm font-medium hover:bg-[#E05C2B]"
-                    >
-                      Send
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Success Modal */}
-          {showSuccessModal && (
-            <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md text-center">
-                <div className="flex justify-end">
-                  <button
-                    onClick={() => setShowSuccessModal(false)}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                </div>
-
-                <div className="mb-4">
-                  <h3 className="text-lg font-semibold text-green-600">
-                    Successful
-                  </h3>
-                  <p className="text-gray-600 mt-2">
-                    Lorem ipsum dolor sit amet consectetur. Tellus pulvinar cras
-                    sed posuere duis. Velit euismod quis sed ut quis.
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => setShowSuccessModal(false)}
-                  className="bg-[#F36F2E] text-white py-2 px-6 rounded-md hover:bg-[#E05C2B] transition-colors"
-                >
-                  Ok
-                </button>
-              </div>
-            </div>
-          )}
-          {showViewModal && viewedUser && (
+          {/* View/Edit Bank Modal */}
+          {showViewModal && editableUser && (
             <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4">
               <div className="bg-gray-50 p-6 rounded-md shadow-md w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                {" "}
-                {/* Added max-h-[90vh] and overflow-y-auto */}
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center">
                     <div className="relative">
                       <div className="w-16 h-16 rounded-full bg-orange-200 flex items-center justify-center overflow-hidden">
-                        {/* Replace with actual bank logo or icon */}
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           fill="none"
@@ -902,29 +798,13 @@ const BankList = () => {
                           />
                         </svg>
                       </div>
-                      <button className="absolute bottom-0 right-0 bg-white rounded-full shadow-sm p-1 text-gray-500 hover:text-gray-700">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-4 w-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M15.232 5.232l-6.585 6.585a2.121 2.121 0 00-1.414.615l-1.93-1.93a2.121 2.121 0 00-.615-1.414l6.585-6.585a2.121 2.121 0 003 0 2.121 2.121 0 000 3zM12 17.768h.008v.008H12v-.008z"
-                          />
-                        </svg>
-                      </button>
                     </div>
                     <div className="ml-4">
                       <h3 className="text-lg font-semibold text-gray-800">
-                        Bank Name Here
+                        {editableUser.name || "Unknown Bank"}
                       </h3>
                       <p className="text-sm text-gray-500">
-                        bank.email@example.com
+                        {editableUser.email || "No Email"}
                       </p>
                     </div>
                   </div>
@@ -953,41 +833,50 @@ const BankList = () => {
                       </h4>
                     </div>
                     <p className="text-xs text-gray-500 md:mt-1">
-                      Review and update the essential information for your bank
-                      profile.
+                      {isEditMode
+                        ? "Update the information for this bank profile."
+                        : "Review the essential information for this bank profile."}
                     </p>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
+                    {/* Bank Name */}
                     <div>
                       <label
-                        htmlFor="bankName"
+                        htmlFor="name"
                         className="block text-xs font-medium text-gray-600 mb-1"
                       >
                         Bank Name
                       </label>
                       <input
                         type="text"
-                        id="bankName"
+                        name="name"
+                        id="name"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500"
-                        value="Example National Bank"
-                        readOnly
+                        value={editableUser.name || ""}
+                        onChange={handleEditInputChange}
+                        readOnly={!isEditMode}
                       />
                     </div>
+                    {/* Account Officer */}
                     <div>
                       <label
-                        htmlFor="accountOfficer"
+                        htmlFor="officer"
                         className="block text-xs font-medium text-gray-600 mb-1"
                       >
                         Account Officer
                       </label>
                       <input
                         type="text"
-                        id="accountOfficer"
+                        name="officer"
+                        id="officer"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500"
-                        value="Jane Doe"
-                        readOnly
+                        value={editableUser.officer || ""}
+                        onChange={handleEditInputChange}
+                        readOnly={!isEditMode}
+                        placeholder="N/A"
                       />
                     </div>
+                    {/* Email Address */}
                     <div className="col-span-2">
                       <label
                         htmlFor="email"
@@ -997,42 +886,54 @@ const BankList = () => {
                       </label>
                       <input
                         type="email"
+                        name="email"
                         id="email"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500"
-                        value="bank.email@example.com"
-                        readOnly
+                        value={editableUser.email || ""}
+                        onChange={handleEditInputChange}
+                        readOnly={!isEditMode}
+                        placeholder="N/A"
                       />
                     </div>
+                    {/* SWIFT Code */}
                     <div>
                       <label
-                        htmlFor="swiftCode"
+                        htmlFor="code"
                         className="block text-xs font-medium text-gray-600 mb-1"
                       >
                         SWIFT Code
                       </label>
                       <input
                         type="text"
-                        id="swiftCode"
+                        name="code"
+                        id="code"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500"
-                        value="EXAMPLEBANK"
-                        readOnly
+                        value={editableUser.code || ""}
+                        onChange={handleEditInputChange}
+                        readOnly={!isEditMode}
+                        placeholder="N/A"
                       />
                     </div>
+                    {/* Telephone */}
                     <div>
                       <label
-                        htmlFor="telephone"
+                        htmlFor="phone"
                         className="block text-xs font-medium text-gray-600 mb-1"
                       >
                         Telephone
                       </label>
                       <input
                         type="tel"
-                        id="telephone"
+                        name="phone"
+                        id="phone"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500"
-                        value="+1234567890"
-                        readOnly
+                        value={editableUser.phone || ""}
+                        onChange={handleEditInputChange}
+                        readOnly={!isEditMode}
+                        placeholder="N/A"
                       />
                     </div>
+                    {/* Street Address */}
                     <div className="col-span-2">
                       <label
                         htmlFor="street"
@@ -1042,12 +943,16 @@ const BankList = () => {
                       </label>
                       <input
                         type="text"
+                        name="street"
                         id="street"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500"
-                        value="123 Bank Street"
-                        readOnly
+                        value={editableUser.street || ""}
+                        onChange={handleEditInputChange}
+                        readOnly={!isEditMode}
+                        placeholder="N/A"
                       />
                     </div>
+                    {/* City */}
                     <div>
                       <label
                         htmlFor="city"
@@ -1057,12 +962,16 @@ const BankList = () => {
                       </label>
                       <input
                         type="text"
+                        name="city"
                         id="city"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500"
-                        value="Bankville"
-                        readOnly
+                        value={editableUser.city || ""}
+                        onChange={handleEditInputChange}
+                        readOnly={!isEditMode}
+                        placeholder="N/A"
                       />
                     </div>
+                    {/* State/Province */}
                     <div>
                       <label
                         htmlFor="state"
@@ -1072,27 +981,35 @@ const BankList = () => {
                       </label>
                       <input
                         type="text"
+                        name="state"
                         id="state"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500"
-                        value="Bankington"
-                        readOnly
+                        value={editableUser.state || ""}
+                        onChange={handleEditInputChange}
+                        readOnly={!isEditMode}
+                        placeholder="N/A"
                       />
                     </div>
+                    {/* Zip Code */}
                     <div>
                       <label
-                        htmlFor="zipCode"
+                        htmlFor="zip"
                         className="block text-xs font-medium text-gray-600 mb-1"
                       >
                         Zip Code
                       </label>
                       <input
                         type="text"
-                        id="zipCode"
+                        name="zip"
+                        id="zip"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500"
-                        value="12345"
-                        readOnly
+                        value={editableUser.zip || ""}
+                        onChange={handleEditInputChange}
+                        readOnly={!isEditMode}
+                        placeholder="N/A"
                       />
                     </div>
+                    {/* Country */}
                     <div>
                       <label
                         htmlFor="country"
@@ -1102,12 +1019,16 @@ const BankList = () => {
                       </label>
                       <input
                         type="text"
+                        name="country"
                         id="country"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500"
-                        value="USA"
-                        readOnly
+                        value={editableUser.country || ""}
+                        onChange={handleEditInputChange}
+                        readOnly={!isEditMode}
+                        placeholder="N/A"
                       />
                     </div>
+                    {/* Fax */}
                     <div>
                       <label
                         htmlFor="fax"
@@ -1117,18 +1038,61 @@ const BankList = () => {
                       </label>
                       <input
                         type="tel"
+                        name="fax"
                         id="fax"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500"
-                        value="+1234567891"
-                        readOnly
+                        value={editableUser.fax || ""}
+                        onChange={handleEditInputChange}
+                        readOnly={!isEditMode}
+                        placeholder="N/A"
                       />
                     </div>
+                    {/* Action Button */}
                     <div className="col-span-2 flex md:flex-row gap-4 flex-col justify-end">
-                      <button className="bg-orange-500 hover:bg-orange-600 text-white rounded-md py-2 px-4 text-sm font-medium focus:outline-none focus:shadow-outline-orange active:bg-orange-700">
-                        Edit Changes
+                      <button
+                        onClick={
+                          isEditMode ? handleSaveChanges : () => setIsEditMode(true)
+                        }
+                        className="bg-orange-500 hover:bg-orange-600 text-white rounded-md py-2 px-4 text-sm font-medium focus:outline-none focus:shadow-outline-orange active:bg-orange-700"
+                      >
+                        {isEditMode ? "Save Changes" : "Edit"}
                       </button>
                     </div>
                   </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Delete Confirmation Modal */}
+          {showDeleteConfirm && (
+            <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm">
+                <div className="text-center">
+                  <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                    <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  </div>
+                  <h3 className="mt-5 text-lg font-medium text-gray-900">Delete Bank</h3>
+                  <div className="mt-2 text-sm text-gray-500">
+                    <p>Are you sure you want to delete this bank?</p>
+                    <p>This action cannot be undone.</p>
+                  </div>
+                </div>
+                <div className="mt-6 flex justify-center gap-4">
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmDelete}
+                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                  >
+                    Delete
+                  </button>
                 </div>
               </div>
             </div>
