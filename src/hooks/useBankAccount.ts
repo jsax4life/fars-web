@@ -286,7 +286,7 @@ export const useBankAccounts = () => {
     const assignRateToAccount = async (accountId: string, rateId: string): Promise<any | undefined> => {
         try {
             const endpoint = Endpoints.assignRateToAccount.replace(/\/$/, '') + '/' + accountId;
-            const request = await api.post(endpoint, { rateId });
+            const request = await api.patch(endpoint, { rateId });
             if (request) {
                 toast.success(request?.message || 'Rate assigned successfully');
                 return request;
