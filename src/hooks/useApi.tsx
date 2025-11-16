@@ -17,8 +17,8 @@ interface ApiContextType {
 // Define API Context
 const ApiContext = createContext<ApiContextType | null>(null);
 
-// API Base URL
-const API_BASE_URL = "https://adegoroyefadareandco.org";
+// API Base URL - use environment variable or fallback to default
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://adegoroyefadareandco.org";
 
 
 export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
