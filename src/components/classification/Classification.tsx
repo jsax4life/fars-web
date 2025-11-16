@@ -18,6 +18,13 @@ interface Classification {
   updatedAt?: string;
 }
 
+interface NewClassification {
+  code: string;
+  category: string;
+  label: string;
+  description?: string;
+}
+
 const classificationCodes: string[] = ["CD", "LCD", "UCD", "LD", "RET", "REV", "INT", "CW", "IT", "ET", "LR", "LNT", "CO", "FEE", "VF", "MC", "CAMF", "VC", "WHT"];
 const categories: string[] = ["DEPOSIT", "WITHDRAWAL", "CREDIT", "DEBIT"];
 
@@ -33,7 +40,7 @@ const Classification = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingClassificationId, setDeletingClassificationId] = useState<string | null>(null);
-  const [newClassification, setNewClassification] = useState<Classification>({
+  const [newClassification, setNewClassification] = useState<NewClassification>({
     code: "",
     category: "DEPOSIT",
     label: "",
@@ -105,7 +112,12 @@ const Classification = () => {
 
   const openEditModal = (classification: Classification) => {
     setSelectedClassificationForEdit(classification);
-    setNewClassification(classification); // Initialize the form with the data to be edited
+    setNewClassification({
+      code: classification.code,
+      category: classification.category,
+      label: classification.label,
+      description: classification.description || "",
+    }); // Initialize the form with the data to be edited
     setIsEditModalOpen(true);
     setIsActionMenuOpen(false); // Close action menu when opening edit modal
   };
