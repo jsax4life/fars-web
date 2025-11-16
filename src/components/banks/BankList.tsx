@@ -14,43 +14,25 @@ import WordEditor from "../utility/TextEditor";
 import Navbar from "../nav/Navbar";
 import { useBanks } from "@/hooks/useBank";
 import { formatDate } from "@/lib/utils";
+import { toast } from 'sonner';
 
-interface User {
+interface Bank {
   id: string;
   name: string;
-  email: string;
   code: string;
-  officer: string;
-  street: string;
-  city: string;
-  state: string;
-  country: string;
-  zip: string;
-  phone: string;
-  fax: string;
   createdAt: string;
-  action: string;
-  report?: string | null;
+  updatedAt: string;
 }
 
 interface NewBank {
   name: string;
-  email: string;
-  officer: string;
   code: string;
-  street: string;
-  city: string;
-  state: string;
-  country: string;
-  zip: string;
-  phone: string;
-  fax: string;
 }
 
 const BankList = () => {
   const router = useRouter();
   const bank = useBanks();
-  const [users, setUsers] = useState<User[]>([]);
+  const [banks, setBanks] = useState<Bank[]>([]);
 
   // Loading and submission states
   const [isLoading, setIsLoading] = useState(true);
@@ -65,24 +47,15 @@ const BankList = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [newBank, setNewBank] = useState<NewBank>({
     name: "",
-    email: "",
-    officer: "",
     code: "",
-    street: "",
-    city: "",
-    state: "",
-    country: "",
-    zip: "",
-    phone: "",
-    fax: "",
   });
 
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
-  const [selectedUserForAction, setSelectedUserForAction] = useState<User | null>(
+  const [selectedBankForAction, setSelectedBankForAction] = useState<Bank | null>(
     null
   );
   const [showReportModal, setShowReportModal] = useState(false);
-  const [reportingUser, setReportingUser] = useState<User | null>(null);
+  const [reportingBank, setReportingBank] = useState<Bank | null>(null);
   const [deactivationReason, setDeactivationReason] = useState({
     title: "",
     message: "",
@@ -90,8 +63,8 @@ const BankList = () => {
 
   // View and Edit Modal State
   const [showViewModal, setShowViewModal] = useState(false);
-  const [viewedUser, setViewedUser] = useState<User | null>(null);
-  const [editableUser, setEditableUser] = useState<User | null>(null);
+  const [viewedBank, setViewedBank] = useState<Bank | null>(null);
+  const [editableBank, setEditableBank] = useState<Bank | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
 
   const actionMenuRef = useRef<HTMLDivElement>(null);
@@ -101,7 +74,7 @@ const BankList = () => {
 
   // Delete confirmation state
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const [deletingBankId, setDeletingBankId] = useState<string | null>(null);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -121,38 +94,41 @@ const BankList = () => {
     // Prevent multiple submissions
     if (isCreating) return;
 
+    // Basic validation
+    if (!newBank.name.trim()) {
+      toast.error('Bank name is required');
+      return;
+    }
+    if (!newBank.code.trim()) {
+      toast.error('Bank code is required');
+      return;
+    }
+
     setIsCreating(true);
     try {
-      // NOTE: Ensure your useBanks() hook has a `createBank` method.
-      const createdBank = await bank.createBank(newBank);
+      // Send only name and code as per API requirements
+      const payload = {
+        name: newBank.name.trim(),
+        code: newBank.code.trim()
+      };
+      
+      const createdBank = await bank.createBank(payload);
       if (createdBank) {
         // Add new bank to the top of the list for immediate visibility
-        setUsers((prevUsers) => [createdBank, ...prevUsers]);
+        setBanks((prevBanks) => [createdBank, ...prevBanks]);
 
         setShowCreateModal(false);
-        setShowSuccessModal(true); // Optionally show a success message
+        setShowSuccessModal(true);
         // Reset form
         setNewBank({
           name: "",
-          email: "",
-          officer: "",
           code: "",
-          street: "",
-          city: "",
-          state: "",
-          country: "",
-          zip: "",
-          phone: "",
-          fax: "",
         });
       } else {
-        // Handle case where creation fails silently
         console.error("Bank creation returned no data.");
-        // Optionally, show an error toast to the user here
       }
     } catch (error) {
       console.error("Error creating bank:", error);
-      // Optionally, show an error toast to the user here
     } finally {
       setIsCreating(false);
     }
@@ -160,7 +136,7 @@ const BankList = () => {
 
   const closeActionMenu = () => {
     setIsActionMenuOpen(false);
-    setSelectedUserForAction(null);
+    setSelectedBankForAction(null);
   };
 
   useEffect(() => {
@@ -180,27 +156,27 @@ const BankList = () => {
   }, []);
 
   const openActionMenu = (
-    user: User,
+    bank: Bank,
     event: React.MouseEvent<HTMLButtonElement>
   ) => {
     event.stopPropagation();
-    setSelectedUserForAction(user);
+    setSelectedBankForAction(bank);
     setIsActionMenuOpen(true);
 
-    if (user.id) {
-      actionButtonRefs.current[user.id] = event.currentTarget;
+    if (bank.id) {
+      actionButtonRefs.current[bank.id] = event.currentTarget;
     }
   };
 
   const getPopupPosition = () => {
     if (
-      !selectedUserForAction?.id ||
-      !actionButtonRefs.current[selectedUserForAction.id]
+      !selectedBankForAction?.id ||
+      !actionButtonRefs.current[selectedBankForAction.id]
     ) {
       return { top: 0, left: 0 };
     }
 
-    const button = actionButtonRefs.current[selectedUserForAction.id];
+    const button = actionButtonRefs.current[selectedBankForAction.id];
     if (!button) return { top: 0, left: 0 };
 
     const rect = button.getBoundingClientRect();
@@ -211,91 +187,81 @@ const BankList = () => {
   };
 
   // --- Delete Flow ---
-  const handleDeleteClick = (userId: string) => {
-    setDeletingUserId(userId);
+  const handleDeleteClick = (bankId: string) => {
+    setDeletingBankId(bankId);
     setShowDeleteConfirm(true);
     closeActionMenu();
   };
 
   const confirmDelete = () => {
-    if (deletingUserId) {
-      bank.deleteBank(deletingUserId).then((response) => {
+    if (deletingBankId) {
+      bank.deleteBank(deletingBankId).then((response) => {
         if (response) {
-          console.log("Deleting user:", deletingUserId);
-          setUsers(users.filter((user) => user.id !== deletingUserId));
+          setBanks(banks.filter((bank) => bank.id !== deletingBankId));
           setShowDeleteConfirm(false);
-          setDeletingUserId(null);
+          setDeletingBankId(null);
         } else {
           console.error("Failed to delete bank");
         }
       }).catch((error) => {
         console.error("Error deleting bank:", error);
-        // Optionally show an error toast to the user
       });
     }
   };
 
   // --- Modal Logic ---
-  const openViewModal = (user: User) => {
-    setViewedUser(user);
-    setEditableUser({ ...user }); // Create a copy for editing
+  const openViewModal = (bank: Bank) => {
+    setViewedBank(bank);
+    setEditableBank({ ...bank }); // Create a copy for editing
     setShowViewModal(true);
     setIsEditMode(false); // Always start in view mode
     closeActionMenu();
   };
 
   const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (editableUser) {
+    if (editableBank) {
       const { name, value } = e.target;
-      setEditableUser({ ...editableUser, [name]: value });
+      setEditableBank({ ...editableBank, [name]: value });
     }
   };
 
   const handleSaveChanges = () => {
-    if (editableUser) {
-      bank.updateBank(editableUser.id, editableUser).then((response) => {
+    if (editableBank) {
+      bank.updateBank(editableBank.id, { name: editableBank.name, code: editableBank.code }).then((response) => {
         if (response) {
-          // Update the main users list
-          setUsers(
-            users.map((user) =>
-              user.id === editableUser.id ? editableUser : user
+          // Update the main banks list
+          setBanks(
+            banks.map((bank) =>
+              bank.id === editableBank.id ? editableBank : bank
             )
           );
-          // Update the user being viewed in the modal
-          setViewedUser(editableUser);
+          // Update the bank being viewed in the modal
+          setViewedBank(editableBank);
           // Exit edit mode
           setIsEditMode(false);
         }
       }).catch((error) => {
-        console.error("Error updating user:", error);
+        console.error("Error updating bank:", error);
       })
     }
   };
 
-  const handleCreateReportClick = (user: User) => {
-    setReportingUser(user);
+  const handleCreateReportClick = (bank: Bank) => {
+    setReportingBank(bank);
     setShowReportModal(true);
     closeActionMenu();
   };
 
   const handleSaveReport = (fileName: string, content: string) => {
-    if (reportingUser) {
-      setUsers(
-        users.map((u) =>
-          u.id === reportingUser.id ? { ...u, report: fileName } : u
-        )
-      );
+    if (reportingBank) {
+      // Report functionality can be implemented later if needed
       setShowReportModal(false);
-      setReportingUser(null);
+      setReportingBank(null);
     }
   };
 
-  const handleViewReportClick = (user: User) => {
-    if (user.report) {
-      alert(`Opening/displaying report: ${user.report}`);
-    } else {
-      alert("No report available.");
-    }
+  const handleViewReportClick = (bank: Bank) => {
+    // Report functionality can be implemented later if needed
     closeActionMenu();
   };
 
@@ -305,38 +271,38 @@ const BankList = () => {
     bank
       .getBanks()
       .then((response) => {
-        if (response) {
-          setUsers(response);
+        if (response && Array.isArray(response)) {
+          setBanks(response);
         } else {
           console.error("Failed to fetch banks");
+          setBanks([]);
         }
       })
       .catch((error) => {
         console.error("Error fetching banks:", error);
+        setBanks([]);
       })
       .finally(() => {
         setIsLoading(false);
       });
   }, []); // Dependency on `bank` object from the hook
 
-  const filteredUsers = useMemo(() => {
+  const filteredBanks = useMemo(() => {
     const query = searchQuery.toLowerCase();
     if (!query) {
-      return users;
+      return banks;
     }
-    return users.filter(
-      (user) =>
-        user.name.toLowerCase().includes(query) ||
-        (user.email && user.email.toLowerCase().includes(query)) ||
-        (user.officer && user.officer.toLowerCase().includes(query)) ||
-        (user.code && user.code.toLowerCase().includes(query))
+    return banks.filter(
+      (bank) =>
+        bank.name.toLowerCase().includes(query) ||
+        (bank.code && bank.code.toLowerCase().includes(query))
     );
-  }, [users, searchQuery]);
+  }, [banks, searchQuery]);
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const currentItems = filteredBanks.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredBanks.length / itemsPerPage);
 
   const handleNextPage = () => {
     setCurrentPage((prev) => (prev < totalPages ? prev + 1 : prev));
@@ -350,7 +316,7 @@ const BankList = () => {
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
 
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto md:ml-64 pt-10 md:pt-10">
         <div className="mb-4">
           <Navbar />
         </div>
@@ -361,7 +327,7 @@ const BankList = () => {
               <div className="relative w-full sm:w-auto">
                 <input
                   type="text"
-                  placeholder="Search by name, email, officer, swift..."
+                  placeholder="Search by bank name or code..."
                   value={searchQuery}
                   onChange={handleSearchChange}
                   className="bg-white border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded leading-tight focus:outline-none focus:border-[#F36F2E] text-sm w-full"
@@ -398,46 +364,19 @@ const BankList = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
                     S/N
                   </th>
-                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
                     Bank Name
                   </th>
-                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Email Address
+                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
+                    Code
                   </th>
-                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Account Officer
-                  </th>
-                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Swift Code
-                  </th>
-                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Street
-                  </th>
-                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    City
-                  </th>
-                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    State
-                  </th>
-                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Country
-                  </th>
-                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Zip Code
-                  </th>
-                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Telephone
-                  </th>
-                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Fax No.
-                  </th>
-                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                     Date Added
                   </th>
-                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 md:px-6 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
                     Action
                   </th>
                 </tr>
@@ -445,59 +384,38 @@ const BankList = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={14} className="px-6 py-4 text-center text-gray-500">
+                    <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
                       Loading...
                     </td>
                   </tr>
+                ) : filteredBanks.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
+                      No banks found
+                    </td>
+                  </tr>
                 ) : (
-                  currentItems.map((user, index) => (
-                    <tr key={user.id} className="relative">
+                  currentItems.map((bank, index) => (
+                    <tr key={bank.id} className="relative">
                       <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
                         {indexOfFirstItem + index + 1}
                       </td>
-                      <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
-                        {user.name}
+                      <td className="px-3 py-2 md:px-6 md:py-4 text-xs md:text-sm text-gray-900 font-medium w-40 truncate">
+                        {bank.name}
                       </td>
                       <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
-                        {user.email || "N/A"}
-                      </td>
-                      <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 truncate max-w-[120px]">
-                        {user.officer || "N/A"}
+                        {bank.code}
                       </td>
                       <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
-                        {user.code || "N/A"}
-                      </td>
-                      <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
-                        {user.street || "N/A"}
-                      </td>
-                      <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
-                        {user.city || "N/A"}
-                      </td>
-                      <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
-                        {user.state || "N/A"}
-                      </td>
-                      <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
-                        {user.country || "N/A"}
-                      </td>
-                      <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
-                        {user.zip || "N/A"}
-                      </td>
-                      <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
-                        {user.phone || "N/A"}
-                      </td>
-                      <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
-                        {user.fax || "N/A"}
-                      </td>
-                      <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
-                        {formatDate(user.createdAt) || "N/A"}
+                        {formatDate(bank.createdAt)}
                       </td>
                       <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 relative">
                         <button
                           ref={(el) => {
-                            if (user.id) actionButtonRefs.current[user.id] = el;
+                            if (bank.id) actionButtonRefs.current[bank.id] = el;
                           }}
                           className="focus:outline-none"
-                          onClick={(e) => openActionMenu(user, e)}
+                          onClick={(e) => openActionMenu(bank, e)}
                         >
                           <img
                             src="/Users/action.svg"
@@ -506,7 +424,7 @@ const BankList = () => {
                           />
                         </button>
                         {isActionMenuOpen &&
-                          selectedUserForAction?.id === user.id && (
+                          selectedBankForAction?.id === bank.id && (
                             <div
                               ref={actionMenuRef}
                               className="fixed z-50 bg-white rounded-md shadow-lg"
@@ -517,30 +435,13 @@ const BankList = () => {
                             >
                               <div className="py-1">
                                 <button
-                                  onClick={() => openViewModal(user)}
+                                  onClick={() => openViewModal(bank)}
                                   className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
                                 >
                                   View Bank Details
                                 </button>
-                                {user.report ? (
-                                  <button
-                                    onClick={() => handleViewReportClick(user)}
-                                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
-                                  >
-                                    View Report
-                                  </button>
-                                ) : (
-                                  <button
-                                    onClick={() =>
-                                      handleCreateReportClick(user)
-                                    }
-                                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                                  >
-                                    Create Report
-                                  </button>
-                                )}
                                 <button
-                                  onClick={() => handleDeleteClick(user.id)}
+                                  onClick={() => handleDeleteClick(bank.id)}
                                   className="block px-4 py-2 text-sm text-gray-700 border-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
                                 >
                                   Delete
@@ -560,13 +461,13 @@ const BankList = () => {
             <div className="text-sm text-gray-700">
               Showing{" "}
               <span className="font-medium">
-                {filteredUsers.length > 0 ? indexOfFirstItem + 1 : 0}
+                {filteredBanks.length > 0 ? indexOfFirstItem + 1 : 0}
               </span>{" "}
               to{" "}
               <span className="font-medium">
-                {Math.min(indexOfLastItem, filteredUsers.length)}
+                {Math.min(indexOfLastItem, filteredBanks.length)}
               </span>{" "}
-              of <span className="font-medium">{filteredUsers.length}</span>{" "}
+              of <span className="font-medium">{filteredBanks.length}</span>{" "}
               entries
             </div>
             <div className="flex space-x-2">
@@ -616,10 +517,10 @@ const BankList = () => {
                   </button>
                 </div>
 
-                <div className="space-y-4 overflow-y-auto max-h-[calc(100vh-150px)]">
+                <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Bank Name
+                      Bank Name <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -628,138 +529,22 @@ const BankList = () => {
                       onChange={handleInputChange}
                       placeholder="Enter Bank Name"
                       className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
+                      required
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Email
-                    </label>
-                    <input
-                      type="text"
-                      name="email"
-                      value={newBank.email}
-                      onChange={handleInputChange}
-                      placeholder="Enter Email"
-                      className="w-full px-3 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Account Officer
-                    </label>
-                    <input
-                      type="text"
-                      name="officer"
-                      value={newBank.officer}
-                      onChange={handleInputChange}
-                      placeholder="Enter Account Officer"
-                      className="w-full px-3 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Swift Code
+                      Bank Code <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
                       name="code"
                       value={newBank.code}
                       onChange={handleInputChange}
-                      placeholder="Enter Swift Code"
+                      placeholder="Enter Bank Code"
                       className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Phone Number
-                    </label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={newBank.phone}
-                      onChange={handleInputChange}
-                      placeholder="Enter Phone Number"
-                      className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Street
-                    </label>
-                    <input
-                      type="text"
-                      name="street"
-                      value={newBank.street}
-                      onChange={handleInputChange}
-                      placeholder="Enter Street"
-                      className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      City
-                    </label>
-                    <input
-                      type="text"
-                      name="city"
-                      value={newBank.city}
-                      onChange={handleInputChange}
-                      placeholder="Enter City"
-                      className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      State
-                    </label>
-                    <input
-                      type="text"
-                      name="state"
-                      value={newBank.state}
-                      onChange={handleInputChange}
-                      placeholder="Enter State"
-                      className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Country
-                    </label>
-                    <input
-                      type="text"
-                      name="country"
-                      value={newBank.country}
-                      onChange={handleInputChange}
-                      placeholder="Enter Country"
-                      className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Zip Code
-                    </label>
-                    <input
-                      type="text"
-                      name="zip"
-                      value={newBank.zip}
-                      onChange={handleInputChange}
-                      placeholder="Enter Zip Code"
-                      className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Fax
-                    </label>
-                    <input
-                      type="text"
-                      name="fax"
-                      value={newBank.fax}
-                      onChange={handleInputChange}
-                      placeholder="Enter Fax"
-                      className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
+                      required
                     />
                   </div>
 
@@ -776,7 +561,7 @@ const BankList = () => {
           )}
 
           {/* View/Edit Bank Modal */}
-          {showViewModal && editableUser && (
+          {showViewModal && editableBank && (
             <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4">
               <div className="bg-gray-50 p-6 rounded-md shadow-md w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center justify-between mb-6">
@@ -801,10 +586,10 @@ const BankList = () => {
                     </div>
                     <div className="ml-4">
                       <h3 className="text-lg font-semibold text-gray-800">
-                        {editableUser.name || "Unknown Bank"}
+                        {editableBank.name || "Unknown Bank"}
                       </h3>
                       <p className="text-sm text-gray-500">
-                        {editableUser.email || "No Email"}
+                        Code: {editableBank.code || "N/A"}
                       </p>
                     </div>
                   </div>
@@ -852,199 +637,59 @@ const BankList = () => {
                         name="name"
                         id="name"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500"
-                        value={editableUser.name || ""}
+                        value={editableBank.name || ""}
                         onChange={handleEditInputChange}
                         readOnly={!isEditMode}
                       />
                     </div>
-                    {/* Account Officer */}
-                    <div>
-                      <label
-                        htmlFor="officer"
-                        className="block text-xs font-medium text-gray-600 mb-1"
-                      >
-                        Account Officer
-                      </label>
-                      <input
-                        type="text"
-                        name="officer"
-                        id="officer"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500"
-                        value={editableUser.officer || ""}
-                        onChange={handleEditInputChange}
-                        readOnly={!isEditMode}
-                        placeholder="N/A"
-                      />
-                    </div>
-                    {/* Email Address */}
-                    <div className="col-span-2">
-                      <label
-                        htmlFor="email"
-                        className="block text-xs font-medium text-gray-600 mb-1"
-                      >
-                        Email Address
-                      </label>
-                      <input
-                        type="email"
-                        name="email"
-                        id="email"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500"
-                        value={editableUser.email || ""}
-                        onChange={handleEditInputChange}
-                        readOnly={!isEditMode}
-                        placeholder="N/A"
-                      />
-                    </div>
-                    {/* SWIFT Code */}
+                    {/* Bank Code */}
                     <div>
                       <label
                         htmlFor="code"
                         className="block text-xs font-medium text-gray-600 mb-1"
                       >
-                        SWIFT Code
+                        Bank Code
                       </label>
                       <input
                         type="text"
                         name="code"
                         id="code"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500"
-                        value={editableUser.code || ""}
+                        value={editableBank.code || ""}
                         onChange={handleEditInputChange}
                         readOnly={!isEditMode}
-                        placeholder="N/A"
                       />
                     </div>
-                    {/* Telephone */}
+                    {/* Date Added */}
                     <div>
                       <label
-                        htmlFor="phone"
+                        htmlFor="createdAt"
                         className="block text-xs font-medium text-gray-600 mb-1"
                       >
-                        Telephone
-                      </label>
-                      <input
-                        type="tel"
-                        name="phone"
-                        id="phone"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500"
-                        value={editableUser.phone || ""}
-                        onChange={handleEditInputChange}
-                        readOnly={!isEditMode}
-                        placeholder="N/A"
-                      />
-                    </div>
-                    {/* Street Address */}
-                    <div className="col-span-2">
-                      <label
-                        htmlFor="street"
-                        className="block text-xs font-medium text-gray-600 mb-1"
-                      >
-                        Street Address
+                        Date Added
                       </label>
                       <input
                         type="text"
-                        name="street"
-                        id="street"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500"
-                        value={editableUser.street || ""}
-                        onChange={handleEditInputChange}
-                        readOnly={!isEditMode}
-                        placeholder="N/A"
+                        id="createdAt"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-500 bg-gray-50"
+                        value={formatDate(editableBank.createdAt) || "N/A"}
+                        readOnly
                       />
                     </div>
-                    {/* City */}
+                    {/* Last Updated */}
                     <div>
                       <label
-                        htmlFor="city"
+                        htmlFor="updatedAt"
                         className="block text-xs font-medium text-gray-600 mb-1"
                       >
-                        City
+                        Last Updated
                       </label>
                       <input
                         type="text"
-                        name="city"
-                        id="city"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500"
-                        value={editableUser.city || ""}
-                        onChange={handleEditInputChange}
-                        readOnly={!isEditMode}
-                        placeholder="N/A"
-                      />
-                    </div>
-                    {/* State/Province */}
-                    <div>
-                      <label
-                        htmlFor="state"
-                        className="block text-xs font-medium text-gray-600 mb-1"
-                      >
-                        State/Province
-                      </label>
-                      <input
-                        type="text"
-                        name="state"
-                        id="state"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500"
-                        value={editableUser.state || ""}
-                        onChange={handleEditInputChange}
-                        readOnly={!isEditMode}
-                        placeholder="N/A"
-                      />
-                    </div>
-                    {/* Zip Code */}
-                    <div>
-                      <label
-                        htmlFor="zip"
-                        className="block text-xs font-medium text-gray-600 mb-1"
-                      >
-                        Zip Code
-                      </label>
-                      <input
-                        type="text"
-                        name="zip"
-                        id="zip"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500"
-                        value={editableUser.zip || ""}
-                        onChange={handleEditInputChange}
-                        readOnly={!isEditMode}
-                        placeholder="N/A"
-                      />
-                    </div>
-                    {/* Country */}
-                    <div>
-                      <label
-                        htmlFor="country"
-                        className="block text-xs font-medium text-gray-600 mb-1"
-                      >
-                        Country
-                      </label>
-                      <input
-                        type="text"
-                        name="country"
-                        id="country"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500"
-                        value={editableUser.country || ""}
-                        onChange={handleEditInputChange}
-                        readOnly={!isEditMode}
-                        placeholder="N/A"
-                      />
-                    </div>
-                    {/* Fax */}
-                    <div>
-                      <label
-                        htmlFor="fax"
-                        className="block text-xs font-medium text-gray-600 mb-1"
-                      >
-                        Fax
-                      </label>
-                      <input
-                        type="tel"
-                        name="fax"
-                        id="fax"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500"
-                        value={editableUser.fax || ""}
-                        onChange={handleEditInputChange}
-                        readOnly={!isEditMode}
-                        placeholder="N/A"
+                        id="updatedAt"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-500 bg-gray-50"
+                        value={formatDate(editableBank.updatedAt) || "N/A"}
+                        readOnly
                       />
                     </div>
                     {/* Action Button */}

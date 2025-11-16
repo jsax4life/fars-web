@@ -3,6 +3,7 @@ import "./globals.css";
 import { ApiProvider } from "@/hooks/useApi";
 import { UserAuthProvider } from "@/hooks/useUserAuth";
 import { Toaster as Sonner } from "@/components/utility/sonner";
+import LoadingOverlay from "@/components/utility/LoadingOverlay";
 
 export const metadata: Metadata = {
   title: "FaRS",
@@ -25,6 +26,7 @@ export default function RootLayout({
         <Sonner />
         <ApiProvider>
           <UserAuthProvider>
+            <LoadingOverlay />
             {children}
           </UserAuthProvider>
         </ApiProvider>

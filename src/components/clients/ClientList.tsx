@@ -80,28 +80,63 @@ const ClientList = () => {
   };
 
   const handleCreateUser = async () => {
+    // Validation
+    if (!newClient.fullName.trim()) {
+      toast.error("Full name is required");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newClient.email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    if (!newClient.country.trim()) {
+      toast.error("Country is required");
+      return;
+    }
+
+    if (!newClient.company.trim()) {
+      toast.error("Company name is required");
+      return;
+    }
+
     setIsLoading(true);
     try {
+      // Improved fullName splitting logic
+      const nameParts = newClient.fullName.trim().split(/\s+/);
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts.slice(1).join(" ") || "";
+
+      if (!firstName) {
+        toast.error("Please provide at least a first name");
+        setIsLoading(false);
+        return;
+      }
+
       const response = await createClient({
-        firstName: newClient.fullName.split(" ")[0],
-        lastName: newClient.fullName.split(" ")[1] || "",
-        country: newClient.country,
-        companyName: newClient.company,
-        address: newClient.address,
-        email: newClient.email,
-        phone: newClient.contact,
-        state: newClient.state,
-        city: newClient.city,
+        firstName,
+        lastName,
+        country: newClient.country.trim(),
+        companyName: newClient.company.trim(),
+        address: newClient.address.trim(),
+        email: newClient.email.trim(),
+        phone: newClient.contact.trim(),
+        state: newClient.state.trim(),
+        city: newClient.city.trim(),
       });
 
       if (response) {
+        // Update users list with the new client
         setUsers([...users, response]);
         setShowCreateModal(false);
-        toast.success("Client created successfully");
+        // Success toast is already shown in the hook
       }
-    } catch (error) {
-      console.error("Error creating client:", error);
-      toast.error("Failed to create client");
+    } catch (error: any) {
+      // Handle any unexpected errors that might occur outside of the API call
+      console.error("Unexpected error creating client:", error);
+      toast.error("An unexpected error occurred");
     } finally {
       setIsLoading(false);
       setNewClient({
@@ -285,6 +320,8 @@ const ClientList = () => {
           users.map((user) => (user.id === response.id ? response : user))
         );
         toast.success("Client updated successfully");
+        setShowViewModal(false);
+        setViewedUser(null);
       }
     } catch (error) {
       console.error("Error updating client:", error);
@@ -321,12 +358,12 @@ const ClientList = () => {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-      <div className="flex-1  mt-16 md:mt-0">
+      <div className="flex-1 md:ml-64 mt-16 md:mt-0">
         <div className=" ">
           <Navbar />
         </div>
 
-        <div className="flex-1 p-4 md:p-6 mt-16 md:mt-0 overflow-x-hidden">
+        <div className="flex-1 p-4 md:p-6 pt-32 md:pt-20 overflow-x-hidden">
           <div className="mb-6">
             <h2 className="text-[#363636] text-lg md:text-xl font-semibold">
               Clients
@@ -468,13 +505,13 @@ const ClientList = () => {
                     View Accounts
                   </Link>
                   <Link
-                    href="/Contracts"
+                    href={`/Contracts?clientId=${selectedUserForAction.id}`}
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                   >
-                    View Contracts
+                    View Rate
                   </Link>
                   <Link
-                    href="/NewAccount"
+                    href={`/NewAccount?clientId=${selectedUserForAction.id}&clientName=${encodeURIComponent(selectedUserForAction.companyName || selectedUserForAction.firstName + ' ' + selectedUserForAction.lastName)}`}
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                   >
                     Create Account

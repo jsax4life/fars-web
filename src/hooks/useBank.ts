@@ -38,9 +38,7 @@ export const useBanks = () => {
 
     const updateBank = async (id: string, data: {
         name?: string,
-        accountNumber?: string,
-        branch?: string,
-        swiftCode?: string
+        code?: string
     }) => {
         try {
             const response = await api.patch(Endpoints.updateBankById + id, data)

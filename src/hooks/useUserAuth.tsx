@@ -194,16 +194,14 @@ export const UserAuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = () => {
     api.get(Endpoints.logout)
-      .then(() => {
+      .finally(() => {
         setUser(null);
         localStorage.removeItem('user');
         api.updateToken(null);
-        // toast.success('Logged out');
-      }).catch((error) => {
-        setUser(null);
-        localStorage.removeItem('user');
-        api.updateToken(null);
-        // toast.success('Logged out');
+        // navigate to login/root
+        if (typeof window !== 'undefined') {
+          window.location.href = '/';
+        }
       });
   };
 

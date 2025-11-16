@@ -5,33 +5,48 @@ import { FaSearch } from "react-icons/fa";
 import Sidebar from "@/components/utility/Sidebar";
 import Link from "next/link";
 import Navbar from "../nav/Navbar";
+import { useBankAccounts } from "@/hooks/useBankAccount";
 
 interface AccountData {
   id: string;
-  entryDate: string;
+  code: string;
   accountName: string;
   accountNumber: string;
   accountType: string;
-  accountCode: string;
-  symbol: string;
-  bankName: string;
-  bankAddress: string;
-  status: "open" | "closed";
-  report?: string; // Added optional report field to AccountData
+  currency: string;
+  createdAt: string;
+  status?: "open" | "closed"; // local only (backend may add later)
+  report?: string;
 }
 
 const Account = () => {
   const [activeAccountTab, setActiveAccountTab] = useState("Account");
-  const [accounts, setAccounts] = useState<AccountData[]>([
-    { id: "1", entryDate: "02 - 04 - 2023", accountName: "Savings Account", accountNumber: "1234567890", accountType: "Savings", accountCode: "465,897.00", symbol: "NGN", bankName: "GTBank", bankAddress: "Lagos", status: "open" },
-    { id: "2", entryDate: "02 - 04 - 2023", accountName: "Current Account", accountNumber: "0987654321", accountType: "Current", accountCode: "1,234,567.00", symbol: "USD", bankName: "Zenith Bank", bankAddress: "Abuja", status: "open" },
-    { id: "3", entryDate: "03 - 04 - 2023", accountName: "Investment Account", accountNumber: "1122334455", accountType: "Investment", accountCode: "5,000,000.00", symbol: "EUR", bankName: "Access Bank", bankAddress: "Port Harcourt", status: "closed" },
-    { id: "4", entryDate: "05 - 04 - 2023", accountName: "Domiciliary Account", accountNumber: "6677889900", accountType: "Savings", accountCode: "10,000.00", symbol: "GBP", bankName: "UBA", bankAddress: "Kano", status: "open" },
-  ]);
+  const [accounts, setAccounts] = useState<AccountData[]>([]);
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   const [selectedAccountForAction, setSelectedAccountForAction] = useState<AccountData | null>(null);
   const actionMenuRef = useRef<HTMLDivElement>(null);
   const actionButtonRefs = useRef<{[key: string]: HTMLButtonElement | null}>({});
+  const { getBankAccounts } = useBankAccounts();
+  useEffect(() => {
+    // Load accounts from API
+    getBankAccounts().then((data: any) => {
+      if (Array.isArray(data)) {
+        const mapped = data.map((a: any) => ({
+          id: a.id,
+          code: a.code,
+          accountNumber: a.accountNumber,
+          accountName: a.accountName,
+          accountType: a.accountType,
+          currency: a.currency,
+          createdAt: a.createdAt,
+          status: "open", // default until backend provides status
+        })) as AccountData[];
+        setAccounts(mapped);
+      } else {
+        setAccounts([]);
+      }
+    });
+  }, []);
 
   // State for the reporting modal, adjusted for accounts
   const [showReportModal, setShowReportModal] = useState(false);
@@ -109,7 +124,7 @@ const Account = () => {
     );
   };
 
-  const getOpenAccounts = () => accounts.filter(account => account.status === "open");
+  const getOpenAccounts = () => accounts.filter(account => (account.status ?? "open") === "open");
   const getClosedAccounts = () => accounts.filter(account => account.status === "closed");
 
   // Account-specific report functions
@@ -223,9 +238,7 @@ const Account = () => {
                           <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ">Account Number</th>
                           <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account Type</th>
                           <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account Code</th>
-                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Symbol</th>
-                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ">Bank Name</th>
-                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ">Bank Address</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Currency</th>
                           <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
                         </tr>
                       </thead>
@@ -233,14 +246,12 @@ const Account = () => {
                         {getOpenAccounts().map((account, index) => (
                           <tr key={account.id}>
                             <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
-                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">{account.entryDate}</td>
+                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(account.createdAt).toLocaleDateString()}</td>
                             <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">{account.accountName}</td>
                             <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 ">{account.accountNumber}</td>
                             <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 ">{account.accountType}</td>
-                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 ">{account.accountCode}</td>
-                            <td className="px-3 py-4 text-sm text-gray-500">{account.symbol}</td>
-                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 ">{account.bankName}</td>
-                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 ">{account.bankAddress}</td>
+                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 ">{account.code}</td>
+                            <td className="px-3 py-4 text-sm text-gray-500">{account.currency}</td>
                             <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 relative">
                               <button
                                 ref={el => {
@@ -263,7 +274,7 @@ const Account = () => {
                                 >
                                   <div className="py-1">
                                     <Link
-                                      href="/AccountDetails" // You might want to make this dynamic like `/AccountDetails/${account.id}`
+                                      href={`/AccountDetails/${account.id}`}
                                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
                                     >
                                       View
@@ -324,9 +335,7 @@ const Account = () => {
                           <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ">Account Number</th>
                           <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account Type</th>
                           <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account Code</th>
-                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Symbol</th>
-                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ">Bank Name</th>
-                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ">Bank Address</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Currency</th>
                           <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
                         </tr>
                       </thead>
@@ -334,14 +343,12 @@ const Account = () => {
                         {getClosedAccounts().map((account, index) => (
                           <tr key={account.id}>
                             <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
-                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">{account.entryDate}</td>
+                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(account.createdAt).toLocaleDateString()}</td>
                             <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">{account.accountName}</td>
                             <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 ">{account.accountNumber}</td>
                             <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 ">{account.accountType}</td>
-                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 ">{account.accountCode}</td>
-                            <td className="px-3 py-4 text-sm text-gray-500">{account.symbol}</td>
-                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 ">{account.bankName}</td>
-                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 ">{account.bankAddress}</td>
+                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 ">{account.code}</td>
+                            <td className="px-3 py-4 text-sm text-gray-500">{account.currency}</td>
                             <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 relative">
                               <button
                                 onClick={() => handleOpenAccount(account.id)}

@@ -39,6 +39,22 @@ export const useClassifications = () => {
     };
 
     /**
+     * Get a classification by ID
+     * @param id - The ID of the classification
+     * @returns Promise<any> - The classification data or undefined on error
+     */
+    const getClassificationById = async (id: string) => {
+        try {
+            const request = await api.get(Endpoints.getClassificationById + id);
+            if (request) {
+                return request;
+            }
+        } catch (error: any) {
+            toast.error('Failed to get classification: ' + (error?.message || 'Unknown error'));
+        }
+    };
+
+    /**
      * Update an existing classification
      * @param id - The ID of the classification to update
      * @param data - The data to update the classification with
@@ -91,24 +107,36 @@ export const useClassifications = () => {
      */
     const createClassification = async (data: ClassificationData) => {
         try {
-            // The example body shows "description" as part of the creation.
-            // If description is truly optional on creation and not sent if undefined,
-            // you might not need to do anything special. If it must be omitted if not provided,
-            // ensure your 'data' object reflects that.
-            const request = await api.post(Endpoints.createClassification, data);
+            // Remove description if it's empty/undefined to match API requirements
+            const payload: any = {
+                code: data.code,
+                category: data.category,
+                label: data.label
+            };
+            if (data.description && data.description.trim()) {
+                payload.description = data.description.trim();
+            }
+
+            const request = await api.post(Endpoints.createClassification, payload);
             if (request) {
                 toast.success('Classification created successfully!');
                 return request;
             }
             return false;
         } catch (error: any) {
-            toast.error('Failed to create classification: ' + (error?.message || 'Unknown error'));
+            // Handle 409 Conflict error specifically
+            if (error?.status === 409 || error?.message?.includes('409') || error?.message?.includes('Conflict') || error?.message?.includes('already exists')) {
+                toast.error('Classification already exists');
+            } else {
+                toast.error('Failed to create classification: ' + (error?.message || 'Unknown error'));
+            }
             return false;
         }
     };
 
     return {
         getClassifications,
+        getClassificationById,
         updateClassification,
         deleteClassification,
         createClassification

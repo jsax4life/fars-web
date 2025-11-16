@@ -1,10 +1,13 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
+import { useUserAuth } from "@/hooks/useUserAuth";
 
 const Navbar = () => {
+  const { user } = useUserAuth();
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const userInitial = useMemo(() => (user?.firstName?.[0] || 'U').toUpperCase(), [user]);
 
   const togglePasswordVisibility = (field: any) => {
     if (field === "oldPassword") {
@@ -157,7 +160,7 @@ const Navbar = () => {
               <div className="flex items-center mb-6">
                 <div className="relative">
                   <img
-                    src="https://placehold.co/80x80/FF7F50/FFFFFF?text=O"
+                    src={user?.avatarUrl || `https://placehold.co/80x80/FF7F50/FFFFFF?text=${userInitial}`}
                     alt="Profile Large"
                     className="w-20 h-20 rounded-full mr-5 object-cover"
                   />
@@ -167,9 +170,9 @@ const Navbar = () => {
                 </div>
                 <div className="">
                   <p className="text-xl font-semibold text-gray-800">
-                    Olayimika Oluwasegun
+                    {user ? `${user.firstName} ${user.lastName}` : ''}
                   </p>
-                  <p className="text-gray-600">olayimikaoluwasegun@gmail.com</p>
+                  <p className="text-gray-600">{user?.email || ''}</p>
                 </div>
               </div>
 
@@ -192,7 +195,7 @@ const Navbar = () => {
                   <input
                     type="text"
                     id="firstName"
-                    defaultValue="Olayimmika"
+                    defaultValue={user?.firstName || ''}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                   />
                 </div>
@@ -206,7 +209,7 @@ const Navbar = () => {
                   <input
                     type="text"
                     id="lastName"
-                    defaultValue="Segun"
+                    defaultValue={user?.lastName || ''}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                   />
                 </div>
@@ -222,7 +225,7 @@ const Navbar = () => {
                 <input
                   type="email"
                   id="email"
-                  defaultValue="olayimikaoluwasegun@gmail.com"
+                  defaultValue={user?.email || ''}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                 />
               </div>
@@ -242,7 +245,7 @@ const Navbar = () => {
                   <input
                     type="text"
                     id="phoneNumber"
-                    defaultValue="08101831001"
+                    defaultValue={user?.phone || ''}
                     className="flex-grow p-3 border-none outline-none rounded-r-lg"
                   />
                 </div>
@@ -325,15 +328,15 @@ const Navbar = () => {
   };
 
   return (
-    <div className="bg-gray-100 font-inter">
-      <nav className="bg-white p-4 shadow-md flex justify-between items-center px-6 md:px-10 rounded-b-lg">
+    <>
+      <div className="bg-gray-100 font-inter fixed top-0 left-0 right-0 md:left-64 z-30">
+        <nav className="bg-white p-4 shadow-md flex justify-between items-center px-6 md:px-10 rounded-b-lg">
         {/* Left Section */}
         <div className="flex items-center space-x-4">
           <div className="text-xl md:text-2xl font-bold text-gray-800">👋</div>
           <div className="flex flex-col">
             <div className="text-xl md:text-2xl font-bold text-gray-800">
-              {" "}
-              Hi, Olayimmika
+              Hi, {user ? user.firstName : 'User'}
             </div>
             <div className="text-sm text-gray-500 hidden md:block">
               June 18th 2023 - 08:34 am
@@ -351,7 +354,7 @@ const Navbar = () => {
             {/* <i className="fas fa-bell text-gray-600 text-lg md:text-xl"></i> */}
             <svg width="29" height="29" viewBox="0 0 59 59" fill="none" xmlns="http://www.w3.org/2000/svg">
 <rect x="0.196777" y="0.375" width="58.1374" height="58.1374" rx="29.0687" fill="#E8E8E8"/>
-<path d="M32.0909 44.7646C32.0553 44.9287 32.0068 45.0898 31.9435 45.2461C31.7542 45.6777 31.4673 46.0596 31.1027 46.3584C30.7523 46.6455 30.3406 46.8473 29.9005 46.9521H29.8273L29.7618 46.9658C29.5964 47.0003 29.4278 47.0186 29.2589 47.0225C28.4879 47.0162 27.75 46.7091 27.2032 46.165C26.8134 45.7772 26.5458 45.2909 26.4191 44.7646H32.0909ZM19.2169 27.1406C19.1273 24.7414 19.6676 22.3602 20.7853 20.2354C21.3169 19.2982 22.0409 18.4837 22.9093 17.8457C23.7805 17.2056 24.778 16.7578 25.8351 16.5312L26.3527 16.4209V13.8965C26.3527 13.2124 26.9068 12.6572 27.5909 12.6572H30.9396C31.6237 12.6572 32.1788 13.2124 32.1788 13.8965V16.4082L32.6818 16.5283C34.8197 17.0374 36.4573 18.212 37.5724 19.9736C38.696 21.7489 39.3136 24.1611 39.3136 27.165V37.3799L42.1964 38.8213C42.616 39.0311 42.881 39.4605 42.881 39.9297V40.4336C42.881 41.1176 42.3266 41.6726 41.6427 41.6729H16.8888C16.2047 41.6729 15.6495 41.1177 15.6495 40.4336V39.9297C15.6495 39.4606 15.9146 39.0311 16.3341 38.8213L19.2169 37.3799V27.1406Z" stroke="#5D5D5D" stroke-width="1.30883"/>
+<path d="M32.0909 44.7646C32.0553 44.9287 32.0068 45.0898 31.9435 45.2461C31.7542 45.6777 31.4673 46.0596 31.1027 46.3584C30.7523 46.6455 30.3406 46.8473 29.9005 46.9521H29.8273L29.7618 46.9658C29.5964 47.0003 29.4278 47.0186 29.2589 47.0225C28.4879 47.0162 27.75 46.7091 27.2032 46.165C26.8134 45.7772 26.5458 45.2909 26.4191 44.7646H32.0909ZM19.2169 27.1406C19.1273 24.7414 19.6676 22.3602 20.7853 20.2354C21.3169 19.2982 22.0409 18.4837 22.9093 17.8457C23.7805 17.2056 24.778 16.7578 25.8351 16.5312L26.3527 16.4209V13.8965C26.3527 13.2124 26.9068 12.6572 27.5909 12.6572H30.9396C31.6237 12.6572 32.1788 13.2124 32.1788 13.8965V16.4082L32.6818 16.5283C34.8197 17.0374 36.4573 18.212 37.5724 19.9736C38.696 21.7489 39.3136 24.1611 39.3136 27.165V37.3799L42.1964 38.8213C42.616 39.0311 42.881 39.4605 42.881 39.9297V40.4336C42.881 41.1176 42.3266 41.6726 41.6427 41.6729H16.8888C16.2047 41.6729 15.6495 41.1177 15.6495 40.4336V39.9297C15.6495 39.4606 15.9146 39.0311 16.3341 38.8213L19.2169 37.3799V27.1406Z" stroke="#5D5D5D" strokeWidth="1.30883"/>
 <rect x="34.2815" y="16.0537" width="8.52113" height="8.52113" rx="4.26057" fill="#E63B1F"/>
 </svg>
 
@@ -364,7 +367,7 @@ const Navbar = () => {
             onClick={() => setIsProfileModalOpen(true)}
           >
             <img
-              src="https://placehold.co/40x40/FF7F50/FFFFFF?text=O"
+              src={user?.avatarUrl || `https://placehold.co/40x40/FF7F50/FFFFFF?text=${userInitial}`}
               alt="Profile"
               className="w-10 h-10 rounded-full border-2 border-orange-400 object-cover"
             />
@@ -384,6 +387,9 @@ const Navbar = () => {
         onClose={() => setIsProfileModalOpen(false)}
       />
     </div>
+    {/* Spacer div to create gap below fixed navbar - takes space in document flow */}
+    <div className="h-24 md:h-16 w-full"></div>
+    </>
   );
 };
 

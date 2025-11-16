@@ -9,6 +9,8 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [remember, setRemember] = useState(false);
   const router = useRouter();
 
   const handleForgotPassword = (e: any) => {
@@ -18,6 +20,7 @@ const Login = () => {
 
   const handleSubmit = (e: any) => {
     e.preventDefault();
+    if (loading) return; // prevent double submission
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
@@ -26,20 +29,21 @@ const Login = () => {
     }
 
     // Password non-empty check
-    if (password.trim() === "") {
-      toast.error("Password cannot be empty.");
+    if (password.trim().length < 8) {
+      toast.error("Password must be at least 8 characters.");
       return;
     }
     setLoading(true);
     // Call the login function from useUserAuth
-    login(email, password).then((response) => {
-      if (response === "success") {
-        setLoading(false);
-        router.push("/UserList");
-      } else {
-        setLoading(false);
-      }
-    });
+    login(email, password)
+      .then((response) => {
+        if (response === "success") {
+          // Optionally persist email for convenience (not tokens)
+          if (remember) localStorage.setItem("fars_last_email", email);
+          router.push("/UserList");
+        }
+      })
+      .finally(() => setLoading(false));
   };
 
   return (
@@ -76,14 +80,35 @@ const Login = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-          <input
-            type="password"
-            placeholder="Password"
-            className="w-full px-4 py-2 rounded-md bg-[#424242] placeholder-gray-400 text-sm text-white outline-none focus:ring-2 focus:ring-[#F36F2E] focus:border-[#F36F2E]"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Password"
+              className="w-full px-4 py-2 pr-10 rounded-md bg-[#424242] placeholder-gray-400 text-sm text-white outline-none focus:ring-2 focus:ring-[#F36F2E] focus:border-[#F36F2E]"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              aria-label="Password"
+            />
+            <button
+              type="button"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              onClick={() => setShowPassword((s) => !s)}
+              className="absolute inset-y-0 right-0 px-3 text-gray-300 hover:text-white"
+            >
+              {showPassword ? "Hide" : "Show"}
+            </button>
+          </div>
+
+          <label className="flex items-center gap-2 text-xs text-gray-300">
+            <input
+              type="checkbox"
+              checked={remember}
+              onChange={(e) => setRemember(e.target.checked)}
+              className="h-4 w-4"
+            />
+            Remember email on this device
+          </label>
 
           <div className="text-left">
             <button
@@ -97,10 +122,10 @@ const Login = () => {
 
           <button
             type="submit"
-            onClick={handleSubmit}
-            className="w-full py-2 rounded-md bg-[#F36F2E] text-black font-bold hover:bg-[#F36F2E]/90 focus:ring-2 focus:ring-offset-2 focus:ring-[#F36F2E]"
+            disabled={loading}
+            className="w-full py-2 rounded-md bg-[#F36F2E] text-black font-bold hover:bg-[#F36F2E]/90 focus:ring-2 focus:ring-offset-2 focus:ring-[#F36F2E] disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Login
+            {loading ? "Signing in..." : "Login"}
           </button>
         </form>
       </div>

@@ -4,12 +4,13 @@ import { toast } from 'sonner';
 
 // Interface for creating a bank account (based on your POST request body)
 interface CreateBankAccountData {
+  bankId: string;
   accountNumber: string;
   accountName: string;
   accountType: string; // e.g., "SAVINGS"
   currency: string;    // e.g., "NGN"
   clientId: string;
-  contractId: string;
+  rateId?: string;
 }
 
 // Interface for updating a bank account (fields are optional)
@@ -35,8 +36,28 @@ export interface BankAccount {
   updatedAt: string; // Assuming ISO date string
 }
 
+// Client-specific bank accounts response structure (as provided)
+export interface ClientBankAccountResponse {
+  id: string;
+  code: string;
+  bankId: string;
+  accountNumber: string;
+  accountName: string;
+  accountType: string; // e.g., "SAVINGS"
+  currency: string;    // e.g., "NGN"
+  openingBalance: number;
+  clientId: string;
+  rateId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const useBankAccounts = () => {
     const api = useApi();
+    // Prevent duplicate concurrent requests per clientId
+    const inFlightClientRequests = new Map<string, Promise<ClientBankAccountResponse[] | undefined>>();
+
+    const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
     /**
      * Get all bank accounts
@@ -50,6 +71,69 @@ export const useBankAccounts = () => {
             }
         } catch (error: any) {
             toast.error('Failed to get bank accounts: ' + (error?.message || 'Unknown error'));
+        }
+    };
+
+    /**
+     * Get bank accounts for a specific client
+     * @param clientId - The client ID
+     * @returns Promise<ClientBankAccountResponse[] | undefined>
+     */
+    const getBankAccountsByClient = async (clientId: string): Promise<ClientBankAccountResponse[] | undefined> => {
+        const endpoint = (Endpoints.getClientBankAccounts.endsWith('/') ? Endpoints.getClientBankAccounts : Endpoints.getClientBankAccounts + '/') + clientId;
+
+        // If a request for this clientId is already in flight, return the same promise
+        if (inFlightClientRequests.has(clientId)) {
+            return inFlightClientRequests.get(clientId)!;
+        }
+
+        const exec = (async (): Promise<ClientBankAccountResponse[] | undefined> => {
+            const maxAttempts = 3;
+            let attempt = 0;
+            while (attempt < maxAttempts) {
+                try {
+                    const request = await api.get(endpoint);
+                    if (request) {
+                        return request as ClientBankAccountResponse[];
+                    }
+                    // Fallback: no data but also no thrown error
+                    return undefined;
+                } catch (error: any) {
+                    const status = error?.status;
+                    // Handle rate limiting with exponential backoff
+                    if (status === 429) {
+                        attempt += 1;
+                        if (attempt >= maxAttempts) {
+                            toast.error('Rate limit exceeded. Please try again in a moment.');
+                            return undefined;
+                        }
+                        // Backoff: 500ms, 1000ms
+                        const delay = 500 * Math.pow(2, attempt - 1);
+                        await sleep(delay);
+                        continue;
+                    }
+                    // Non-rate-limit error: show friendly error once
+                    toast.error('Failed to get client bank accounts: ' + (error?.message || 'Unknown error'));
+                    return undefined;
+                }
+            }
+            return undefined;
+        })();
+
+        inFlightClientRequests.set(clientId, exec);
+        try {
+            return await exec;
+        } finally {
+            inFlightClientRequests.delete(clientId);
+        }
+    };
+
+    const getBankAccountById = async (id: string) => {
+        try {
+            const request = await api.get(Endpoints.getBankAccountById.replace(/\/$/, '') + '/' + id);
+            if (request) return request;
+        } catch (error: any) {
+            toast.error('Failed to get bank account: ' + (error?.message || 'Unknown error'));
         }
     };
 
@@ -120,10 +204,110 @@ export const useBankAccounts = () => {
         }
     };
 
+    /**
+     * Get staff assignments for a bank account
+     * @param accountId - The bank account ID
+     * @returns Promise with assigned staff members
+     */
+    const getStaffAssignmentsByAccount = async (accountId: string): Promise<any[] | undefined> => {
+        try {
+            const request = await api.get(Endpoints.getStaffAssignmentsByAccount + accountId);
+            if (request) {
+                return Array.isArray(request) ? request : (request?.data || []);
+            }
+        } catch (error: any) {
+            toast.error('Failed to get staff assignments: ' + (error?.message || 'Unknown error'));
+        }
+    };
+
+    /**
+     * Get account assignments for a staff member
+     * @param staffId - The staff/user ID
+     * @returns Promise with assigned accounts
+     */
+    const getStaffAssignmentsByStaff = async (staffId: string): Promise<any[] | undefined> => {
+        try {
+            const request = await api.get(Endpoints.getStaffAssignmentsByStaff + staffId);
+            if (request) {
+                return Array.isArray(request) ? request : (request?.data || []);
+            }
+        } catch (error: any) {
+            toast.error('Failed to get staff account assignments: ' + (error?.message || 'Unknown error'));
+        }
+    };
+
+    /**
+     * Assign a staff member to a bank account
+     * @param userId - The user/staff ID
+     * @param accountId - The bank account ID
+     * @returns Promise with assignment result
+     */
+    const assignStaffToAccount = async (userId: string, accountId: string): Promise<any | undefined> => {
+        try {
+            const request = await api.post(Endpoints.createStaffAssignment, {
+                userId,
+                accountId
+            });
+            if (request) {
+                toast.success(request?.message || 'Staff assigned successfully');
+                return request;
+            }
+        } catch (error: any) {
+            toast.error('Failed to assign staff: ' + (error?.message || 'Unknown error'));
+        }
+    };
+
+    /**
+     * Unassign a staff member from a bank account
+     * @param assignmentId - The staff assignment ID
+     * @param accountId - The bank account ID
+     * @returns Promise with unassignment result
+     */
+    const unassignStaffFromAccount = async (assignmentId: string, accountId: string): Promise<any | undefined> => {
+        try {
+            const request = await api.delete(Endpoints.deleteStaffAssignment.replace(/\/$/, '') + '/' + assignmentId, {
+                accountId
+            });
+            if (request) {
+                toast.success(request?.message || 'Staff unassigned successfully');
+                return request;
+            }
+        } catch (error: any) {
+            toast.error('Failed to unassign staff: ' + (error?.message || 'Unknown error'));
+        }
+    };
+
+    /**
+     * Assign a rate to a bank account
+     * @param accountId - The bank account ID
+     * @param rateId - The rate ID to assign
+     * @returns Promise with assignment result
+     */
+    const assignRateToAccount = async (accountId: string, rateId: string): Promise<any | undefined> => {
+        try {
+            const endpoint = Endpoints.assignRateToAccount.replace(/\/$/, '') + '/' + accountId;
+            const request = await api.post(endpoint, { rateId });
+            if (request) {
+                toast.success(request?.message || 'Rate assigned successfully');
+                return request;
+            }
+        } catch (error: any) {
+            toast.error('Failed to assign rate: ' + (error?.message || 'Unknown error'));
+            throw error;
+        }
+    };
+
     return {
         getBankAccounts,
+        getBankAccountsByClient,
+        getBankAccountById,
         createBankAccount,
         updateBankAccount,
-        deleteBankAccount
+        deleteBankAccount,
+        getStaffAssignmentsByAccount,
+        getStaffAssignmentsByStaff,
+        assignStaffToAccount,
+        unassignStaffFromAccount,
+        assignRateToAccount
     };
 };

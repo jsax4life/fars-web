@@ -9,18 +9,22 @@ interface Tokens {
 interface ApiContextType {
     token: Tokens | null;
     updateToken: (newToken: Tokens | null) => void;
+    isFetching: boolean;
+    incrementPending: () => void;
+    decrementPending: () => void;
 }
 
 // Define API Context
 const ApiContext = createContext<ApiContextType | null>(null);
 
 // API Base URL
-const API_BASE_URL = "http://server.adegoroyefadareandco.org";
+const API_BASE_URL = "https://adegoroyefadareandco.org";
 
 
 export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [token, setToken] = useState<Tokens | null>(null);
     const [loading, setLoading] = useState(true); // Track loading state
+    const [pendingRequests, setPendingRequests] = useState(0);
 
     // Load token from storage
     useEffect(() => {
@@ -54,8 +58,11 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return null; // Or a loading spinner
     }
 
+    const incrementPending = () => setPendingRequests((prev) => prev + 1);
+    const decrementPending = () => setPendingRequests((prev) => Math.max(0, prev - 1));
+
     return (
-        <ApiContext.Provider value={{ token, updateToken }}>
+        <ApiContext.Provider value={{ token, updateToken, isFetching: pendingRequests > 0, incrementPending, decrementPending }}>
             {children}
         </ApiContext.Provider>
     );
@@ -69,7 +76,7 @@ export const useApi = () => {
         throw new Error("useApi must be used within an ApiProvider");
     }
 
-    const { token, updateToken } = context;
+    const { token, updateToken, isFetching, incrementPending, decrementPending } = context;
 
     const request = async (method: string, endpoint: string, data?: any) => {
         if (token === null) {
@@ -80,22 +87,49 @@ export const useApi = () => {
         }
 
         const url = `${API_BASE_URL}${endpoint}`;
-        const headers: Record<string, string> = {
-            "Content-Type": "application/json",
-        };
+        const headers: Record<string, string> = {};
+
+        // Only set Content-Type for non-FormData requests
+        if (!(data instanceof FormData)) {
+            headers["Content-Type"] = "application/json";
+        }
 
         if (token) {
             headers["Authorization"] = `Bearer ${token.accessToken}`;
         }
 
         try {
+            incrementPending();
             const response = await fetch(url, {
                 method,
                 headers,
-                body: data ? JSON.stringify(data) : undefined,
+                body: data ? (data instanceof FormData ? data : JSON.stringify(data)) : undefined,
             });
 
-            const result = await response.json();
+            // Check if response has content before trying to parse JSON
+            const contentType = response.headers.get("content-type");
+            const hasJsonContent = contentType && contentType.includes("application/json");
+            const hasContent = response.status !== 204 && response.status !== 205; // 204 No Content, 205 Reset Content
+
+            let result: any = null;
+            if (hasContent) {
+                try {
+                    const text = await response.text();
+                    if (text && text.trim().length > 0) {
+                        // Try to parse as JSON if Content-Type suggests JSON, or try parsing anyway
+                        if (hasJsonContent || text.trim().startsWith('{') || text.trim().startsWith('[')) {
+                            result = JSON.parse(text);
+                        } else {
+                            // If it's not JSON, return the text as a simple object
+                            result = { message: text };
+                        }
+                    }
+                } catch (parseError) {
+                    // If JSON parsing fails, result stays null
+                    // This is okay - we'll handle errors based on response.ok below
+                    result = null;
+                }
+            }
 
             if (!response.ok) {
                 // Handle token expiration or invalidation here
@@ -106,23 +140,54 @@ export const useApi = () => {
                     //navigate to /
                     if (token) window.location.href = "/"; // Redirect to login page
                 }
-                throw new Error(result.message || response.statusText);
+
+                // Normalize backend error shapes into a readable message
+                let errorMessage: string = response.statusText;
+                try {
+                    const messages: string[] = [];
+                    if (result) {
+                        if (typeof result.message === 'string') messages.push(result.message);
+                        if (Array.isArray(result.message)) messages.push(result.message.join('\n'));
+                        if (result.response) {
+                            if (typeof result.response.message === 'string') messages.push(result.response.message);
+                            if (Array.isArray(result.response.message)) messages.push(result.response.message.join('\n'));
+                            if (typeof result.response.error === 'string') messages.push(result.response.error);
+                        }
+                        if (typeof result.error === 'string') messages.push(result.error);
+                    }
+                    const chosen = messages.find(m => m && m.trim().length > 0);
+                    if (chosen) errorMessage = chosen;
+                } catch (_) {
+                    // fallback to statusText
+                }
+
+                const err = new Error(errorMessage) as Error & { status?: number };
+                (err as any).status = response.status;
+                throw err;
+            }
+
+            // For successful responses without content (like 204), return a success indicator
+            if (!hasContent || !result) {
+                return { success: true, message: 'Operation completed successfully' };
             }
 
             return result;
         } catch (error: any) {
             throw error;
+        } finally {
+            decrementPending();
         }
     };
 
     return {
         token,
         updateToken,
+        isFetching,
         get: (endpoint: string) => request("GET", endpoint),
         post: (endpoint: string, data: any) => request("POST", endpoint, data),
         patch: (endpoint: string, data: any) => request("PATCH", endpoint, data),
         put: (endpoint: string, data: any) => request("PUT", endpoint, data),
-        delete: (endpoint: string) => request("DELETE", endpoint),
+        delete: (endpoint: string, data?: any) => request("DELETE", endpoint, data),
     };
 };
 

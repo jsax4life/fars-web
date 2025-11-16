@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, ChangeEvent, FormEvent } from "react";
+import React, { useState, ChangeEvent, FormEvent, useEffect } from "react";
 import Sidebar from "@/components/utility/Sidebar";
 import AccountInformation from "./AccountInformation";
 import TransactionTable from "@/components/account/Table/TransactionTable";
@@ -12,20 +12,10 @@ import { PlusIcon } from "@heroicons/react/20/solid";
 import Image from "next/image";
 import RateAdjustmentForm from "./RateAdjustment";
 import Navbar from "../nav/Navbar";
-
-// Dummy user data for the dropdown
-const users = [
-    { id: 1, name: "Alice Smith", avatar: "/images/avatar-1.png" },
-    { id: 2, name: "Bob Johnson", avatar: "/images/avatar-2.png" },
-    { id: 3, name: "Charlie Brown", avatar: "/images/avatar-3.png" },
-    { id: 4, name: "Diana Lee", avatar: "/images/avatar-4.png" },
-    { id: 5, name: "Eve Williams", avatar: "/images/avatar-5.png" },
-    { id: 6, name: "Frank Miller", avatar: "/images/avatar-6.png" },
-    { id: 7, name: "Grace Davis", avatar: "/images/avatar-7.png" },
-    { id: 8, name: "Henry Wilson", avatar: "/images/avatar-8.png" },
-    { id: 9, name: "Ivy Moore", avatar: "/images/avatar-9.png" },
-    { id: 10, name: "Jack Taylor", avatar: "/images/avatar-10.png" },
-];
+import { useParams, useRouter } from "next/navigation";
+import { useBankAccounts } from "@/hooks/useBankAccount";
+import { useUsers } from "@/hooks/useUsers";
+import { toast } from "sonner";
 
 interface FormData {
     accountNumber?: string;
@@ -104,15 +94,37 @@ interface ModalFormData {
 }
 
 interface AssignedUser {
-    id: number;
-    name: string;
-    avatar: string;
+    id: string;
+    userId?: string;
+    user?: {
+        id: string;
+        firstName?: string;
+        lastName?: string;
+        email?: string;
+        avatarUrl?: string;
+    };
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    avatarUrl?: string;
+    name?: string;
+    avatar?: string;
 }
 
 // type AnalysisType = "CMF" | "ST Loan" | "LT Loan" | "Interest" | "Debit" | "Credit" | "Collateral" | "Fees" | null;
 
 const AccountDetails = () => {
+    const params = useParams();
+    const router = useRouter();
+    const id = Array.isArray(params?.id) ? params?.id[0] : (params?.id as string | undefined);
+    const { getBankAccountById, getStaffAssignmentsByAccount, assignStaffToAccount, unassignStaffFromAccount } = useBankAccounts();
+    const { getUsers } = useUsers();
+    const [accountHeader, setAccountHeader] = useState<string>("");
     const [activeTab, setActiveTab] = useState("Entry");
+    const [allUsers, setAllUsers] = useState<any[]>([]);
+    const [loadingUsers, setLoadingUsers] = useState(false);
+    const [loadingAssignments, setLoadingAssignments] = useState(false);
+    const [showAssignedUsers, setShowAssignedUsers] = useState(true);
     const [entryTransactions, setEntryTransactions] = useState<Transaction[]>([
         { sNo: "01", entryDate: "02-04-2023", transactionDate: "02-04-2023", valueDate: "02-04-2023", tellerNumber: "N/A", transactionDescription: "Principal LIQ...", transactionType: "Cash/Cheque", chequeNo: "Nil", originalValue: "44,897,985.89" },
         { sNo: "02", entryDate: "02-04-2023", transactionDate: "02-04-2023", valueDate: "02-04-2023", tellerNumber: "U000...", transactionDescription: "Debetuje baje...", transactionType: "Cash/Cheque", chequeNo: "Cash", originalValue: "100,000.00" },
@@ -290,6 +302,42 @@ const AccountDetails = () => {
       
     };
 
+    useEffect(() => {
+        if (!id) return;
+        getBankAccountById(id).then((a: any) => {
+            if (!a) return;
+            setAccountHeader(`${a.accountName || ''} Account`);
+            // Prefill top section with all available data
+            initialInfo = {
+                accountNumber: a.accountNumber,
+                accountCode: a.code,
+                accountName: a.accountName,
+                revenueType: (a.accountType || '').toLowerCase(),
+                currency: a.currency,
+                postingBalance: a.openingBalance?.toString() || '',
+                leadBank: a.bank?.name || '',
+                // Rate information
+                drRate: a.rate?.debitRate?.toString() || '',
+                exRate: a.rate?.excessRate?.toString() || '',
+                exChargeType: a.rate?.excessRateType || '',
+                CAMFRate: a.rate?.camfRate?.toString() || '',
+                returnChargeRate: a.rate?.returnChargeRate?.toString() || '',
+                returnChargeLimit: a.rate?.returnChargeLimit?.toString() || '',
+                CAMFConvenantRate: a.rate?.cotCovenantRate?.toString() || '',
+                CAMFOffConvenantRate: a.rate?.cotOffCoverRate?.toString() || '',
+                turnOverLimit: a.rate?.turnoverLimit?.toString() || '',
+                CAMFConvenantFrequency: a.rate?.cotCovenantFrequency || '',
+                creditInterestRate: a.rate?.creditInterestRates?.[0]?.rate?.toString() || '',
+                vatWHTRate: a.rate?.whtRate?.toString() || '',
+            };
+            setInitialInfoState(initialInfo);
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id]);
+
+    let initialInfo: any = {};
+    const [initialInfoState, setInitialInfoState] = useState<any>({});
+
     const getTableDataAndHeaders = () => {
         switch (activeTab) {
             case "Bank Statement":
@@ -451,19 +499,138 @@ const AccountDetails = () => {
         );
     };
 
-    const toggleUserList = () => {
-        setIsUserListOpen(!isUserListOpen);
-    };
-
-    const assignUser = (user: (typeof users)[0]) => {
-        if (!assignedUsers.some((assigned) => assigned.id === user.id)) {
-            setAssignedUsers([...assignedUsers, user]);
+    const toggleUserList = async () => {
+        const newState = !isUserListOpen;
+        setIsUserListOpen(newState);
+        
+        if (newState && id) {
+            // Fetch assigned users and all users when modal opens
+            setLoadingAssignments(true);
+            setLoadingUsers(true);
+            
+            try {
+                // Fetch assigned staff for this account
+                const assignments = await getStaffAssignmentsByAccount(id);
+                if (assignments && Array.isArray(assignments)) {
+                    const mapped = assignments.map((assignment: any) => {
+                        const user = assignment.user || assignment;
+                        return {
+                            id: assignment.id || user.id,
+                            userId: user.id || assignment.userId,
+                            firstName: user.firstName,
+                            lastName: user.lastName,
+                            email: user.email,
+                            avatarUrl: user.avatarUrl,
+                            name: user.firstName && user.lastName 
+                                ? `${user.firstName} ${user.lastName}` 
+                                : user.email || 'Unknown User',
+                            avatar: user.avatarUrl || `https://placehold.co/40x40/FF7F50/FFFFFF?text=${(user.firstName?.[0] || user.email?.[0] || 'U').toUpperCase()}`
+                        };
+                    });
+                    setAssignedUsers(mapped);
+                }
+                
+                // Fetch all users from the system
+                const usersData = await getUsers();
+                if (usersData && Array.isArray(usersData)) {
+                    setAllUsers(usersData);
+                }
+            } catch (error) {
+                console.error('Failed to load users:', error);
+            } finally {
+                setLoadingAssignments(false);
+                setLoadingUsers(false);
+            }
         }
-        setIsUserListOpen(false);
     };
 
-    const unassignUser = (userId: number) => {
-        setAssignedUsers(assignedUsers.filter((user) => user.id !== userId));
+    const assignUser = async (user: any) => {
+        if (!id) {
+            toast.error('Account ID is missing');
+            return;
+        }
+        
+        const userId = user.id;
+        if (!userId) {
+            toast.error('User ID is missing');
+            return;
+        }
+
+        // Check if already assigned
+        if (assignedUsers.some((assigned) => assigned.userId === userId || assigned.id === userId)) {
+            toast.error('User is already assigned to this account');
+            return;
+        }
+
+        setLoadingUsers(true);
+        try {
+            const result = await assignStaffToAccount(userId, id);
+            if (result) {
+                // Add to assigned users list
+                const newAssigned = {
+                    id: result.id || userId,
+                    userId: userId,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    email: user.email,
+                    avatarUrl: user.avatarUrl,
+                    name: user.firstName && user.lastName 
+                        ? `${user.firstName} ${user.lastName}` 
+                        : user.email || 'Unknown User',
+                    avatar: user.avatarUrl || `https://placehold.co/40x40/FF7F50/FFFFFF?text=${(user.firstName?.[0] || user.email?.[0] || 'U').toUpperCase()}`
+                };
+                setAssignedUsers([...assignedUsers, newAssigned]);
+            }
+        } catch (error) {
+            console.error('Failed to assign user:', error);
+        } finally {
+            setLoadingUsers(false);
+        }
+    };
+
+    const unassignUser = async (assignmentId: string) => {
+        if (!id) {
+            toast.error('Account ID is missing');
+            return;
+        }
+
+        if (!assignmentId) {
+            toast.error('Assignment ID is missing');
+            return;
+        }
+
+        setLoadingAssignments(true);
+        try {
+            const result = await unassignStaffFromAccount(assignmentId, id);
+            if (result) {
+                // Remove from assigned users list
+                setAssignedUsers(assignedUsers.filter((user) => user.id !== assignmentId));
+                // Optionally refresh the assignments list
+                const assignments = await getStaffAssignmentsByAccount(id);
+                if (assignments && Array.isArray(assignments)) {
+                    const mapped = assignments.map((assignment: any) => {
+                        const user = assignment.user || assignment;
+                        return {
+                            id: assignment.id || user.id,
+                            userId: user.id || assignment.userId,
+                            firstName: user.firstName,
+                            lastName: user.lastName,
+                            email: user.email,
+                            avatarUrl: user.avatarUrl,
+                            name: user.firstName && user.lastName 
+                                ? `${user.firstName} ${user.lastName}` 
+                                : user.email || 'Unknown User',
+                            avatar: user.avatarUrl || `https://placehold.co/40x40/FF7F50/FFFFFF?text=${(user.firstName?.[0] || user.email?.[0] || 'U').toUpperCase()}`
+                        };
+                    });
+                    setAssignedUsers(mapped);
+                }
+            }
+        } catch (error) {
+            console.error('Failed to unassign user:', error);
+        } finally {
+            setLoadingAssignments(false);
+        }
     };
 
     const toggleQueryModal = () => {
@@ -483,22 +650,37 @@ const AccountDetails = () => {
                 <div className="bg-gray-100 min-h-full p-4 md:p-6">
                     <div className="bg-white rounded-md shadow-md p-4 md:p-6">
                         <div className="flex items-center justify-between mb-4">
-                            <h1 className="text-gray-700 text-xl font-semibold">user.id Account</h1>
+                            <div className="flex items-center gap-3">
+                                <button onClick={() => router.back()} className="text-gray-600 hover:text-gray-800 focus:outline-none" aria-label="Go back">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M9.707 14.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L6.414 8H17a1 1 0 110 2H6.414l3.293 3.293a1 1 0 010 1.414z" clipRule="evenodd" />
+                                    </svg>
+                                </button>
+                                <h1 className="text-gray-700 text-xl font-semibold">{accountHeader || 'Account'}</h1>
+                            </div>
                             <div className="flex items-center space-x-3">
                                 <div className="flex -space-x-2">
-                                    {assignedUsers.map((user) => (
-                                        <div key={user.id} className="relative w-8 h-8 rounded-full shadow">
-                                            <Image src={user.avatar} alt={user.name} fill className="rounded-full object-cover" />
-                                            <button
-                                                onClick={() => unassignUser(user.id)}
-                                                className="absolute top-0 right-0 -mt-1 -mr-1 bg-gray-200 rounded-full w-4 h-4 flex items-center justify-center text-gray-500 hover:text-red-500 focus:outline-none focus:ring-2 focus:ring-red-500"
-                                            >
-                                                <svg className="w-2 h-2" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    ))}
+                                    {assignedUsers.map((user) => {
+                                        const firstName = user.firstName || '';
+                                        const email = user.email || '';
+                                        const initial = (firstName?.[0] || email?.[0] || 'U').toUpperCase();
+                                        const avatarUrl = user.avatarUrl || user.avatar || `https://placehold.co/40x40/FF7F50/FFFFFF?text=${initial}`;
+                                        const userName = user.name || `${firstName} ${user.lastName || ''}`.trim() || email || 'User';
+                                        return (
+                                            <div key={user.id || user.userId} className="relative w-8 h-8 rounded-full shadow overflow-hidden bg-gray-200">
+                                                <Image src={avatarUrl} alt={userName} fill className="rounded-full object-cover" />
+                                                <button
+                                                    onClick={() => unassignUser(user.id || '')}
+                                                    disabled={loadingAssignments}
+                                                    className="absolute top-0 right-0 -mt-1 -mr-1 bg-gray-200 rounded-full w-4 h-4 flex items-center justify-center text-gray-500 hover:text-red-500 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-red-500"
+                                                >
+                                                    <svg className="w-2 h-2" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
                                     <button
                                         onClick={toggleUserList}
                                         className="relative w-8 h-8 rounded-full border border-gray-300 bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -611,7 +793,7 @@ const AccountDetails = () => {
                             </div>
                         )} */}
 
-                        <AccountInformation />
+                        <AccountInformation initialData={initialInfoState} />
 
                         <div className="mb-4 overflow-x-auto">
                             <div className="flex whitespace-nowrap border-b border-gray-200">
@@ -890,52 +1072,125 @@ const AccountDetails = () => {
             {isUserListOpen && (
                 <Modal isOpen={isUserListOpen} onClose={toggleUserList}>
                     <h2 className="text-lg font-semibold mb-4 text-gray-700">Assign Users</h2>
-                    <div className="overflow-y-auto max-h-80">
-                        <h3 className="font-semibold mb-2 text-gray-600">Assigned Users</h3>
-                        {assignedUsers.length > 0 ? (
-                            <ul>
-                                {assignedUsers.map((user) => (
-                                    <li key={user.id} className="flex items-center justify-between py-2">
-                                        <div className="flex items-center text-gray-700">
-                                            <div className="w-8 h-8 rounded-full shadow text-gray-700 mr-2 relative">
-                                                <Image src={user.avatar} alt={user.name} fill className="rounded-full object-cover" />
-                                            </div>
-                                            <span>{user.name}</span>
-                                        </div>
-                                        <button
-                                            onClick={() => unassignUser(user.id)}
-                                            className="bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold py-1 px-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                                        >
-                                            Unassign
-                                        </button>
-                                    </li>
-                                ))}
-                            </ul>
-                        ) : (
-                            <p className="text-gray-500 mb-2">No users assigned yet.</p>
-                        )}
+                    <div className="overflow-y-auto max-h-96">
+                        {/* Assigned Users Section with Toggle */}
+                        <div className="mb-4">
+                            <button
+                                onClick={() => setShowAssignedUsers(!showAssignedUsers)}
+                                className="flex items-center justify-between w-full font-semibold mb-2 text-gray-600 hover:text-gray-800"
+                            >
+                                <span>Assigned Users ({assignedUsers.length})</span>
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className={`h-5 w-5 transition-transform ${showAssignedUsers ? 'rotate-180' : ''}`}
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                >
+                                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                </svg>
+                            </button>
+                            {showAssignedUsers && (
+                                <div>
+                                    {loadingAssignments ? (
+                                        <p className="text-gray-500 text-sm">Loading assigned users...</p>
+                                    ) : assignedUsers.length > 0 ? (
+                                        <ul className="space-y-2">
+                                            {assignedUsers.map((user) => (
+                                                <li key={user.id || user.userId} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+                                                    <div className="flex items-center text-gray-700">
+                                                        <div className="w-8 h-8 rounded-full shadow mr-2 relative overflow-hidden bg-gray-200">
+                                                            {(user.avatarUrl || user.avatar) ? (
+                                                                <Image 
+                                                                    src={(user.avatarUrl || user.avatar) as string} 
+                                                                    alt={user.name || 'User'} 
+                                                                    fill 
+                                                                    className="rounded-full object-cover" 
+                                                                />
+                                                            ) : (
+                                                                <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs">
+                                                                    {(user.firstName?.[0] || user.email?.[0] || 'U').toUpperCase()}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <span>{user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || 'Unknown User'}</span>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => unassignUser(user.id || '')}
+                                                        disabled={loadingAssignments}
+                                                        className="bg-gray-300 hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 font-semibold py-1 px-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                                                    >
+                                                        Unassign
+                                                    </button>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    ) : (
+                                        <p className="text-gray-500 text-sm">No users assigned yet.</p>
+                                    )}
+                                </div>
+                            )}
+                        </div>
 
-                        <h3 className="font-semibold mt-4 mb-2 text-gray-600">Unassigned Users</h3>
-                        <ul>
-                            {users
-                                .filter((user) => !assignedUsers.some((assigned) => assigned.id === user.id))
-                                .map((user) => (
-                                    <li key={user.id} className="flex items-center justify-between py-2">
-                                        <div className="flex items-center text-gray-700">
-                                            <div className="w-8 h-8 rounded-full shadow text-gray-700 mr-2 relative">
-                                                <Image src={user.avatar} alt={user.name} fill className="rounded-full object-cover" />
-                                            </div>
-                                            <span>{user.name}</span>
-                                        </div>
-                                        <button
-                                            onClick={() => assignUser(user)}
-                                            className="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-1 px-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                                        >
-                                            Assign
-                                        </button>
-                                    </li>
-                                ))}
-                        </ul>
+                        {/* Unassigned Users Section */}
+                        <div className="mt-4">
+                            <h3 className="font-semibold mb-2 text-gray-600">Unassigned Users</h3>
+                            {loadingUsers ? (
+                                <p className="text-gray-500 text-sm">Loading users...</p>
+                            ) : (
+                                <ul className="space-y-2">
+                                    {allUsers
+                                        .filter((user) => {
+                                            const userId = user.id;
+                                            return !assignedUsers.some((assigned) => 
+                                                assigned.userId === userId || assigned.id === userId
+                                            );
+                                        })
+                                        .map((user) => {
+                                            const userName = user.firstName && user.lastName 
+                                                ? `${user.firstName} ${user.lastName}` 
+                                                : user.email || 'Unknown User';
+                                            const userAvatar = user.avatarUrl || `https://placehold.co/40x40/FF7F50/FFFFFF?text=${(user.firstName?.[0] || user.email?.[0] || 'U').toUpperCase()}`;
+                                            
+                                            return (
+                                                <li key={user.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+                                                    <div className="flex items-center text-gray-700">
+                                                        <div className="w-8 h-8 rounded-full shadow mr-2 relative overflow-hidden bg-gray-200">
+                                                            {user.avatarUrl ? (
+                                                                <Image 
+                                                                    src={user.avatarUrl} 
+                                                                    alt={userName} 
+                                                                    fill 
+                                                                    className="rounded-full object-cover" 
+                                                                />
+                                                            ) : (
+                                                                <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs">
+                                                                    {(user.firstName?.[0] || user.email?.[0] || 'U').toUpperCase()}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <span>{userName}</span>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => assignUser(user)}
+                                                        disabled={loadingUsers}
+                                                        className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-1 px-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                                                    >
+                                                        Assign
+                                                    </button>
+                                                </li>
+                                            );
+                                        })}
+                                    {allUsers.filter((user) => {
+                                        const userId = user.id;
+                                        return !assignedUsers.some((assigned) => 
+                                            assigned.userId === userId || assigned.id === userId
+                                        );
+                                    }).length === 0 && (
+                                        <p className="text-gray-500 text-sm">All users are assigned.</p>
+                                    )}
+                                </ul>
+                            )}
+                        </div>
                     </div>
                 </Modal>
             )}

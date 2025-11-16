@@ -1,10 +1,12 @@
 "use client";
 
 import React, { use, useEffect, useRef, useState } from "react";
+import { toast } from 'sonner';
 import Sidebar from "../utility/Sidebar";
 import { useRouter } from "next/navigation";
 import { useUsers } from "@/hooks/useUsers";
 import { useUserAuth } from "@/hooks/useUserAuth";
+import { useBankAccounts } from "@/hooks/useBankAccount";
 import { User } from "@/types";
 import { formatRole, paginateItems } from "@/lib/utils";
 import Navbar from "../nav/Navbar";
@@ -15,25 +17,51 @@ interface NewAdmin {
   phone: string;
   role: string;
   password: string;
+  username: string;
+  avatarUrl: string;
+  isActive: boolean;
+  permissions: string[];
+}
+
+interface AssignedAccount {
+  id: string; // Assignment ID
+  accountId?: string; // Bank account ID (may not be in response)
+  accountName: string;
+  accountNumber: string;
+  accountType: string;
+  clientId: string;
 }
 
 const UserList = () => {
   const router = useRouter();
-  const { getUsers, updateUser, deleteUser, createUser, deactivateUser, activateUser } = useUsers()
+  const { getUsers, getUserById, updateUser, deleteUser, createUser, deactivateUser, activateUser, checkEmailAvailability, checkUsernameAvailability } = useUsers()
+  const { getStaffAssignmentsByStaff, unassignStaffFromAccount } = useBankAccounts();
   const { user } = useUserAuth()
-  const [role, setRole] = useState('staff');
+  const [role, setRole] = useState('all');
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(0);
+  const [assignedAccounts, setAssignedAccounts] = useState<AssignedAccount[]>([]);
+  const [loadingAccounts, setLoadingAccounts] = useState(false);
+  const [showAssignedAccounts, setShowAssignedAccounts] = useState(true);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string>("");
+  const [emailAvailable, setEmailAvailable] = useState<null | boolean>(null);
+  const [usernameAvailable, setUsernameAvailable] = useState<null | boolean>(null);
+  const [checkingEmail, setCheckingEmail] = useState(false);
+  const [checkingUsername, setCheckingUsername] = useState(false);
   const [newAdmin, setNewAdmin] = useState<NewAdmin>({
     fullName: "",
     email: "",
     phone: "",
     password: "",
     role: "admin",
+    username: "",
+    avatarUrl: 'https://gravatar.com/avatar/48c3863a0f03a81d67916d28fdaa0ea6?s=400&d=mp&r=pg',
+    isActive: true,
+    permissions: ["VIEW_CLIENTS", "EDIT_TRANSACTIONS"],
   });
 
   // Deactivation flow states
@@ -77,13 +105,34 @@ const UserList = () => {
 
   const fetchUsers = async () => {
     setLoading(true)
-    const users = await getUsers(role.toUpperCase())
-    if (users) {
-      setUsers(users)
-    } else {
-      setUsers([])
-    }
+    try {
+      if (role === 'all') {
+        const allUsers = await getUsers();
+        setUsers(allUsers || [])
+        return;
+      }
+
+      if (role === 'staff') {
+        // Backend may have multiple staff roles; fetch all and filter client-side
+        const allUsers = await getUsers();
+        const staffRoleAliases = [
+          'staff', 'staff1', 'staff_1', 'staff2', 'staff_2',
+          'finance', 'finance_user', 'finance_staff',
+          'auditor', 'auditor_staff'
+        ];
+        const filtered = (allUsers || []).filter((u: any) => {
+          const r = (u?.role || '').toString().toLowerCase();
+          return staffRoleAliases.some(alias => r === alias || r.includes(alias));
+        });
+        setUsers(filtered)
+        return;
+      }
+
+      const filteredByRole = await getUsers(role.toUpperCase())
+      setUsers(filteredByRole || [])
+    } finally {
     setLoading(false)
+    }
   }
   useEffect(() => {
     fetchUsers()
@@ -143,9 +192,44 @@ const UserList = () => {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setNewAdmin({ ...newAdmin, [name]: value });
+    const { name, value, type, checked } = e.target as HTMLInputElement;
+    setNewAdmin({ ...newAdmin, [name]: type === 'checkbox' ? checked : value });
   };
+  useEffect(() => {
+    if (!showCreateModal) return;
+    const value = newAdmin.email.trim();
+    if (!value) { setEmailAvailable(null); return; }
+    setCheckingEmail(true);
+    const t = setTimeout(async () => {
+      const ok = await checkEmailAvailability(value);
+      setEmailAvailable(ok);
+      setCheckingEmail(false);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [newAdmin.email, showCreateModal]);
+
+  useEffect(() => {
+    if (!showCreateModal) return;
+    const value = newAdmin.username.trim();
+    if (!value) { setUsernameAvailable(null); return; }
+    setCheckingUsername(true);
+    const t = setTimeout(async () => {
+      const ok = await checkUsernameAvailability(value);
+      setUsernameAvailable(ok);
+      setCheckingUsername(false);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [newAdmin.username, showCreateModal]);
+
+  const togglePermission = (perm: string) => {
+    setNewAdmin((prev) => {
+      const exists = prev.permissions.includes(perm);
+      return {
+        ...prev,
+        permissions: exists ? prev.permissions.filter(p => p !== perm) : [...prev.permissions, perm]
+      }
+    })
+  }
 
   const handleDeactivationInputChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -191,9 +275,11 @@ const UserList = () => {
   };
 
   const handleDeleteUser = (userId: string) => {
+    setShowDeleteConfirm(false); // Close confirmation modal first
     setLoading(true)
-    deleteUser(userId).then(() => {
+    deleteUser(userId).then((resp: any) => {
       setUsers(users.filter(user => user.id !== userId));
+      setSuccessMessage(resp?.message || 'User has been successfully deleted');
       setShowSuccessModal(true);
       closeActionMenu();
     }).finally(() => {
@@ -201,15 +287,63 @@ const UserList = () => {
     })
   };
 
-  const openViewModal = (user: User) => {
-    setViewedUser(user);
-    setShowViewModal(true);
+  const openViewModal = async (user: User) => {
+    setLoading(true)
+    setLoadingAccounts(true)
+    try {
+      const fresh = await getUserById(user.id)
+      setViewedUser(fresh || user)
+      setShowViewModal(true)
+      
+      // Fetch assigned accounts for this staff member
+      try {
+        const accounts = await getStaffAssignmentsByStaff(user.id);
+        if (accounts && Array.isArray(accounts)) {
+          setAssignedAccounts(accounts);
+        } else {
+          setAssignedAccounts([]);
+        }
+      } catch (error) {
+        console.error('Failed to load assigned accounts:', error);
+        setAssignedAccounts([]);
+      }
+    } finally {
+      setLoading(false)
+      setLoadingAccounts(false)
     closeActionMenu();
+    }
   };
 
   const closeViewModal = () => {
     setShowViewModal(false);
     setViewedUser(null);
+    setAssignedAccounts([]);
+  };
+
+  const handleUnassignAccount = async (assignmentId: string, accountId?: string) => {
+    // If accountId is not provided, use assignmentId as fallback
+    // The backend might accept the assignment ID in the body
+    const accountIdToUse = accountId || assignmentId;
+    
+    setLoadingAccounts(true);
+    try {
+      const result = await unassignStaffFromAccount(assignmentId, accountIdToUse);
+      if (result) {
+        // Remove from assigned accounts list
+        setAssignedAccounts(assignedAccounts.filter(acc => acc.id !== assignmentId));
+        // Refresh the list to get updated data
+        if (viewedUser) {
+          const accounts = await getStaffAssignmentsByStaff(viewedUser.id);
+          if (accounts && Array.isArray(accounts)) {
+            setAssignedAccounts(accounts);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to unassign account:', error);
+    } finally {
+      setLoadingAccounts(false);
+    }
   };
 
   const openEditModal = (user: User) => {
@@ -235,37 +369,90 @@ const UserList = () => {
     setEditFormData({ ...editFormData, [name]: value });
   };
 
-  const handleSaveEdit = () => {
-    if (editedUser) {
-      setLoading(true)
-      updateUser(editedUser.id, {
+  const handleSaveEdit = async () => {
+    if (!editedUser) return;
+    setLoading(true);
+    try {
+      const payload: any = {
         firstName: editFormData.firstName,
         lastName: editFormData.lastName,
         email: editFormData.email,
-        // phone: editFormData.phone,
-        role: editFormData.role.toUpperCase(),
-      }).then(() => {
-        setUsers(users.map(user =>
-          user.id === editedUser.id ? { ...user, ...editFormData } : user
-        ));
-        setLoading(false)
-        closeEditModal();
+      };
+      if (editFormData.role && editFormData.role.trim()) {
+        payload.role = editFormData.role.toUpperCase();
+      }
+      if (typeof editFormData.phone === 'string') {
+        payload.phone = editFormData.phone;
+      }
+      const res = await updateUser(editedUser.id, payload);
+      if (res) {
+        setUsers(users.map(u => u.id === editedUser.id ? { ...u, ...editFormData, role: payload.role || u.role } : u));
+        setSuccessMessage(res?.message || 'User has been successfully updated');
         setShowSuccessModal(true);
-      })
+        closeEditModal();
+      }
+    } catch (error: any) {
+      // Error message already toasted in hook; no success modal on failure
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleCreateUser = () => {
+    // Basic validation
+    const trimmedFullName = newAdmin.fullName.trim();
+    if (!trimmedFullName) {
+      toast.error('Full name is required');
+      return;
+    }
+    const [firstName = '', lastName = ''] = trimmedFullName.split(/\s+/, 2);
+    if (!firstName || !lastName) {
+      toast.error('Please provide both first and last names');
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newAdmin.email)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+    if (emailAvailable === false) {
+      toast.error('Email is already in use');
+      return;
+    }
+    if (!newAdmin.password || newAdmin.password.length < 8) {
+      toast.error('Password must be at least 8 characters');
+      return;
+    }
+    if (!newAdmin.username.trim()) {
+      toast.error('Username is required');
+      return;
+    }
+    if (usernameAvailable === false) {
+      toast.error('Username is already taken');
+      return;
+    }
+
     setShowCreateModal(false);
-    setLoading(true)
+    setLoading(true);
+
     createUser({
-      firstName: newAdmin.fullName.split(" ")[0],
-      lastName: newAdmin.fullName.split(" ")[1],
+      firstName,
+      lastName,
       email: newAdmin.email,
       role: newAdmin.role.toUpperCase(),
-    }).then((res) => {
+      phone: newAdmin.phone || undefined,
+      password: newAdmin.password,
+      username: newAdmin.username,
+      // Username will be generated in the hook if not provided
+      isActive: newAdmin.isActive,
+      permissions: newAdmin.permissions,
+      avatarUrl: newAdmin.avatarUrl,
+    })
+      .then((res) => {
       if (res) {
+          // Append newly created user to list
         setUsers([...users, res]);
+          setSuccessMessage('User has been successfully created');
         setShowSuccessModal(true);
         setNewAdmin({
           fullName: "",
@@ -273,14 +460,18 @@ const UserList = () => {
           phone: "",
           password: "",
           role: "admin",
+            username: "",
+            avatarUrl: 'https://gravatar.com/avatar/48c3863a0f03a81d67916d28fdaa0ea6?s=400&d=mp&r=pg',
+            isActive: true,
+            permissions: ["VIEW_CLIENTS", "EDIT_TRANSACTIONS"],
         });
       } else {
         setShowSuccessModal(false);
       }
-    }).finally(() => {
-      setLoading(false)
-      setLoading(false)
     })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   const handleConfirmDeactivate = () => {
@@ -290,11 +481,15 @@ const UserList = () => {
 
   const handleConfirmActivate = () => {
     if (selectedUserId) {
-      activateUser(selectedUserId).then(() => {
+      activateUser(selectedUserId).then((resp: any) => {
         setUsers(users.map(user =>
           user.id === selectedUserId ? { ...user, isActive: true } : user
         ));
+        if (selectedUserForAction?.id === selectedUserId) {
+          setSelectedUserForAction({ ...(selectedUserForAction as User), isActive: true });
+        }
         setShowActivateConfirm(false);
+        setSuccessMessage(resp?.message || 'User has been successfully activated');
         setShowSuccessModal(true);
       }).catch(() => {
         // setShowDeactivateForm(false);
@@ -304,11 +499,15 @@ const UserList = () => {
 
   const handleSubmitDeactivation = () => {
     if (selectedUserId) {
-      deactivateUser(selectedUserId, deactivationReason.reason).then(() => {
+      deactivateUser(selectedUserId, deactivationReason.reason).then((resp: any) => {
         setUsers(users.map(user =>
           user.id === selectedUserId ? { ...user, isActive: false } : user
         ));
+        if (selectedUserForAction?.id === selectedUserId) {
+          setSelectedUserForAction({ ...(selectedUserForAction as User), isActive: false });
+        }
         setShowDeactivateForm(false);
+        setSuccessMessage(resp?.message || 'User has been successfully deactivated');
         setShowSuccessModal(true);
         setDeactivationReason({
 
@@ -324,7 +523,7 @@ const UserList = () => {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-       <div className="flex-1 md:mt-0">
+        <div className="flex-1 md:ml-64 md:mt-0">
                     <div className = "mb-4"><Navbar /></div>
                     
       {loading && (
@@ -332,7 +531,7 @@ const UserList = () => {
           <img src="/loader.gif" alt="Loading..." className="h-20 w-20" />
         </div>
       )}
-    <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
+     <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto pt-32 md:pt-32">
     
         <div className="mb-6">
           <h2 className="text-[#363636] text-lg md:text-xl font-semibold">
@@ -348,6 +547,7 @@ const UserList = () => {
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
                   className="block appearance-none bg-white border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded leading-tight focus:outline-none focus:border-blue-500 text-sm w-full">
+                  <option value={'all'}>All</option>
                   <option value={'admin'}>Admin</option>
                   <option value={'super_admin'}>Super Admin</option>
                   <option value={'staff'}>Staff</option>
@@ -458,18 +658,10 @@ const UserList = () => {
                     <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 hidden md:table-cell">
                       {user.phone || 'N/A'}
                     </td>
-                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
-                      <div className="relative">
-                        <select
-                          value={user.role.toLocaleLowerCase()}
-                          onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                          className="block appearance-none bg-white border border-gray-300 text-gray-700 py-1 px-2 pr-6 rounded leading-tight focus:outline-none focus:border-[#F36F2E] text-xs md:text-sm"
-                        >
-                          <option value="staff">Staff</option>
-                          <option value="admin">Admin</option>
-                          <option value="super_admin">Super Admin</option>
-                        </select>
-                      </div>
+                    <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-700">
+                      <span className="px-2 py-1 bg-gray-100 rounded text-gray-800">
+                        {formatRole(user.role)}
+                      </span>
                     </td>
                     <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
                       <span
@@ -514,26 +706,34 @@ const UserList = () => {
         >
           <div className="py-1">
             <button
-              onClick={() => openViewModal(selectedUserForAction)}
+              onClick={(e) => { e.stopPropagation(); openViewModal(selectedUserForAction) }}
               className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
             >
                               View
                             </button>
                             <button
-                              onClick={() => openEditModal(user)}
+                              onClick={(e) => { e.stopPropagation(); if (selectedUserForAction) openEditModal(selectedUserForAction) }}
                               className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
                             >
                               Edit
                             </button>
                             <button
-                              onClick={() => user.isActive ? handleDeactivateUser(user.id) : handleActivateUser(user.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!selectedUserForAction) return;
+                const current = users.find(u => u.id === selectedUserForAction.id);
+                const isActiveNow = current ? current.isActive : selectedUserForAction.isActive;
+                isActiveNow ? handleDeactivateUser(selectedUserForAction.id) : handleActivateUser(selectedUserForAction.id)
+              }}
                               className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left focus:outline-none"
                             >
-                              {user.isActive ? 'Deactivate' : 'Activate'}
+                              {(users.find(u => u.id === selectedUserForAction?.id)?.isActive ?? selectedUserForAction?.isActive) ? 'Deactivate' : 'Activate'}
                             </button>
                             <button
-                              onClick={() => {
-                                setSelectedUserId(user.id);
+              onClick={(e) => { 
+                e.stopPropagation();
+                if (!selectedUserForAction) return;
+                setSelectedUserId(selectedUserForAction.id);
                                 setShowDeleteConfirm(true);
                                 closeActionMenu();
                               }}
@@ -607,6 +807,21 @@ const UserList = () => {
                   </div>
 
                   <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                    <input
+                      type="text"
+                      name="username"
+                      value={newAdmin.username}
+                      onChange={handleInputChange}
+                      placeholder="e.g. STAFF0001"
+                      className="w-full text-black px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
+                    />
+                    {checkingUsername && <p className="text-xs text-gray-500 mt-1">Checking username...</p>}
+                    {usernameAvailable === false && <p className="text-xs text-red-600 mt-1">Username is already taken</p>}
+                    {usernameAvailable === true && <p className="text-xs text-green-600 mt-1">Username is available</p>}
+                  </div>
+
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                     <input
                       type="email"
@@ -616,6 +831,9 @@ const UserList = () => {
                       placeholder="Enter Admin Email"
                       className="w-full text-black px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
                     />
+                    {checkingEmail && <p className="text-xs text-gray-500 mt-1">Checking email...</p>}
+                    {emailAvailable === false && <p className="text-xs text-red-600 mt-1">Email is already in use</p>}
+                    {emailAvailable === true && <p className="text-xs text-green-600 mt-1">Email is available</p>}
                   </div>
 
                   <div>
@@ -626,6 +844,18 @@ const UserList = () => {
                       value={newAdmin.phone}
                       onChange={handleInputChange}
                       placeholder="Enter Admin Phone Number"
+                      className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Avatar URL</label>
+                    <input
+                      type="text"
+                      name="avatarUrl"
+                      value={newAdmin.avatarUrl}
+                      onChange={handleInputChange}
+                      placeholder="https://..."
                       className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
                     />
                   </div>
@@ -653,9 +883,47 @@ const UserList = () => {
                     </select>
                   </div>
 
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Active</label>
+                    <label className="inline-flex items-center gap-2 text-gray-700">
+                      <input
+                        type="checkbox"
+                        name="isActive"
+                        checked={newAdmin.isActive}
+                        onChange={handleInputChange}
+                        className="h-4 w-4"
+                      />
+                      <span>Is Active</span>
+                    </label>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Permissions</label>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        "VIEW_CLIENTS",
+                        "EDIT_TRANSACTIONS",
+                      ].map((perm) => (
+                        <button
+                          key={perm}
+                          type="button"
+                          onClick={() => togglePermission(perm)}
+                          className={`px-3 py-1 rounded-full border text-sm ${
+                            newAdmin.permissions.includes(perm)
+                              ? "bg-[#F36F2E] text-white border-[#F36F2E]"
+                              : "bg-white text-gray-700 border-gray-300"
+                          }`}
+                        >
+                          {perm}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <button
                     onClick={handleCreateUser}
-                    className="w-full bg-[#F36F2E] text-white py-2 px-4 rounded-md hover:bg-[#E05C2B] transition-colors sticky bottom-0"
+                    disabled={checkingEmail || checkingUsername || emailAvailable === false || usernameAvailable === false}
+                    className="w-full bg-[#F36F2E] text-white py-2 px-4 rounded-md hover:bg-[#E05C2B] transition-colors sticky bottom-0 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     Create User
                   </button>
@@ -813,10 +1081,7 @@ const UserList = () => {
 
                 <div className="mb-4">
                   <h3 className="text-lg font-semibold text-green-600">Successful</h3>
-                  <p className="text-gray-600 mt-2">
-                    Lorem ipsum dolor sit amet consectetur. Tellus pulvinar cras sed
-                    posuere duis. Velit euismod quis sed ut quis.
-                  </p>
+                  <p className="text-gray-600 mt-2">{successMessage || 'Action completed successfully'}</p>
                 </div>
 
                 <button
@@ -888,6 +1153,57 @@ const UserList = () => {
                     </div>
 
                   </div>
+                </div>
+
+                {/* Assigned Accounts Section */}
+                <div className="mb-6 p-4 bg-white rounded-md border border-gray-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-sm font-semibold text-gray-700">Assigned Accounts</h4>
+                    <button
+                      onClick={() => setShowAssignedAccounts(!showAssignedAccounts)}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className={`h-5 w-5 transition-transform ${showAssignedAccounts ? 'rotate-180' : ''}`}
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  </div>
+                  
+                  {showAssignedAccounts && (
+                    <div>
+                      {loadingAccounts ? (
+                        <p className="text-gray-500 text-sm">Loading accounts...</p>
+                      ) : assignedAccounts.length > 0 ? (
+                        <div className="space-y-3">
+                          {assignedAccounts.map((account) => (
+                            <div key={account.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-md border border-gray-200">
+                              <div className="flex-1">
+                                <p className="text-sm font-medium text-gray-800">{account.accountName}</p>
+                                <div className="flex items-center gap-4 mt-1">
+                                  <p className="text-xs text-gray-600">Account: {account.accountNumber}</p>
+                                  <p className="text-xs text-gray-600">Type: {account.accountType}</p>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => handleUnassignAccount(account.id, account.accountId)}
+                                disabled={loadingAccounts}
+                                className="ml-4 px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-md disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-red-500"
+                              >
+                                Unassign
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-gray-500 text-sm">No accounts assigned to this staff member.</p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
               </div>

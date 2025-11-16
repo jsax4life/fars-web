@@ -15,6 +15,8 @@ const Endpoints = {
     users: '/api/users',
     deactivateUser: '/api/users/deactivate/',
     activateUser: '/api/users/activate/',
+    checkEmail: '/api/users/check-email',
+    checkUsername: '/api/users/check-username',
 
     // Added Client Endpoints
     createClient: '/api/clients',
@@ -33,16 +35,51 @@ const Endpoints = {
     // Bank Account Endpoints
     createBankAccount: '/api/bank-accounts',
     getAllBankAccounts: '/api/bank-accounts',
+    getClientBankAccounts: '/api/bank-accounts/client/',
     getBankAccountById: '/api/bank-accounts/',
     updateBankAccountById: '/api/bank-accounts/',
     deleteBankAccountById: '/api/bank-accounts/',
+    assignRateToAccount: '/api/bank-accounts/assign-rate/',
+
+  // Rates Endpoints
+  getAllRates: '/api/rates',
+  getRateById: '/api/rates/',
+  createRate: '/api/rates',
+  deleteRate: '/api/rates/',
+  uploadRateDocument: '/api/rates/upload-document',
+  getRateDocuments: '/api/rates/',
+  getAllContractDocuments: '/api/rates/contract-documents',
+  getDocumentById: '/api/rates/document/',
+  updateRateDocument: '/api/rates/document/',
+  deleteRateDocument: '/api/rates/document/',
+  getRatesByClientId: '/api/rates/client/',
 
     //Bank Endpoints
     createBank: '/api/banks',
     getAllBanks: '/api/banks',
     getBankById: '/api/banks/',
     updateBankById: '/api/banks/',
-    deleteBankById: '/api/banks/'
+    deleteBankById: '/api/banks/',
+
+    // Staff Assignment Endpoints
+    getStaffAssignmentsByAccount: '/api/staff-assignments/bank-account/',
+    getStaffAssignmentsByStaff: '/api/staff-assignments/staff/',
+    createStaffAssignment: '/api/staff-assignments',
+    deleteStaffAssignment: '/api/staff-assignments/',
+
+    // Classification Pattern Endpoints
+    createClassificationPattern: '/api/classification-patterns',
+    getAllClassificationPatterns: '/api/classification-patterns',
+    getClassificationPatternById: '/api/classification-patterns/',
+    updateClassificationPatternById: '/api/classification-patterns/',
+    deleteClassificationPatternById: '/api/classification-patterns/',
+
+    // Reversal Keyword Endpoints
+    createReversalKeyword: '/api/reversal-keywords',
+    getAllReversalKeywords: '/api/reversal-keywords',
+    getReversalKeywordById: '/api/reversal-keywords/',
+    updateReversalKeywordById: '/api/reversal-keywords/',
+    deleteReversalKeywordById: '/api/reversal-keywords/',
 };
 
 export default Endpoints;

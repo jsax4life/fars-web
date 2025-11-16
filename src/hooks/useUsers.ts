@@ -5,10 +5,12 @@ import { toast } from 'sonner';
 export const useUsers = () => {
     const api = useApi()
 
-    const getUsers = async (role: string) => {
+    const getUsers = async (role?: string) => {
         try {
             // call api
-            const request = await api.get(Endpoints.users + `?role=${role}`)
+            const request = role && role !== 'ALL'
+                ? await api.get(Endpoints.users + `?role=${role}`)
+                : await api.get(Endpoints.users)
             if (request) {
                 return request
             }
@@ -17,11 +19,41 @@ export const useUsers = () => {
         }
     }
 
+    const getUserById = async (id: string) => {
+        try {
+            const request = await api.get(Endpoints.updateAccount + id)
+            if (request) return request
+        } catch (error: any) {
+            toast.error('Failed to load user: ' + error?.message)
+        }
+    }
+
+    const checkEmailAvailability = async (email: string) => {
+        if (!email) return false;
+        try {
+            const request = await api.get(`${Endpoints.checkEmail}?email=${encodeURIComponent(email)}`)
+            return !!(request?.available ?? request?.isAvailable ?? request?.data?.available);
+        } catch (error) {
+            return false;
+        }
+    }
+
+    const checkUsernameAvailability = async (username: string) => {
+        if (!username) return false;
+        try {
+            const request = await api.get(`${Endpoints.checkUsername}?username=${encodeURIComponent(username)}`)
+            return !!(request?.available ?? request?.isAvailable ?? request?.data?.available);
+        } catch (error) {
+            return false;
+        }
+    }
+
     const updateUser = async (id: string, data: {
         firstName?: string,
         lastName?: string,
         username?: string,
         email?: string,
+        phone?: string,
         avatarUrl?: string,
         role?: string,
         permissions?: string[],
@@ -33,13 +65,13 @@ export const useUsers = () => {
             const request = await api.patch(Endpoints.updateAccount + id, data)
 
             if (request) {
-                toast.success('Account updated successfully!');
+                toast.success(request?.message || 'Account updated successfully!');
                 return request;
             }
             return false;
         } catch (error: any) {
             toast.error('Failed to update account: ' + error?.message);
-            return false;
+            throw error;
         }
     }
 
@@ -50,7 +82,7 @@ export const useUsers = () => {
 
             if (request?.message) {
                 toast.success(request?.message);
-                return true;
+                return request;
             }
             return false;
         } catch (error: any) {
@@ -64,19 +96,25 @@ export const useUsers = () => {
         lastName: string,
         email: string,
         role: string,
+        username?: string,
+        phone?: string,
+        avatarUrl?: string,
+        password?: string,
+        permissions?: string[],
+        isActive?: boolean,
     }) => {
         try {
             // call create account api
             const request = await api.post(Endpoints.createuser, {
                 ...data,
-                username: generateUsername(data.firstName, data.lastName),
-                password: 'P@55w0rd',
-                isActive: true,
-                permissions: [
+                username: data.username || generateUsername(data.firstName, data.lastName),
+                password: data.password || 'P@55w0rd',
+                isActive: data.isActive ?? true,
+                permissions: data.permissions && data.permissions.length > 0 ? data.permissions : [
                     "VIEW_CLIENTS",
                     "EDIT_TRANSACTIONS"
                 ],
-                avatarUrl: 'https://gravatar.com/avatar/48c3863a0f03a81d67916d28fdaa0ea6?s=400&d=mp&r=pg',
+                avatarUrl: data.avatarUrl || 'https://gravatar.com/avatar/48c3863a0f03a81d67916d28fdaa0ea6?s=400&d=mp&r=pg',
             })
             if (request) {
                 toast.success('Account created successfully!');
@@ -127,11 +165,14 @@ export const useUsers = () => {
 
     return {
         getUsers,
+        getUserById,
         updateUser,
         deleteUser,
         createUser,
         deactivateUser,
         activateUser,
+        checkEmailAvailability,
+        checkUsernameAvailability,
     }
 
 }

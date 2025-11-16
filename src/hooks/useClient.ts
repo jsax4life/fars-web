@@ -69,21 +69,36 @@ export const useClients = () => {
         phone: string,
         country: string,
         state: string,
-        city: string
+        city: string,
+        avatarUrl?: string
     }) => {
         try {
-            // call create account api
-            const request = await api.post(Endpoints.createClient, {
-                ...data,
-                avatarUrl: 'https://gravatar.com/avatar/48c3863a0f03a81d67916d28fdaa0ea6?s=400&d=mp&r=pg',
-            })
+            // Prepare payload matching exact API structure
+            const payload = {
+                firstName: data.firstName,
+                lastName: data.lastName,
+                companyName: data.companyName,
+                address: data.address,
+                email: data.email,
+                phone: data.phone,
+                country: data.country,
+                state: data.state,
+                city: data.city,
+                avatarUrl: data.avatarUrl || 'https://gravatar.com/avatar/48c3863a0f03a81d67916d28fdaa0ea6?s=400&d=mp&r=pg'
+            };
+            
+            // call create client api
+            const request = await api.post(Endpoints.createClient, payload);
+            
             if (request) {
                 toast.success('Client created successfully!');
                 return request;
             }
             return false;
         } catch (error: any) {
-            toast.error('Failed to create client: ' + error?.message);
+            // Enhanced error handling
+            const errorMessage = error?.message || 'Unknown error occurred';
+            toast.error('Failed to create client: ' + errorMessage);
             return false;
         }
     }

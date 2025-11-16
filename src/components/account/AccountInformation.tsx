@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, ChangeEvent } from "react";
+import React, { useState, ChangeEvent, useEffect } from "react";
 
 interface FormData {
   accountNumber?: string;
@@ -66,9 +66,58 @@ interface Field {
   options?: string[] | { label: string; value: string }[];
 }
 
-const AccountInformation = () => {
+type InitialData = Partial<{
+  accountNumber: string;
+  accountCode: string;
+  accountName: string;
+  revenueType: string;
+  currency: string;
+  postingBalance: string;
+  leadBank: string;
+  drRate: string;
+  exRate: string;
+  exChargeType: string;
+  CAMFRate: string;
+  returnChargeRate: string;
+  returnChargeLimit: string;
+  CAMFConvenantRate: string;
+  CAMFOffConvenantRate: string;
+  turnOverLimit: string;
+  CAMFConvenantFrequency: string;
+  creditInterestRate: string;
+  vatWHTRate: string;
+}>;
+
+const AccountInformation = ({ initialData }: { initialData?: InitialData }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [formData, setFormData] = useState<FormData>({});
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData(prev => ({
+        ...prev,
+        accountNumber: initialData.accountNumber ?? prev.accountNumber,
+        accountCode: initialData.accountCode ?? prev.accountCode,
+        accountName: initialData.accountName ?? prev.accountName,
+        revenueType: (initialData.revenueType as any) ?? prev.revenueType,
+        currency: (initialData.currency as any) ?? prev.currency,
+        postingBalance: initialData.postingBalance ?? prev.postingBalance,
+        leadBank: initialData.leadBank ?? prev.leadBank,
+        drRate: initialData.drRate ?? prev.drRate,
+        exRate: initialData.exRate ?? prev.exRate,
+        exChargeType: (initialData.exChargeType as any) ?? prev.exChargeType,
+        CAMFRate: initialData.CAMFRate ?? prev.CAMFRate,
+        returnChargeRate: initialData.returnChargeRate ?? prev.returnChargeRate,
+        returnChargeLimit: initialData.returnChargeLimit ?? prev.returnChargeLimit,
+        CAMFConvenantRate: initialData.CAMFConvenantRate ?? prev.CAMFConvenantRate,
+        CAMFOffConvenantRate: initialData.CAMFOffConvenantRate ?? prev.CAMFOffConvenantRate,
+        turnOverLimit: initialData.turnOverLimit ?? prev.turnOverLimit,
+        CAMFConvenantFrequency: initialData.CAMFConvenantFrequency ?? prev.CAMFConvenantFrequency,
+        creditInterestRate: initialData.creditInterestRate ?? prev.creditInterestRate,
+        vatWHTRate: initialData.vatWHTRate ?? prev.vatWHTRate,
+      }));
+    }
+  }, [initialData]);
 
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
@@ -93,14 +142,7 @@ const AccountInformation = () => {
   };
   const firstEightFields: Field[] = [
     { id: "accountNumber", label: "Account Number", type: "text" },
-    { id: "dateValue", label: "Date Range", type: "date" },
     { id: "accountCode", label: "Account Code", type: "text" },
-    {
-      id: "accountCodeVersion",
-      label: "Account Code Verifier",
-      type: "select",
-      options: ["Select Verifier"],
-    },
     { id: "accountName", label: "Account Name", type: "text" },
     {
       id: "revenueType",
@@ -113,52 +155,35 @@ const AccountInformation = () => {
         "corporate" as const,
       ],
     },
-    { id: "locationOffline", label: "Location/Office", type: "text" },
     {
       id: "currency",
       label: "Currency",
       type: "select",
       options: ["Select Currency", "NGN" as const, "USD" as const, "GBP" as const],
     },
+    { id: "postingBalance", label: "Opening Balance", type: "text" },
+    { id: "leadBank", label: "Bank Name", type: "text" },
   ];
 
   const allFields: Field[] = [
     ...firstEightFields,
-    { id: "transactionTeam", label: "Transaction Team", type: "text" },
-    { id: "chequeNo", label: "Cheque No", type: "text" },
-    { id: "postingBalance", label: "Posting Balance", type: "text" },
-    { id: "orderBy", label: "Order By", type: "text" },
- 
     { id: "returnChargeRate", label: "Return Charge Rate", type: "text" },
-    { id: "returnChargeAmt", label: "Return Charge Amt", type: "text" },
-
-    // { id: "totOfSCharge", label: "Total of S Charge", type: "text" },
-    // { id: "totOfSChargeAmt", label: "Total of S Charge Amt", type: "text" },
+    { id: "returnChargeLimit", label: "Return Charge Limit", type: "text" },
     { id: "CAMFRate", label: "CAMF Rate", type: "text" },
-    { id: "limitStartDate", label: "Limit Start Date", type: "date" },
-    { id: "limitEndDate", label: "Limit End Date", type: "date" },
-    { id: "limitAmount", label: "Limit Amount", type: "text" },
-    {
-      id: "leadBank",
-      label: "Bank Name",
-      type: "select",
-      options: ["Select Bank"],
-    },
-    {
-      id: "leadClient",
-      label: "Client Name",
-      type: "select",
-      options: ["Select Client"],
-    },
-   
+    { id: "CAMFConvenantRate", label: "CAMF Convenant Rate", type: "text" },
+    { id: "CAMFOffConvenantRate", label: "CAMF Off Convenant Rate", type: "text" },
+    { id: "CAMFConvenantFrequency", label: "CAMF Convenant Frequency", type: "text" },
+    { id: "turnOverLimit", label: "Turnover Limit", type: "text" },
     { id: "drRate", label: "Dr. Rate", type: "text" },
     { id: "exRate", label: "Ex. Rate", type: "text" },
     {
       id: "exChargeType",
       label: "Ex. Charge Type.",
       type: "select",
-      options: ["Select Type"],
+      options: ["Select Type", "flat", "percentage"],
     },
+    { id: "creditInterestRate", label: "Credit Interest Rate", type: "text" },
+    { id: "vatWHTRate", label: "WHT Rate", type: "text" },
   ];
 
   return (
@@ -203,6 +228,7 @@ const AccountInformation = () => {
                 name={field.id}
                 value={formData[field.id] as string || ""}
                 onChange={handleChange}
+                readOnly
                 className="mt-1 block w-full rounded-md shadow-sm py-2 px-3 sm:text-sm bg-gray-100 border-transparent focus:border-orange-500 focus:ring-orange-500"
                 style={{ border: 'none' }}
               />
@@ -212,6 +238,7 @@ const AccountInformation = () => {
                 name={field.id}
                 value={formData[field.id] as string || ""}
                 onChange={handleChange}
+                disabled
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm bg-gray-100"
               >
                 {field.options?.map((option, index) => (
