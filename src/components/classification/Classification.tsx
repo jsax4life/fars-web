@@ -164,7 +164,7 @@ const Classification = () => {
         code: newClassification.code.trim(),
         category: newClassification.category,
         label: newClassification.label.trim(),
-        description: newClassification.description.trim() || undefined
+        description: newClassification.description?.trim() || undefined
       };
 
       const result = await createClassification(payload);
