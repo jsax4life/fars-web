@@ -80,6 +80,14 @@ const Endpoints = {
     getReversalKeywordById: '/api/reversal-keywords/',
     updateReversalKeywordById: '/api/reversal-keywords/',
     deleteReversalKeywordById: '/api/reversal-keywords/',
+
+    // Transaction Endpoints
+    uploadTransaction: '/api/transactions/',
+    createTransactions: '/api/transactions/',
+    getAccountTransactions: '/api/transactions/',
+    getTransactionById: '/api/transactions/',
+    updateTransaction: '/api/transactions/',
+    deleteTransaction: '/api/transactions/',
 };
 
 export default Endpoints;

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, ChangeEvent, FormEvent, useEffect } from "react";
+import React, { useState, ChangeEvent, FormEvent, useEffect, useRef } from "react";
 import Sidebar from "@/components/utility/Sidebar";
 import AccountInformation from "./AccountInformation";
 import TransactionTable from "@/components/account/Table/TransactionTable";
@@ -15,7 +15,10 @@ import Navbar from "../nav/Navbar";
 import { useParams, useRouter } from "next/navigation";
 import { useBankAccounts } from "@/hooks/useBankAccount";
 import { useUsers } from "@/hooks/useUsers";
+import { useTransactions, TransactionPreview } from "@/hooks/useTransactions";
 import { toast } from "sonner";
+import TransactionPreviewModal from "./TransactionPreviewModal";
+import AccountTransactions from "./AccountTransactions";
 
 interface FormData {
     accountNumber?: string;
@@ -119,6 +122,7 @@ const AccountDetails = () => {
     const id = Array.isArray(params?.id) ? params?.id[0] : (params?.id as string | undefined);
     const { getBankAccountById, getStaffAssignmentsByAccount, assignStaffToAccount, unassignStaffFromAccount } = useBankAccounts();
     const { getUsers } = useUsers();
+    const { uploadTransaction } = useTransactions();
     const [accountHeader, setAccountHeader] = useState<string>("");
     const [activeTab, setActiveTab] = useState("Entry");
     const [allUsers, setAllUsers] = useState<any[]>([]);
@@ -216,6 +220,10 @@ const AccountDetails = () => {
     const [formData, setFormData] = useState<FormData>({});
     const [step, setStep] = useState<number>(1);
     const [uploadType, setUploadType] = useState<"cashbook" | "bankstatement" | null>(null);
+    const [showTransactionPreview, setShowTransactionPreview] = useState(false);
+    const [previewTransactions, setPreviewTransactions] = useState<TransactionPreview[]>([]);
+    const [isUploading, setIsUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     // const [analysisType, setAnalysisType] = useState<AnalysisType>(null);
     const [isQueryModalOpen, setIsQueryModalOpen] = useState(false);
     const [showModal, setShowModal] = useState(false);
@@ -469,7 +477,43 @@ const AccountDetails = () => {
     const handleUploadOptionClick = (type: "cashbook" | "bankstatement") => {
         setUploadType(type);
         setIsUploadDropdownOpen(false);
-        alert(`Initiating upload for ${type}`);
+        // Trigger file input
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file || !id) {
+            return;
+        }
+
+        setIsUploading(true);
+        try {
+            const preview = await uploadTransaction(id, file);
+            if (preview && preview.length > 0) {
+                setPreviewTransactions(preview);
+                setShowTransactionPreview(true);
+            }
+        } catch (error) {
+            console.error("Failed to upload transaction:", error);
+        } finally {
+            setIsUploading(false);
+            // Reset file input
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        }
+    };
+
+    const handleTransactionPreviewClose = () => {
+        setShowTransactionPreview(false);
+        setPreviewTransactions([]);
+    };
+
+    const handleTransactionCreateSuccess = () => {
+        // Refresh transactions or show success message
+        toast.success("Transactions created successfully!");
+        // Optionally refresh the entry transactions list
     };
 
     // const handleAnalyzeOptionClick = (type: AnalysisType) => {
@@ -639,14 +683,14 @@ const AccountDetails = () => {
 
     return (
         <div className="flex flex-col md:flex-row h-screen bg-gray-100 ">
-            <div className="hidden md:block fixed h-full w-64">
+            <div className="hidden md:block fixed h-full w-64 z-40">
                 <Sidebar />
             </div>
-<div className="flex-1  mt-16 md:mt-0">
+<div className="flex-1  mt-16 md:mt-0 relative z-0">
         <div className = "md:ml-64 "><Navbar /></div>
         
 
-            <div className="flex-1 md:ml-64 overflow-auto mt-16 md:mt-0">
+            <div className="flex-1 md:ml-64 overflow-auto mt-16 md:mt-0 relative z-0">
                 <div className="bg-gray-100 min-h-full p-4 md:p-6">
                     <div className="bg-white rounded-md shadow-md p-4 md:p-6">
                         <div className="flex items-center justify-between mb-4">
@@ -690,13 +734,21 @@ const AccountDetails = () => {
                                 </div>
                                 {activeTab === "Entry" && (
                                     <div className="relative">
+                                        <input
+                                            ref={fileInputRef}
+                                            type="file"
+                                            accept=".xlsx,.xls,.csv,.pdf"
+                                            onChange={handleFileChange}
+                                            className="hidden"
+                                        />
                                         <button
                                             onClick={handleUploadButtonClick}
-                                            className="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded focus:outline-none focus:shadow-outline-orange active:bg-orange-700"
+                                            disabled={isUploading}
+                                            className="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded focus:outline-none focus:shadow-outline-orange active:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             <div className="flex items-center">
                                                 <CloudArrowUpIcon className="h-5 w-5 mr-2" />
-                                                <span>Upload</span>
+                                                <span>{isUploading ? "Uploading..." : "Upload"}</span>
                                             </div>
                                         </button>
                                         {isUploadDropdownOpen && (
@@ -857,6 +909,16 @@ const AccountDetails = () => {
                                 >
                                     Query
                                 </button>
+                                <button
+                                    onClick={() => handleTabChange("Transactions")}
+                                    className={`py-2 px-3 md:px-4 -mb-px font-semibold text-sm ${
+                                        activeTab === "Transactions"
+                                            ? "border-b-2 border-orange-500 text-orange-500"
+                                            : "text-gray-500 hover:text-orange-500"
+                                        } focus:outline-none`}
+                                >
+                                    Transactions
+                                </button>
                                 {/* <button
                                     onClick={() => handleTabChange("Analysis")}
                                     className={`py-2 px-3 md:px-4 -mb-px font-semibold text-sm ${
@@ -1010,6 +1072,9 @@ const AccountDetails = () => {
                                         Save Query
                                     </button>
                             </div>
+                        )}
+                        {activeTab === "Transactions" && id && (
+                            <AccountTransactions accountId={id} />
                         )}
   {(activeTab === "Analyze" || activeTab === "Bank Statement" || activeTab === "Classified Statement" || activeTab === "Cash Book" || activeTab === "Trans Matched") && (
                             <div className="overflow-y-auto max-h-[600px]">
@@ -1210,6 +1275,16 @@ const AccountDetails = () => {
                             handleSave = {handleSave} /> 
                     </div>
                         )}
+
+            {showTransactionPreview && id && (
+                <TransactionPreviewModal
+                    isOpen={showTransactionPreview}
+                    onClose={handleTransactionPreviewClose}
+                    transactions={previewTransactions}
+                    accountId={id}
+                    onCreateSuccess={handleTransactionCreateSuccess}
+                />
+            )}
         </div>
          </div>
     );

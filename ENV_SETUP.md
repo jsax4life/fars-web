@@ -33,3 +33,6 @@ Add the environment variable in Vercel Dashboard:
 - `NEXT_PUBLIC_*` prefix is required for client-side access in Next.js
 - The API URL defaults to `https://adegoroyefadareandco.org` if not set
 
+
+
+
