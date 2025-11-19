@@ -19,7 +19,7 @@ interface Classification {
 }
 
 const AccountTransactions: React.FC<AccountTransactionsProps> = ({ accountId }) => {
-  const { getAccountTransactions, getTransactionById, updateTransaction, deleteTransaction } = useTransactions();
+  const { getAccountTransactions, getTransactionById, updateTransaction, deleteTransaction, deleteMultipleTransactions } = useTransactions();
   const { getClassifications } = useClassifications();
   const [transactions, setTransactions] = useState<AccountTransaction[]>([]);
   const [loading, setLoading] = useState(false);
@@ -36,6 +36,15 @@ const AccountTransactions: React.FC<AccountTransactionsProps> = ({ accountId }) 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingTransactionId, setDeletingTransactionId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [selectedTransactionIds, setSelectedTransactionIds] = useState<Set<string>>(new Set());
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [filters, setFilters] = useState<{
+    from?: string;
+    to?: string;
+    classificationId?: string;
+  }>({});
+  const [showFilters, setShowFilters] = useState(false);
   const actionMenuRef = useRef<HTMLDivElement>(null);
   const actionButtonRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({});
   
@@ -47,7 +56,29 @@ const AccountTransactions: React.FC<AccountTransactionsProps> = ({ accountId }) 
       loadTransactions();
       loadClassifications();
     }
-  }, [accountId, page]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accountId, page, filters]);
+
+  // Clear selections when page changes
+  useEffect(() => {
+    setSelectedTransactionIds(new Set());
+  }, [page]);
+
+  const handleFilterChange = (key: 'from' | 'to' | 'classificationId', value: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      [key]: value || undefined,
+    }));
+    // Reset to page 1 when filters change
+    setPage(1);
+  };
+
+  const handleClearFilters = () => {
+    setFilters({});
+    setPage(1);
+  };
+
+  const hasActiveFilters = filters.from || filters.to || filters.classificationId;
 
   // Close action menu when clicking outside
   useEffect(() => {
@@ -81,6 +112,9 @@ const AccountTransactions: React.FC<AccountTransactionsProps> = ({ accountId }) 
       const response = await getAccountTransactions(accountId, {
         page,
         limit,
+        from: filters.from,
+        to: filters.to,
+        classificationId: filters.classificationId,
       });
       if (response) {
         setTransactions(response.data);
@@ -259,6 +293,51 @@ const AccountTransactions: React.FC<AccountTransactionsProps> = ({ accountId }) 
     }
   };
 
+  const handleSelectTransaction = (transactionId: string) => {
+    setSelectedTransactionIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(transactionId)) {
+        newSet.delete(transactionId);
+      } else {
+        newSet.add(transactionId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedTransactionIds.size === transactions.length) {
+      setSelectedTransactionIds(new Set());
+    } else {
+      setSelectedTransactionIds(new Set(transactions.map((t) => t.id)));
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedTransactionIds.size === 0) return;
+    setShowBulkDeleteConfirm(true);
+  };
+
+  const handleBulkDeleteConfirm = async () => {
+    if (selectedTransactionIds.size === 0) return;
+
+    setIsBulkDeleting(true);
+    try {
+      const ids = Array.from(selectedTransactionIds);
+      const success = await deleteMultipleTransactions(ids);
+      if (success) {
+        // Refresh transactions list
+        await loadTransactions();
+        setSelectedTransactionIds(new Set());
+        setShowBulkDeleteConfirm(false);
+      }
+    } catch (error) {
+      console.error("Failed to delete transactions:", error);
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
   if (loading && transactions.length === 0) {
     return (
       <div className="flex justify-center items-center py-12">
@@ -281,9 +360,100 @@ const AccountTransactions: React.FC<AccountTransactionsProps> = ({ accountId }) 
         <h3 className="text-lg font-semibold text-gray-700">
           Account Transactions
         </h3>
-        {meta && (
-          <div className="text-sm text-gray-500">
-            Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, meta.total)} of {meta.total} transactions
+        <div className="flex items-center gap-4">
+          {selectedTransactionIds.size > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">
+                {selectedTransactionIds.size} selected
+              </span>
+              <button
+                onClick={handleBulkDelete}
+                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm rounded focus:outline-none focus:ring-2 focus:ring-red-500"
+              >
+                Delete Selected
+              </button>
+            </div>
+          )}
+          {meta && (
+            <div className="text-sm text-gray-500">
+              Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, meta.total)} of {meta.total} transactions
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Filters Section */}
+      <div className="bg-white rounded-md shadow-sm p-4 border border-gray-200">
+        <div className="flex items-center justify-between mb-3">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900"
+          >
+            <span>Filters</span>
+            <svg
+              className={`h-4 w-4 transition-transform ${showFilters ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+            {hasActiveFilters && (
+              <span className="ml-2 px-2 py-0.5 text-xs bg-orange-500 text-white rounded-full">
+                Active
+              </span>
+            )}
+          </button>
+          {hasActiveFilters && (
+            <button
+              onClick={handleClearFilters}
+              className="text-sm text-gray-600 hover:text-gray-900"
+            >
+              Clear Filters
+            </button>
+          )}
+        </div>
+        {showFilters && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-3 border-t border-gray-200">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                From Date
+              </label>
+              <input
+                type="date"
+                value={filters.from || ''}
+                onChange={(e) => handleFilterChange('from', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                To Date
+              </label>
+              <input
+                type="date"
+                value={filters.to || ''}
+                onChange={(e) => handleFilterChange('to', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Classification
+              </label>
+              <select
+                value={filters.classificationId || ''}
+                onChange={(e) => handleFilterChange('classificationId', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+              >
+                <option value="">All Classifications</option>
+                {classifications.map((classification) => (
+                  <option key={classification.id} value={classification.id}>
+                    {classification.code} - {classification.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         )}
       </div>
@@ -293,6 +463,14 @@ const AccountTransactions: React.FC<AccountTransactionsProps> = ({ accountId }) 
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50 sticky top-0">
               <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
+                  <input
+                    type="checkbox"
+                    checked={selectedTransactionIds.size === transactions.length && transactions.length > 0}
+                    onChange={handleSelectAll}
+                    className="h-4 w-4 text-orange-500 focus:ring-orange-500 border-gray-300 rounded cursor-pointer"
+                  />
+                </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Date
                 </th>
@@ -333,7 +511,15 @@ const AccountTransactions: React.FC<AccountTransactionsProps> = ({ accountId }) 
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {transactions.map((transaction) => (
-                <tr key={transaction.id} className="hover:bg-gray-50">
+                <tr key={transaction.id} className={`hover:bg-gray-50 ${selectedTransactionIds.has(transaction.id) ? 'bg-blue-50' : ''}`}>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <input
+                      type="checkbox"
+                      checked={selectedTransactionIds.has(transaction.id)}
+                      onChange={() => handleSelectTransaction(transaction.id)}
+                      className="h-4 w-4 text-orange-500 focus:ring-orange-500 border-gray-300 rounded cursor-pointer"
+                    />
+                  </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                     {formatDate(transaction.transactionDate)}
                   </td>
@@ -784,6 +970,38 @@ const AccountTransactions: React.FC<AccountTransactionsProps> = ({ accountId }) 
                 className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isDeleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Bulk Delete Confirmation Modal */}
+      {showBulkDeleteConfirm && (
+        <Modal isOpen={showBulkDeleteConfirm} onClose={() => {
+          setShowBulkDeleteConfirm(false);
+        }}>
+          <div className="w-full max-w-md">
+            <h2 className="text-xl font-semibold text-gray-700 mb-4">Delete Multiple Transactions</h2>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete {selectedTransactionIds.size} selected transaction(s)? This action cannot be undone.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowBulkDeleteConfirm(false);
+                }}
+                disabled={isBulkDeleting}
+                className="px-4 py-2 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkDeleteConfirm}
+                disabled={isBulkDeleting}
+                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isBulkDeleting ? "Deleting..." : `Delete ${selectedTransactionIds.size} Transaction(s)`}
               </button>
             </div>
           </div>

@@ -238,6 +238,33 @@ export const useTransactions = () => {
     }
   };
 
+  /**
+   * Delete multiple transactions by their IDs
+   * @param transactionIds - Array of transaction IDs to delete
+   * @returns Promise<boolean> - True if deletion was successful
+   */
+  const deleteMultipleTransactions = async (
+    transactionIds: string[]
+  ): Promise<boolean> => {
+    try {
+      const endpoint = Endpoints.deleteMultipleTransactions;
+      const payload = {
+        ids: transactionIds
+      };
+      const response = await api.delete(endpoint, payload);
+      
+      if (response) {
+        toast.success(`${transactionIds.length} transaction(s) deleted successfully!`);
+        return true;
+      }
+      
+      return false;
+    } catch (error: any) {
+      toast.error('Failed to delete transactions: ' + (error?.message || 'Unknown error'));
+      return false;
+    }
+  };
+
   return {
     uploadTransaction,
     createTransactions,
@@ -245,6 +272,7 @@ export const useTransactions = () => {
     getTransactionById,
     updateTransaction,
     deleteTransaction,
+    deleteMultipleTransactions,
   };
 };
 

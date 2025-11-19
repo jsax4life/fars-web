@@ -84,7 +84,6 @@ interface AccountData {
   accountCode: string;
   symbol: string;
   bankName: string;
-  bankAddress: string;
   status: "open" | "closed";
   report?: string;
 }
@@ -338,8 +337,7 @@ const Account = () => {
               accountType: acc.accountType,
               accountCode: acc.code,
               symbol: acc.currency,
-              bankName: "-",
-              bankAddress: "-",
+              bankName: acc.bank?.name || "-",
               status: "open",
             }));
             setAccounts(mapped);
@@ -493,7 +491,7 @@ const Account = () => {
                           <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account Code</th>
                           <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Symbol</th>
                           <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ">Bank Name</th>
-                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ">Bank Address</th>
+                          {/* <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ">Bank Address</th> */}
                           <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
                         </tr>
                       </thead>
@@ -508,7 +506,6 @@ const Account = () => {
                             <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 ">{account.accountCode}</td>
                             <td className="px-3 py-4 text-sm text-gray-500">{account.symbol}</td>
                             <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 ">{account.bankName}</td>
-                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 ">{account.bankAddress}</td>
                             <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 relative">
                               <button
                                 ref={el => {
@@ -601,7 +598,6 @@ const Account = () => {
                           <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account Code</th>
                           <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Symbol</th>
                           <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ">Bank Name</th>
-                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ">Bank Address</th>
                           <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
                         </tr>
                       </thead>
@@ -616,7 +612,6 @@ const Account = () => {
                             <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 ">{account.accountCode}</td>
                             <td className="px-3 py-4 text-sm text-gray-500">{account.symbol}</td>
                             <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 ">{account.bankName}</td>
-                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 ">{account.bankAddress}</td>
                             <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 relative">
                               <button
                                 onClick={() => handleOpenAccount(account.id)}

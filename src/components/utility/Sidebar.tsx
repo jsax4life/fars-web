@@ -39,7 +39,7 @@ const Sidebar = () => {
      { name: "Rate Management", icon: '/sidebar/9.svg', path: '/Rates' },
       { name: "Analysis", icon: '/sidebar/1.svg', path: '/Analysis' },
     { 
-      name: "Classification Configs", 
+      name: "Configurations", 
       icon: '/sidebar/8.svg', 
       subItems: [
         { name: "Classification", path: '/Classification' },

@@ -126,7 +126,7 @@ const RateDetails = () => {
             </button>
             <h2 className="text-[#363636] text-lg md:text-xl font-semibold">Rate Details</h2>
             {!isEditing && (
-              <button onClick={startEdit} className="ml-auto px-3 py-2 text-sm bg-orange-600 text-white rounded-md hover:bg-orange-700">Edit</button>
+              <button onClick={startEdit} className="ml-auto px-3 py-2 text-sm bg-orange-600 text-white rounded-md hover:bg-orange-700">Adjust Rate</button>
             )}
             {isEditing && (
               <div className="ml-auto flex items-center gap-2">

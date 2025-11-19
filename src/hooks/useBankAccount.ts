@@ -50,6 +50,11 @@ export interface ClientBankAccountResponse {
   rateId: string | null;
   createdAt: string;
   updatedAt: string;
+  bank?: {
+    id: string;
+    name: string;
+    code: string;
+  };
 }
 
 export const useBankAccounts = () => {

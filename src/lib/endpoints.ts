@@ -88,6 +88,7 @@ const Endpoints = {
     getTransactionById: '/api/transactions/',
     updateTransaction: '/api/transactions/',
     deleteTransaction: '/api/transactions/',
+    deleteMultipleTransactions: '/api/transactions/multiple',
 };
 
 export default Endpoints;
