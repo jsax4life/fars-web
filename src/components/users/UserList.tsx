@@ -34,7 +34,7 @@ interface AssignedAccount {
 
 const UserList = () => {
   const router = useRouter();
-  const { getUsers, getUserById, updateUser, deleteUser, createUser, deactivateUser, activateUser, checkEmailAvailability, checkUsernameAvailability } = useUsers()
+  const { getUsers, getStaff, getUserById, updateUser, deleteUser, createUser, deactivateUser, activateUser, checkEmailAvailability, checkUsernameAvailability } = useUsers()
   const { getStaffAssignmentsByStaff, unassignStaffFromAccount } = useBankAccounts();
   const { user } = useUserAuth()
   const [role, setRole] = useState('all');
@@ -106,28 +106,23 @@ const UserList = () => {
   const fetchUsers = async () => {
     setLoading(true)
     try {
+      console.log('fetchUsers called with role:', role);
       if (role === 'all') {
+        console.log('Calling getUsers() for all users');
         const allUsers = await getUsers();
         setUsers(allUsers || [])
         return;
       }
 
       if (role === 'staff') {
-        // Backend may have multiple staff roles; fetch all and filter client-side
-        const allUsers = await getUsers();
-        const staffRoleAliases = [
-          'staff', 'staff1', 'staff_1', 'staff2', 'staff_2',
-          'finance', 'finance_user', 'finance_staff',
-          'auditor', 'auditor_staff'
-        ];
-        const filtered = (allUsers || []).filter((u: any) => {
-          const r = (u?.role || '').toString().toLowerCase();
-          return staffRoleAliases.some(alias => r === alias || r.includes(alias));
-        });
-        setUsers(filtered)
+        // Use the dedicated staff endpoint which excludes clients
+        console.log('Fetching staff from /api/users/staff');
+        const staffUsers = await getStaff();
+        setUsers(staffUsers || [])
         return;
       }
 
+      console.log('Calling getUsers() with role:', role.toUpperCase());
       const filteredByRole = await getUsers(role.toUpperCase())
       setUsers(filteredByRole || [])
     } finally {
@@ -136,6 +131,7 @@ const UserList = () => {
   }
   useEffect(() => {
     fetchUsers()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role])
 
   useEffect(() => {

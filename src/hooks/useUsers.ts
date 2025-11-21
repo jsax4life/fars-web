@@ -19,6 +19,19 @@ export const useUsers = () => {
         }
     }
 
+    const getStaff = async () => {
+        try {
+            console.log('Calling getStaff endpoint:', Endpoints.getStaff);
+            const request = await api.get(Endpoints.getStaff)
+            if (request) {
+                return request
+            }
+        } catch (error: any) {
+            toast.error('Failed to get staff: ' + (error?.message || 'Unknown error'));
+            return undefined;
+        }
+    }
+
     const getUserById = async (id: string) => {
         try {
             const request = await api.get(Endpoints.updateAccount + id)
@@ -165,6 +178,7 @@ export const useUsers = () => {
 
     return {
         getUsers,
+        getStaff,
         getUserById,
         updateUser,
         deleteUser,

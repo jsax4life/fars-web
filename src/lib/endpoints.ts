@@ -13,6 +13,7 @@ const Endpoints = {
     profile: '/api/auth/profile',
     account: '/account',
     users: '/api/users',
+    getStaff: '/api/users/staff',
     deactivateUser: '/api/users/deactivate/',
     activateUser: '/api/users/activate/',
     checkEmail: '/api/users/check-email',

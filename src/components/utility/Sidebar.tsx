@@ -19,6 +19,7 @@ import {
   FiX,
   FiChevronDown,
   FiChevronRight,
+  FiSettings,
 } from "react-icons/fi";
 import { MenuItem, SubMenuItem } from '../../types/menu';
 
@@ -132,13 +133,17 @@ const Sidebar = () => {
                         }`}
                       >
                         <div className="flex items-center min-w-0 flex-1">
-                          <Image 
-                            src={item.icon} 
-                            width={20} 
-                            height={20} 
-                            alt={item.name}
-                            className="mr-3 flex-shrink-0"
-                          />
+                          {item.name === "Configurations" ? (
+                            <FiSettings className="mr-3 flex-shrink-0" size={20} />
+                          ) : (
+                            <Image 
+                              src={item.icon} 
+                              width={20} 
+                              height={20} 
+                              alt={item.name}
+                              className="mr-3 flex-shrink-0"
+                            />
+                          )}
                           <span className="whitespace-nowrap truncate">{item.name}</span>
                         </div>
                         <div className="flex-shrink-0 ml-2">

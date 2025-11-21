@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { XCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -59,7 +60,7 @@ const Modal: React.FC<ModalProps> = ({
 
     if (!isOpen) return null; // Or return null, depending on your preference
 
-    return (
+    const modalContent = (
         <AnimatePresence>
             {isOpen && (
                 <motion.div
@@ -67,10 +68,10 @@ const Modal: React.FC<ModalProps> = ({
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}
-                    className={`fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4 overflow-y-auto ${overlayClassName}`}
+                    className={`fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center p-4 overflow-y-auto ${overlayClassName}`}
                     style={{
-                        // Ensure the modal is at the highest layer
-                        zIndex: 1000,
+                        // Ensure the modal is at the highest layer, above sidebar (z-40)
+                        zIndex: 99999,
                     }}
                 >
                     <motion.div
@@ -82,12 +83,12 @@ const Modal: React.FC<ModalProps> = ({
                         className={`bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl relative ${contentClassName} ${className}`}
                         style={{
                             // Use a higher z-index for the modal content
-                            zIndex: 1001,
+                            zIndex: 100000,
                         }}
                     >
                         <button
                             onClick={onClose}
-                            className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 focus:outline-none"
+                            className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 focus:outline-none z-10"
                         >
                             <XCircle className="h-6 w-6" />
                             <span className="sr-only">Close</span>
@@ -98,6 +99,13 @@ const Modal: React.FC<ModalProps> = ({
             )}
         </AnimatePresence>
     );
+
+    // Render modal to document.body using portal to ensure it's above everything
+    if (typeof window !== 'undefined') {
+        return createPortal(modalContent, document.body);
+    }
+    
+    return modalContent;
 };
 
 export default Modal;

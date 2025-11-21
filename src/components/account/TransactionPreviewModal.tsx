@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Modal from "@/components/utility/Modal";
 import { TransactionPreview, TransactionCreatePayload, useTransactions } from "@/hooks/useTransactions";
 import { useClassifications } from "@/hooks/useClassification";
-import { FiX, FiEdit2, FiSave } from "react-icons/fi";
+import { FiEdit2, FiSave, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 
 interface TransactionPreviewModalProps {
   isOpen: boolean;
@@ -33,12 +33,21 @@ const TransactionPreviewModal: React.FC<TransactionPreviewModalProps> = ({
   const [classifications, setClassifications] = useState<Classification[]>([]);
   const [loadingClassifications, setLoadingClassifications] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(50);
   const { getClassifications } = useClassifications();
   const { createTransactions } = useTransactions();
 
   useEffect(() => {
     setTransactions(initialTransactions);
+    setCurrentPage(1); // Reset to first page when transactions change
   }, [initialTransactions]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setCurrentPage(1); // Reset to first page when modal opens
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -60,25 +69,49 @@ const TransactionPreviewModal: React.FC<TransactionPreviewModalProps> = ({
     }
   };
 
-  const handleEdit = (index: number) => {
-    setEditingIndex(index);
+  // Calculate pagination
+  const totalPages = Math.ceil(transactions.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedTransactions = transactions.slice(startIndex, endIndex);
+
+  // Get the actual index in the full transactions array
+  const getActualIndex = (pageIndex: number) => {
+    return startIndex + pageIndex;
   };
 
-  const handleSave = (index: number) => {
+  const handleEdit = (pageIndex: number) => {
+    const actualIndex = getActualIndex(pageIndex);
+    setEditingIndex(actualIndex);
+  };
+
+  const handleSave = (pageIndex: number) => {
     setEditingIndex(null);
   };
 
   const handleFieldChange = (
-    index: number,
+    pageIndex: number,
     field: keyof TransactionPreview,
     value: any
   ) => {
+    const actualIndex = getActualIndex(pageIndex);
     const updated = [...transactions];
-    updated[index] = {
-      ...updated[index],
+    updated[actualIndex] = {
+      ...updated[actualIndex],
       [field]: value,
     };
     setTransactions(updated);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    setEditingIndex(null); // Close any open edits when changing pages
+  };
+
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page
+    setEditingIndex(null); // Close any open edits
   };
 
   const handleSubmit = async () => {
@@ -120,18 +153,16 @@ const TransactionPreviewModal: React.FC<TransactionPreviewModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
-      <div className="w-full max-w-7xl max-h-[90vh] flex flex-col">
+    <Modal 
+      isOpen={isOpen} 
+      onClose={onClose}
+      contentClassName="max-w-[95vw] w-full"
+    >
+      <div className="w-full max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between mb-4 pb-4 border-b">
           <h2 className="text-xl font-semibold text-gray-700">
             Transaction Preview ({transactions.length} transactions)
           </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 focus:outline-none"
-          >
-            <FiX className="h-6 w-6" />
-          </button>
         </div>
 
         <div className="flex-1 overflow-auto mb-4">
@@ -139,65 +170,67 @@ const TransactionPreviewModal: React.FC<TransactionPreviewModalProps> = ({
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50 sticky top-0">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">
                     Row
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">
                     Trans Date
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">
                     Value Date
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">
                     Description
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">
                     Debit
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">
                     Credit
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">
                     Amount
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">
                     Type
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">
                     Balance
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">
                     Teller No
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">
                     Cheque No
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">
                     Classification
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {transactions.map((transaction, index) => (
+                {paginatedTransactions.map((transaction, pageIndex) => {
+                  const actualIndex = getActualIndex(pageIndex);
+                  return (
                   <tr
-                    key={index}
-                    className={editingIndex === index ? "bg-yellow-50" : ""}
+                    key={actualIndex}
+                    className={editingIndex === actualIndex ? "bg-yellow-50" : ""}
                   >
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-2 py-2 whitespace-nowrap text-xs text-gray-900">
                       {String(transaction.rowIndex)}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm">
-                      {editingIndex === index ? (
+                    <td className="px-2 py-2 whitespace-nowrap text-xs">
+                      {editingIndex === actualIndex ? (
                         <input
                           type="date"
                           value={transaction.transactionDate}
                           onChange={(e) =>
-                            handleFieldChange(index, "transactionDate", e.target.value)
+                            handleFieldChange(pageIndex, "transactionDate", e.target.value)
                           }
-                          className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-orange-500"
+                          className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-orange-500"
                         />
                       ) : (
                         <span className="text-gray-900">
@@ -205,15 +238,15 @@ const TransactionPreviewModal: React.FC<TransactionPreviewModalProps> = ({
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm">
-                      {editingIndex === index ? (
+                    <td className="px-2 py-2 whitespace-nowrap text-xs">
+                      {editingIndex === actualIndex ? (
                         <input
                           type="date"
                           value={transaction.valueDate}
                           onChange={(e) =>
-                            handleFieldChange(index, "valueDate", e.target.value)
+                            handleFieldChange(pageIndex, "valueDate", e.target.value)
                           }
-                          className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-orange-500"
+                          className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-orange-500"
                         />
                       ) : (
                         <span className="text-gray-900">
@@ -221,34 +254,34 @@ const TransactionPreviewModal: React.FC<TransactionPreviewModalProps> = ({
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-sm">
-                      {editingIndex === index ? (
+                    <td className="px-2 py-2 text-xs">
+                      {editingIndex === actualIndex ? (
                         <input
                           type="text"
                           value={transaction.description}
                           onChange={(e) =>
-                            handleFieldChange(index, "description", e.target.value)
+                            handleFieldChange(pageIndex, "description", e.target.value)
                           }
-                          className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-orange-500"
+                          className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-orange-500"
                         />
                       ) : (
                         <span className="text-gray-900">{transaction.description}</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm">
-                      {editingIndex === index ? (
+                    <td className="px-2 py-2 whitespace-nowrap text-xs">
+                      {editingIndex === actualIndex ? (
                         <input
                           type="number"
                           step="0.01"
                           value={transaction.debit}
                           onChange={(e) =>
                             handleFieldChange(
-                              index,
+                              pageIndex,
                               "debit",
                               parseFloat(e.target.value) || 0
                             )
                           }
-                          className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-orange-500"
+                          className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-orange-500"
                         />
                       ) : (
                         <span className="text-gray-900">
@@ -256,20 +289,20 @@ const TransactionPreviewModal: React.FC<TransactionPreviewModalProps> = ({
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm">
-                      {editingIndex === index ? (
+                    <td className="px-2 py-2 whitespace-nowrap text-xs">
+                      {editingIndex === actualIndex ? (
                         <input
                           type="number"
                           step="0.01"
                           value={transaction.credit}
                           onChange={(e) =>
                             handleFieldChange(
-                              index,
+                              pageIndex,
                               "credit",
                               parseFloat(e.target.value) || 0
                             )
                           }
-                          className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-orange-500"
+                          className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-orange-500"
                         />
                       ) : (
                         <span className="text-gray-900">
@@ -277,28 +310,28 @@ const TransactionPreviewModal: React.FC<TransactionPreviewModalProps> = ({
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-2 py-2 whitespace-nowrap text-xs text-gray-900">
                       {formatCurrency(transaction.amount)}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm">
-                      {editingIndex === index ? (
+                    <td className="px-2 py-2 whitespace-nowrap text-xs">
+                      {editingIndex === actualIndex ? (
                         <select
                           value={transaction.type}
                           onChange={(e) =>
                             handleFieldChange(
-                              index,
+                              pageIndex,
                               "type",
                               e.target.value as "CREDIT" | "DEBIT"
                             )
                           }
-                          className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-orange-500"
+                          className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-orange-500"
                         >
                           <option value="CREDIT">CREDIT</option>
                           <option value="DEBIT">DEBIT</option>
                         </select>
                       ) : (
                         <span
-                          className={`px-2 py-1 rounded text-xs font-semibold ${
+                          className={`px-1 py-0.5 rounded text-[10px] font-semibold ${
                             transaction.type === "CREDIT"
                               ? "bg-green-100 text-green-800"
                               : "bg-red-100 text-red-800"
@@ -308,22 +341,22 @@ const TransactionPreviewModal: React.FC<TransactionPreviewModalProps> = ({
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-2 py-2 whitespace-nowrap text-xs text-gray-900">
                       {formatCurrency(transaction.balance)}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm">
-                      {editingIndex === index ? (
+                    <td className="px-2 py-2 whitespace-nowrap text-xs">
+                      {editingIndex === actualIndex ? (
                         <input
                           type="number"
                           value={transaction.tellerNo || ""}
                           onChange={(e) =>
                             handleFieldChange(
-                              index,
+                              pageIndex,
                               "tellerNo",
                               e.target.value ? parseInt(e.target.value) : undefined
                             )
                           }
-                          className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-orange-500"
+                          className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-orange-500"
                         />
                       ) : (
                         <span className="text-gray-900">
@@ -331,19 +364,19 @@ const TransactionPreviewModal: React.FC<TransactionPreviewModalProps> = ({
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm">
-                      {editingIndex === index ? (
+                    <td className="px-2 py-2 whitespace-nowrap text-xs">
+                      {editingIndex === actualIndex ? (
                         <input
                           type="number"
                           value={transaction.chequeNo || ""}
                           onChange={(e) =>
                             handleFieldChange(
-                              index,
+                              pageIndex,
                               "chequeNo",
                               e.target.value ? parseInt(e.target.value) : undefined
                             )
                           }
-                          className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-orange-500"
+                          className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-orange-500"
                         />
                       ) : (
                         <span className="text-gray-900">
@@ -351,18 +384,18 @@ const TransactionPreviewModal: React.FC<TransactionPreviewModalProps> = ({
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm">
-                      {editingIndex === index ? (
+                    <td className="px-2 py-2 whitespace-nowrap text-xs">
+                      {editingIndex === actualIndex ? (
                         <select
                           value={transaction.classificationId || ""}
                           onChange={(e) =>
                             handleFieldChange(
-                              index,
+                              pageIndex,
                               "classificationId",
                               e.target.value || undefined
                             )
                           }
-                          className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-orange-500"
+                          className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-orange-500"
                           disabled={loadingClassifications}
                         >
                           <option value="">Select Classification</option>
@@ -389,8 +422,8 @@ const TransactionPreviewModal: React.FC<TransactionPreviewModalProps> = ({
                             <span className="text-gray-500 italic">No classification</span>
                           )}
                           <button
-                            onClick={() => handleEdit(index)}
-                            className="text-xs text-blue-600 hover:text-blue-800 mt-1 text-left"
+                            onClick={() => handleEdit(pageIndex)}
+                            className="text-[10px] text-blue-600 hover:text-blue-800 mt-0.5 text-left"
                             title="Click Edit to change classification"
                           >
                             Change
@@ -398,29 +431,71 @@ const TransactionPreviewModal: React.FC<TransactionPreviewModalProps> = ({
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm">
-                      {editingIndex === index ? (
+                    <td className="px-2 py-2 whitespace-nowrap text-xs">
+                      {editingIndex === actualIndex ? (
                         <button
-                          onClick={() => handleSave(index)}
+                          onClick={() => handleSave(pageIndex)}
                           className="text-green-600 hover:text-green-800 focus:outline-none"
                           title="Save"
                         >
-                          <FiSave className="h-5 w-5" />
+                          <FiSave className="h-4 w-4" />
                         </button>
                       ) : (
                         <button
-                          onClick={() => handleEdit(index)}
+                          onClick={() => handleEdit(pageIndex)}
                           className="text-blue-600 hover:text-blue-800 focus:outline-none"
                           title="Edit"
                         >
-                          <FiEdit2 className="h-5 w-5" />
+                          <FiEdit2 className="h-4 w-4" />
                         </button>
                       )}
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
+          </div>
+        </div>
+
+        {/* Pagination Controls */}
+        <div className="flex items-center justify-between pt-4 border-t">
+          <div className="flex items-center space-x-2">
+            <span className="text-xs text-gray-600">Items per page:</span>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+              className="px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-orange-500"
+            >
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+              <option value={200}>200</option>
+            </select>
+            <span className="text-xs text-gray-600">
+              Showing {startIndex + 1} to {Math.min(endIndex, transactions.length)} of {transactions.length} transactions
+            </span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="px-2 py-1 text-xs text-gray-700 bg-gray-200 hover:bg-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+            >
+              <FiChevronLeft className="h-3 w-3 mr-1" />
+              Previous
+            </button>
+            <span className="text-xs text-gray-600">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="px-2 py-1 text-xs text-gray-700 bg-gray-200 hover:bg-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+            >
+              Next
+              <FiChevronRight className="h-3 w-3 ml-1" />
+            </button>
           </div>
         </div>
 
