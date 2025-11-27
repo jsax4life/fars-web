@@ -3,7 +3,7 @@
 import React, { use, useEffect, useRef, useState } from "react";
 import { toast } from 'sonner';
 import Sidebar from "../utility/Sidebar";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useUsers } from "@/hooks/useUsers";
 import { useUserAuth } from "@/hooks/useUserAuth";
 import { useBankAccounts } from "@/hooks/useBankAccount";
@@ -34,10 +34,25 @@ interface AssignedAccount {
 
 const UserList = () => {
   const router = useRouter();
+  const pathname = usePathname();
   const { getUsers, getStaff, getUserById, updateUser, deleteUser, createUser, deactivateUser, activateUser, checkEmailAvailability, checkUsernameAvailability } = useUsers()
   const { getStaffAssignmentsByStaff, unassignStaffFromAccount } = useBankAccounts();
   const { user } = useUserAuth()
-  const [role, setRole] = useState('all');
+  // Default to 'all' for Staff Management page
+  // This will show both STAFF and ADMIN roles by default
+  const [role, setRole] = useState(() => {
+    console.log('🔵 UserList: Initializing role state to "all"');
+    return 'all';
+  });
+  
+  // Log pathname and initial role on mount
+  useEffect(() => {
+    console.log('🟢 UserList component mounted');
+    console.log('🟢 Current pathname:', pathname);
+    console.log('🟢 Initial role state:', role);
+    console.log('🟢 Role type:', typeof role);
+    console.log('🟢 Role === "staff":', role === 'staff');
+  }, [pathname, role]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(0);
@@ -106,33 +121,79 @@ const UserList = () => {
   const fetchUsers = async () => {
     setLoading(true)
     try {
-      console.log('fetchUsers called with role:', role);
-      if (role === 'all') {
-        console.log('Calling getUsers() for all users');
-        const allUsers = await getUsers();
-        setUsers(allUsers || [])
+      // Force lowercase and trim to ensure consistent comparison
+      const currentRole = (role || '').trim().toLowerCase();
+      console.log('=== fetchUsers START ===');
+      console.log('Role value:', JSON.stringify(role));
+      console.log('Current role (processed):', JSON.stringify(currentRole));
+      
+      // ALWAYS use the staff endpoint which excludes clients
+      // This page is for Staff Management, so we should never call /api/users
+      console.log('✓ Calling getStaff() - endpoint: /api/users/staff');
+      const allStaffUsers = await getStaff();
+      console.log('getStaff returned:', allStaffUsers ? `${Array.isArray(allStaffUsers) ? allStaffUsers.length : 'object'} users` : 'null/undefined');
+      
+      if (!allStaffUsers || !Array.isArray(allStaffUsers)) {
+        setUsers([]);
+        console.log('=== fetchUsers END (no data) ===');
         return;
       }
-
-      if (role === 'staff') {
-        // Use the dedicated staff endpoint which excludes clients
-        console.log('Fetching staff from /api/users/staff');
-        const staffUsers = await getStaff();
-        setUsers(staffUsers || [])
-        return;
+      
+      // Filter by role on the client side
+      let filteredUsers = allStaffUsers;
+      
+      if (currentRole === 'staff') {
+        // Filter to show only STAFF role
+        filteredUsers = allStaffUsers.filter((user: User) => 
+          user.role?.toUpperCase() === 'STAFF'
+        );
+        console.log('✓ Filtered to STAFF role:', filteredUsers.length, 'users');
+      } else if (currentRole === 'all') {
+        // Show all staff users (STAFF and ADMIN roles)
+        filteredUsers = allStaffUsers.filter((user: User) => {
+          const userRole = user.role?.toUpperCase();
+          return userRole === 'STAFF' || userRole === 'ADMIN';
+        });
+        console.log('✓ Filtered to ALL (STAFF + ADMIN):', filteredUsers.length, 'users');
+      } else {
+        // Filter by specific role (admin, super_admin, etc.)
+        filteredUsers = allStaffUsers.filter((user: User) => 
+          user.role?.toUpperCase() === currentRole.toUpperCase()
+        );
+        console.log('✓ Filtered to role:', currentRole.toUpperCase(), '-', filteredUsers.length, 'users');
       }
-
-      console.log('Calling getUsers() with role:', role.toUpperCase());
-      const filteredByRole = await getUsers(role.toUpperCase())
-      setUsers(filteredByRole || [])
+      
+      setUsers(filteredUsers);
+      console.log('=== fetchUsers END ===');
+    } catch (error) {
+      console.error('=== fetchUsers ERROR ===', error);
+      toast.error('Failed to fetch users: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
-    setLoading(false)
+      setLoading(false)
     }
   }
   useEffect(() => {
+    console.log('🟡 useEffect triggered - role changed to:', role);
+    console.log('🟡 Role value:', JSON.stringify(role));
+    console.log('🟡 Role type:', typeof role);
+    console.log('🟡 About to call fetchUsers with role:', role);
+    
+    // Double-check that role is 'staff' before calling
+    if (role !== 'staff' && role !== 'all' && role !== 'admin' && role !== 'super_admin') {
+      console.warn('⚠️ Unexpected role value:', role, '- defaulting to staff');
+      setRole('staff');
+      return;
+    }
+    
     fetchUsers()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role])
+  
+  // Also log when fetchUsers, getUsers, or getStaff functions change
+  useEffect(() => {
+    console.log('getUsers function reference:', typeof getUsers);
+    console.log('getStaff function reference:', typeof getStaff);
+  }, [getUsers, getStaff])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -541,7 +602,11 @@ const UserList = () => {
               <div className="relative w-full sm:w-auto">
                 <select
                   value={role}
-                  onChange={(e) => setRole(e.target.value)}
+                  onChange={(e) => {
+                    const newRole = e.target.value;
+                    console.log('Role dropdown changed from', role, 'to', newRole);
+                    setRole(newRole);
+                  }}
                   className="block appearance-none bg-white border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded leading-tight focus:outline-none focus:border-blue-500 text-sm w-full">
                   <option value={'all'}>All</option>
                   <option value={'admin'}>Admin</option>

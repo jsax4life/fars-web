@@ -138,8 +138,15 @@ const ClassificationPattern = () => {
         getClassifications(),
       ]);
 
-      if (patternsData && Array.isArray(patternsData)) {
-        setAllPatterns(patternsData);
+      // Handle new response structure with data and meta keys
+      if (patternsData) {
+        if (Array.isArray(patternsData)) {
+          setAllPatterns(patternsData);
+        } else if (patternsData.data && Array.isArray(patternsData.data)) {
+          setAllPatterns(patternsData.data);
+        } else {
+          setAllPatterns([]);
+        }
       } else {
         setAllPatterns([]);
       }

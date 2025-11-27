@@ -229,7 +229,35 @@ export const useRates = () => {
     }
   };
 
-  return { getRates, getRateById, updateRate, createRate, deleteRate, uploadRateDocument, getRateDocuments, getAllContractDocuments, getDocumentById, updateRateDocument, deleteRateDocument, getRatesByClientId };
+  const assignRateToDocument = async (documentId: string, rateId: string): Promise<any> => {
+    try {
+      const endpoint = Endpoints.assignRateToDocument.replace(/\/$/, '') + '/' + documentId + '/assign/' + rateId;
+      const res = await api.patch(endpoint);
+      if (res) {
+        toast.success(res?.message || 'Rate assigned to document successfully');
+        return res;
+      }
+    } catch (error: any) {
+      toast.error('Failed to assign rate to document: ' + (error?.message || 'Unknown error'));
+      throw error;
+    }
+  };
+
+  const unassignRateFromDocument = async (documentId: string, rateId: string): Promise<any> => {
+    try {
+      const endpoint = Endpoints.unassignRateFromDocument.replace(/\/$/, '') + '/' + documentId + '/unassign/' + rateId;
+      const res = await api.patch(endpoint);
+      if (res) {
+        toast.success(res?.message || 'Rate unassigned from document successfully');
+        return res;
+      }
+    } catch (error: any) {
+      toast.error('Failed to unassign rate from document: ' + (error?.message || 'Unknown error'));
+      throw error;
+    }
+  };
+
+  return { getRates, getRateById, updateRate, createRate, deleteRate, uploadRateDocument, getRateDocuments, getAllContractDocuments, getDocumentById, updateRateDocument, deleteRateDocument, getRatesByClientId, assignRateToDocument, unassignRateFromDocument };
 };
 
 

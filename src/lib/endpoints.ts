@@ -54,6 +54,8 @@ const Endpoints = {
   updateRateDocument: '/api/rates/document/',
   deleteRateDocument: '/api/rates/document/',
   getRatesByClientId: '/api/rates/client/',
+  assignRateToDocument: '/api/rates/document/',
+  unassignRateFromDocument: '/api/rates/document/',
 
     //Bank Endpoints
     createBank: '/api/banks',

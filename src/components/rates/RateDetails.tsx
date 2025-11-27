@@ -5,13 +5,13 @@ import { useParams, useRouter } from "next/navigation";
 import Sidebar from "@/components/utility/Sidebar";
 import Navbar from "@/components/nav/Navbar";
 import { useRates, type RateSummary } from "@/hooks/useRates";
-import { FiEye, FiDownload } from "react-icons/fi";
+import { FiEye, FiDownload, FiLink, FiMinus } from "react-icons/fi";
 
 const RateDetails = () => {
   const params = useParams();
   const router = useRouter();
   const id = Array.isArray(params?.id) ? params.id[0] : (params?.id as string);
-  const { getRateById, updateRate, getRateDocuments } = useRates();
+  const { getRateById, updateRate, getRateDocuments, getAllContractDocuments, assignRateToDocument, unassignRateFromDocument } = useRates();
   const [rate, setRate] = useState<RateSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [showMore, setShowMore] = useState(false);
@@ -19,6 +19,68 @@ const RateDetails = () => {
   const [form, setForm] = useState<Record<string, any>>({});
   const [documents, setDocuments] = useState<any[]>([]);
   const [loadingDocuments, setLoadingDocuments] = useState(false);
+  const [availableDocuments, setAvailableDocuments] = useState<any[]>([]);
+  const [loadingAvailableDocuments, setLoadingAvailableDocuments] = useState(false);
+  const [assigningDocumentId, setAssigningDocumentId] = useState<string | null>(null);
+
+  const loadDocuments = async () => {
+    if (!id) return;
+    setLoadingDocuments(true);
+    try {
+      // Fetch only documents assigned to this rate
+      const docs = await getRateDocuments(id);
+      if (docs) setDocuments(docs);
+    } catch (error) {
+      console.error('Failed to load documents:', error);
+    } finally {
+      setLoadingDocuments(false);
+    }
+  };
+
+  const loadAvailableDocuments = async (assignedDocs: any[] = documents) => {
+    if (!id) return;
+    setLoadingAvailableDocuments(true);
+    try {
+      // Fetch all documents
+      const allDocs = await getAllContractDocuments();
+      if (allDocs) {
+        // Create sets of assigned document IDs and codes for efficient filtering
+        const assignedDocIds = new Set(assignedDocs.map(doc => doc.id));
+        const assignedDocCodes = new Set(assignedDocs.map(doc => doc.code).filter(Boolean));
+        
+        // Filter out documents that are already assigned to this rate
+        const available = allDocs.filter((doc: any) => {
+          // Check if document ID is already in the assigned documents list
+          if (assignedDocIds.has(doc.id)) return false;
+          
+          // Check if document code is already in the assigned documents list
+          if (doc.code && assignedDocCodes.has(doc.code)) return false;
+          
+          // Check if document has rates array containing current rate
+          if (doc.rates && Array.isArray(doc.rates)) {
+            const isAssigned = doc.rates.some((r: any) => {
+              // Check by rate ID
+              if (r.id === id || r === id) return true;
+              // Check if rate object has id property matching
+              if (typeof r === 'object' && r.id === id) return true;
+              return false;
+            });
+            if (isAssigned) return false;
+          }
+          
+          // Check if document has rateId matching current rate
+          if (doc.rateId === id) return false;
+          
+          return true;
+        });
+        setAvailableDocuments(available);
+      }
+    } catch (error) {
+      console.error('Failed to load available documents:', error);
+    } finally {
+      setLoadingAvailableDocuments(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -30,14 +92,11 @@ const RateDetails = () => {
         if (!cancelled && res) {
           setRate(res);
           // Load documents for this rate
-          setLoadingDocuments(true);
-          try {
-            const docs = await getRateDocuments(id);
-            if (!cancelled && docs) setDocuments(docs);
-          } catch (error) {
-            console.error('Failed to load documents:', error);
-          } finally {
-            if (!cancelled) setLoadingDocuments(false);
+          const assignedDocs = await getRateDocuments(id);
+          if (assignedDocs) {
+            setDocuments(assignedDocs);
+            // Load available documents after assigned documents are loaded
+            await loadAvailableDocuments(assignedDocs);
           }
         }
       } finally {
@@ -46,7 +105,55 @@ const RateDetails = () => {
     };
     load();
     return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  // Check if a document is assigned to the current rate
+  const isDocumentAssigned = (doc: any): boolean => {
+    // Check if document has rateId matching current rate
+    if (doc.rateId === id) return true;
+    // Check if document has rates array containing current rate
+    if (doc.rates && Array.isArray(doc.rates)) {
+      return doc.rates.some((r: any) => r.id === id || r === id);
+    }
+    return false;
+  };
+
+  const handleAssignRate = async (documentId: string) => {
+    if (!id) return;
+    setAssigningDocumentId(documentId);
+    try {
+      await assignRateToDocument(documentId, id);
+      // Reload both assigned and available documents to reflect the change
+      const assignedDocs = await getRateDocuments(id);
+      if (assignedDocs) {
+        setDocuments(assignedDocs);
+        await loadAvailableDocuments(assignedDocs);
+      }
+    } catch (error) {
+      console.error('Failed to assign rate:', error);
+    } finally {
+      setAssigningDocumentId(null);
+    }
+  };
+
+  const handleUnassignRate = async (documentId: string) => {
+    if (!id) return;
+    setAssigningDocumentId(documentId);
+    try {
+      await unassignRateFromDocument(documentId, id);
+      // Reload both assigned and available documents to reflect the change
+      const assignedDocs = await getRateDocuments(id);
+      if (assignedDocs) {
+        setDocuments(assignedDocs);
+        await loadAvailableDocuments(assignedDocs);
+      }
+    } catch (error) {
+      console.error('Failed to unassign rate:', error);
+    } finally {
+      setAssigningDocumentId(null);
+    }
+  };
 
   const startEdit = () => {
     if (!rate) return;
@@ -275,9 +382,9 @@ const RateDetails = () => {
                 </>
               )}
 
-              {/* Documents Section */}
+              {/* Assigned Documents Section */}
               <div className="mt-8 pt-8 border-t border-gray-200">
-                <h3 className="font-semibold text-gray-800 mb-4 text-lg">Documents</h3>
+                <h3 className="font-semibold text-gray-800 mb-4 text-lg">Assigned Documents</h3>
                 {loadingDocuments ? (
                   <div className="text-center text-gray-500 py-4">Loading documents...</div>
                 ) : documents.length > 0 ? (
@@ -302,7 +409,7 @@ const RateDetails = () => {
                               {doc.createdAt ? new Date(doc.createdAt).toLocaleDateString() : '-'}
                             </td>
                             <td className="px-4 py-3 text-sm">
-                              <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-3 flex-wrap">
                                 {doc.url && (
                                   <>
                                     <button
@@ -328,7 +435,6 @@ const RateDetails = () => {
                                           window.URL.revokeObjectURL(url);
                                         } catch (error) {
                                           console.error('Failed to download document:', error);
-                                          // Fallback: open in new tab
                                           window.open(doc.url, '_blank');
                                         }
                                       }}
@@ -340,6 +446,15 @@ const RateDetails = () => {
                                     </button>
                                   </>
                                 )}
+                                <button
+                                  onClick={() => handleUnassignRate(doc.id)}
+                                  disabled={assigningDocumentId === doc.id}
+                                  className="inline-flex items-center gap-1 text-red-600 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  title="Unassign rate from document"
+                                >
+                                  <FiMinus className="h-4 w-4" />
+                                  <span>{assigningDocumentId === doc.id ? 'Unassigning...' : 'Unassign'}</span>
+                                </button>
                               </div>
                             </td>
                           </tr>
@@ -348,7 +463,92 @@ const RateDetails = () => {
                     </table>
                   </div>
                 ) : (
-                  <div className="text-center text-gray-500 py-4">No documents found for this rate.</div>
+                  <div className="text-center text-gray-500 py-4">No documents assigned to this rate.</div>
+                )}
+              </div>
+
+              {/* Assign Documents Section */}
+              <div className="mt-8 pt-8 border-t border-gray-200">
+                <h3 className="font-semibold text-gray-800 mb-4 text-lg">Assign New Documents</h3>
+                {loadingAvailableDocuments ? (
+                  <div className="text-center text-gray-500 py-4">Loading available documents...</div>
+                ) : availableDocuments.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uploaded</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {availableDocuments.map((doc) => (
+                          <tr key={doc.id}>
+                            <td className="px-4 py-3 text-sm text-gray-700">{doc.code || '-'}</td>
+                            <td className="px-4 py-3 text-sm text-gray-700">{doc.title || '-'}</td>
+                            <td className="px-4 py-3 text-sm text-gray-700">{doc.type || '-'}</td>
+                            <td className="px-4 py-3 text-sm text-gray-700">
+                              {doc.createdAt ? new Date(doc.createdAt).toLocaleDateString() : '-'}
+                            </td>
+                            <td className="px-4 py-3 text-sm">
+                              <div className="flex items-center gap-3 flex-wrap">
+                                {doc.url && (
+                                  <>
+                                    <button
+                                      onClick={() => window.open(doc.url, '_blank')}
+                                      className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700"
+                                      title="View document"
+                                    >
+                                      <FiEye className="h-4 w-4" />
+                                      <span>View</span>
+                                    </button>
+                                    <button
+                                      onClick={async () => {
+                                        try {
+                                          const response = await fetch(doc.url);
+                                          const blob = await response.blob();
+                                          const url = window.URL.createObjectURL(blob);
+                                          const link = document.createElement('a');
+                                          link.href = url;
+                                          link.download = doc.title || doc.code || 'document';
+                                          document.body.appendChild(link);
+                                          link.click();
+                                          document.body.removeChild(link);
+                                          window.URL.revokeObjectURL(url);
+                                        } catch (error) {
+                                          console.error('Failed to download document:', error);
+                                          window.open(doc.url, '_blank');
+                                        }
+                                      }}
+                                      className="inline-flex items-center gap-1 text-green-600 hover:text-green-700"
+                                      title="Download document"
+                                    >
+                                      <FiDownload className="h-4 w-4" />
+                                      <span>Download</span>
+                                    </button>
+                                  </>
+                                )}
+                                <button
+                                  onClick={() => handleAssignRate(doc.id)}
+                                  disabled={assigningDocumentId === doc.id}
+                                  className="inline-flex items-center gap-1 text-purple-600 hover:text-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  title="Assign rate to document"
+                                >
+                                  <FiLink className="h-4 w-4" />
+                                  <span>{assigningDocumentId === doc.id ? 'Assigning...' : 'Assign'}</span>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-center text-gray-500 py-4">No available documents to assign.</div>
                 )}
               </div>
             </div>

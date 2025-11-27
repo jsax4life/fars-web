@@ -21,12 +21,17 @@ export const useUsers = () => {
 
     const getStaff = async () => {
         try {
-            console.log('Calling getStaff endpoint:', Endpoints.getStaff);
-            const request = await api.get(Endpoints.getStaff)
+            const endpoint = Endpoints.getStaff;
+            console.log('getStaff: Calling endpoint:', endpoint);
+            console.log('getStaff: Full URL will be:', typeof window !== 'undefined' ? window.location.origin + endpoint : endpoint);
+            const request = await api.get(endpoint)
+            console.log('getStaff: Response received:', request ? `Success (${Array.isArray(request) ? request.length + ' items' : 'object'})` : 'null/undefined');
             if (request) {
                 return request
             }
+            return undefined;
         } catch (error: any) {
+            console.error('getStaff: Error occurred:', error);
             toast.error('Failed to get staff: ' + (error?.message || 'Unknown error'));
             return undefined;
         }

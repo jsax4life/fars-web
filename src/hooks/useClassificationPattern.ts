@@ -51,6 +51,14 @@ export const useClassificationPatterns = () => {
             
             const request = await api.get(url);
             if (request) {
+                // Handle new response structure with data and meta keys
+                if (request.data && Array.isArray(request.data)) {
+                    return request.data;
+                }
+                // Fallback for old structure (direct array)
+                if (Array.isArray(request)) {
+                    return request;
+                }
                 return request;
             }
         } catch (error: any) {
