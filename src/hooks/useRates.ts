@@ -232,7 +232,7 @@ export const useRates = () => {
   const assignRateToDocument = async (documentId: string, rateId: string): Promise<any> => {
     try {
       const endpoint = Endpoints.assignRateToDocument.replace(/\/$/, '') + '/' + documentId + '/assign/' + rateId;
-      const res = await api.patch(endpoint);
+      const res = await api.patch(endpoint, {});
       if (res) {
         toast.success(res?.message || 'Rate assigned to document successfully');
         return res;
@@ -246,7 +246,7 @@ export const useRates = () => {
   const unassignRateFromDocument = async (documentId: string, rateId: string): Promise<any> => {
     try {
       const endpoint = Endpoints.unassignRateFromDocument.replace(/\/$/, '') + '/' + documentId + '/unassign/' + rateId;
-      const res = await api.patch(endpoint);
+      const res = await api.patch(endpoint, {});
       if (res) {
         toast.success(res?.message || 'Rate unassigned from document successfully');
         return res;

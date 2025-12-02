@@ -5,6 +5,7 @@ const Endpoints = {
     requestOtp: '/auth/resend-otp',
     forgotPassword: '/api/auth/forgot-password',
     resetPassword: '/api/auth/reset-password',
+    changePassword: '/api/auth/change-password',
     resetPin: '/auth/reset-pin',
     logout: '/api/auth/logout',
     verifyPin: '/account/verify-pin/',
@@ -92,6 +93,9 @@ const Endpoints = {
     updateTransaction: '/api/transactions/',
     deleteTransaction: '/api/transactions/',
     deleteMultipleTransactions: '/api/transactions/multiple',
+
+    // Analysis Endpoints
+    getAnalysisTypes: '/api/analysis/types',
 };
 
 export default Endpoints;

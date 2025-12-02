@@ -66,6 +66,23 @@ export const useUsers = () => {
         }
     }
 
+    const changePassword = async (oldPassword: string, newPassword: string) => {
+        try {
+            const request = await api.patch(Endpoints.changePassword, {
+                oldPassword,
+                newPassword
+            });
+            if (request) {
+                toast.success(request?.message || 'Password changed successfully!');
+                return true;
+            }
+            return false;
+        } catch (error: any) {
+            toast.error('Failed to change password: ' + (error?.message || 'Unknown error'));
+            return false;
+        }
+    }
+
     const updateUser = async (id: string, data: {
         firstName?: string,
         lastName?: string,
@@ -192,6 +209,7 @@ export const useUsers = () => {
         activateUser,
         checkEmailAvailability,
         checkUsernameAvailability,
+        changePassword
     }
 
 }

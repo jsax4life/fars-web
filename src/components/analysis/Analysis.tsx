@@ -1,9 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Sidebar from "@/components/utility/Sidebar";
 import { CloudArrowUpIcon } from "@heroicons/react/24/outline";
 import Navbar from "../nav/Navbar";
+import { useAnalysis, AnalysisTypeResponse } from "@/hooks/useAnalysis";
+import { useClients } from "@/hooks/useClient";
+import {
+  useBankAccounts,
+  type ClientBankAccountResponse,
+} from "@/hooks/useBankAccount";
 
 interface Transaction {
   no: string;
@@ -77,7 +83,7 @@ interface Transaction {
 type AnalysisType =
   | "CMF"
   | "ST Loan"
-    | "STIP Loan"
+  | "STIP Loan"
   | "LT Loan"
   | "Interest"
   | "Debit"
@@ -90,6 +96,7 @@ const AccountDetails = () => {
   const [selectedAnalysisType, setSelectedAnalysisType] =
     useState<AnalysisType | null>(null);
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [selectedBank, setSelectedBank] = useState<string | null>(null);
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
   const [displayAnalysisTable, setDisplayAnalysisTable] = useState(false);
@@ -98,24 +105,81 @@ const AccountDetails = () => {
   const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false);
   const [isBankDropdownOpen, setIsBankDropdownOpen] = useState(false);
   const [isAccountsDropdownOpen, setIsAccountsDropdownOpen] = useState(false);
+  const [analysisTypes, setAnalysisTypes] = useState<AnalysisTypeResponse[]>([]);
+  const [isLoadingAnalysisTypes, setIsLoadingAnalysisTypes] = useState(false);
+  const { getAnalysisTypes } = useAnalysis();
+  const { getClients } = useClients();
+  const [clients, setClients] = useState<any[]>([]);
+  const [isLoadingClients, setIsLoadingClients] = useState(false);
+  const { getBankAccountsByClient } = useBankAccounts();
+  const [clientAccounts, setClientAccounts] = useState<
+    ClientBankAccountResponse[]
+  >([]);
+  const [isLoadingAccounts, setIsLoadingAccounts] = useState(false);
 
-  const analysisTypes: AnalysisType[] = [
-    "CMF",
-    "ST Loan",
-     "STIP Loan",
-    "LT Loan",
-    "Interest",
-    "Debit",
-    "Credit",
-    "Collateral",
-    "Fees",
-  ];
-  const clients = [
-    "Eget euismod ipsum",
-    "Charles Graham",
-    "Lorem ipsum",
-    "Eget euismod",
-  ];
+  useEffect(() => {
+    const fetchAnalysisTypes = async () => {
+      try {
+        setIsLoadingAnalysisTypes(true);
+        const types = await getAnalysisTypes();
+        setAnalysisTypes(types);
+      } catch (error) {
+        console.error("Failed to load analysis types", error);
+      } finally {
+        setIsLoadingAnalysisTypes(false);
+      }
+    };
+
+    // Load analysis types once on mount
+    fetchAnalysisTypes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        setIsLoadingClients(true);
+        const data = await getClients();
+        if (Array.isArray(data)) {
+          setClients(data);
+        } else if (data && Array.isArray((data as any).data)) {
+          setClients((data as any).data);
+        }
+      } catch (error) {
+        console.error("Failed to load clients", error);
+      } finally {
+        setIsLoadingClients(false);
+      }
+    };
+
+    fetchClients();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Load accounts whenever a client is selected
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      if (!selectedClientId) {
+        setClientAccounts([]);
+        setSelectedBank(null);
+        setSelectedAccounts([]);
+        return;
+      }
+
+      try {
+        setIsLoadingAccounts(true);
+        const accounts = await getBankAccountsByClient(selectedClientId);
+        setClientAccounts(accounts || []);
+      } catch (error) {
+        console.error("Failed to load client accounts", error);
+      } finally {
+        setIsLoadingAccounts(false);
+      }
+    };
+
+    fetchAccounts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedClientId]);
   const banks = [
     "UBA",
     "First Bank",
@@ -1172,36 +1236,31 @@ const cmfAnalysisData: Transaction[] = [
                 </button>
                 {isAnalysisTypeDropdownOpen && (
                   <div className="absolute z-10 mt-1 w-full  bg-white shadow-lg rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
-                    {analysisTypes.map((type) => (
-                      <div
-                        key={type}
-                        className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-orange-100"
-                        onClick={() => {
-                          setSelectedAnalysisType(type);
-                          setIsAnalysisTypeDropdownOpen(false);
-                        }}
-                      >
-                        <span className="font-normal text-black block truncate">
-                          {type === "ST Loan"
-                            ? "Short Term Loan"
-                            : type === "STIP Loan"
-                            ? "Short Term Loan With Installment Payment"
-                            : type === "LT Loan"
-                            ? "Long Term Loan"
-                            : type === "Interest"
-                            ? "Interest Analysis"
-                            : type === "Debit"
-                            ? "Debit Interest"
-                            : type === "Credit"
-                            ? "Credit Interest"
-                            : type === "Collateral"
-                            ? "Cash Collateral"
-                            : type === "Fees"
-                            ? "Fees"
-                            : type}
-                        </span>
+                    {isLoadingAnalysisTypes && (
+                      <div className="py-2 px-3 text-sm text-gray-500">
+                        Loading analysis types...
                       </div>
-                    ))}
+                    )}
+                    {!isLoadingAnalysisTypes && analysisTypes.length === 0 && (
+                      <div className="py-2 px-3 text-sm text-gray-500">
+                        No analysis types available
+                      </div>
+                    )}
+                    {!isLoadingAnalysisTypes &&
+                      analysisTypes.map((type) => (
+                        <div
+                          key={type.id}
+                          className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-orange-100"
+                          onClick={() => {
+                            setSelectedAnalysisType(type.name as AnalysisType);
+                            setIsAnalysisTypeDropdownOpen(false);
+                          }}
+                        >
+                          <span className="font-normal text-black block truncate">
+                            {type.name}
+                          </span>
+                        </div>
+                      ))}
                   </div>
                 )}
               </div>
@@ -1236,25 +1295,51 @@ const cmfAnalysisData: Transaction[] = [
                 </button>
                 {isClientDropdownOpen && (
                   <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm max-h-60">
-                    {clients.map((client) => (
-                      <div
-                        key={client}
-                        className="cursor-pointer select-none text-black relative py-2 pl-3 pr-9 hover:bg-orange-100 flex items-center"
-                        onClick={() => {
-                          setSelectedClient(client);
-                          setIsClientDropdownOpen(false);
-                        }}
-                      >
-                        <img
-                          src="https://via.placeholder.com/24"
-                          alt="Client Avatar"
-                          className="w-6 h-6 rounded-full mr-2"
-                        />
-                        <span className="font-normal block truncate">
-                          {client}
-                        </span>
+                    {isLoadingClients && (
+                      <div className="py-2 px-3 text-sm text-gray-500">
+                        Loading clients...
                       </div>
-                    ))}
+                    )}
+                    {!isLoadingClients && clients.length === 0 && (
+                      <div className="py-2 px-3 text-sm text-gray-500">
+                        No clients available
+                      </div>
+                    )}
+                    {!isLoadingClients &&
+                      clients.map((client: any) => {
+                        const displayName =
+                          client.companyName ||
+                          `${client.firstName || ""} ${
+                            client.lastName || ""
+                          }`.trim() ||
+                          client.email ||
+                          client.username ||
+                          "Unnamed client";
+
+                        return (
+                          <div
+                            key={client.id}
+                            className="cursor-pointer select-none text-black relative py-2 pl-3 pr-9 hover:bg-orange-100 flex items-center"
+                            onClick={() => {
+                              setSelectedClient(displayName);
+                              setSelectedClientId(client.id);
+                              setIsClientDropdownOpen(false);
+                            }}
+                          >
+                            <img
+                              src={
+                                client.avatarUrl ||
+                                "https://gravatar.com/avatar/48c3863a0f03a81d67916d28fdaa0ea6?s=80&d=mp&r=pg"
+                              }
+                              alt="Client Avatar"
+                              className="w-6 h-6 rounded-full mr-2"
+                            />
+                            <span className="font-normal block truncate">
+                              {displayName}
+                            </span>
+                          </div>
+                        );
+                      })}
                   </div>
                 )}
               </div>
@@ -1289,20 +1374,37 @@ const cmfAnalysisData: Transaction[] = [
                 </button>
                 {isBankDropdownOpen && (
                   <div className="absolute z-10 mt-1 text-black w-full bg-white shadow-lg rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm max-h-60">
-                    {banks.map((bank) => (
-                      <div
-                        key={bank}
-                        className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-orange-100"
-                        onClick={() => {
-                          setSelectedBank(bank);
-                          setIsBankDropdownOpen(false);
-                        }}
-                      >
-                        <span className="font-normal block truncate">
-                          {bank}
-                        </span>
+                    {isLoadingAccounts && (
+                      <div className="py-2 px-3 text-sm text-gray-500">
+                        Loading banks...
                       </div>
-                    ))}
+                    )}
+                    {!isLoadingAccounts &&
+                      Array.from(
+                        new Map(
+                          clientAccounts
+                            .filter((acc) => acc.bank)
+                            .map((acc) => [acc.bank!.id, acc.bank!])
+                        ).values()
+                      ).map((bank) => (
+                        <div
+                          key={bank.id}
+                          className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-orange-100"
+                          onClick={() => {
+                            setSelectedBank(bank.name);
+                            setIsBankDropdownOpen(false);
+                          }}
+                        >
+                          <span className="font-normal block truncate">
+                            {bank.name}
+                          </span>
+                        </div>
+                      ))}
+                    {!isLoadingAccounts && clientAccounts.length === 0 && (
+                      <div className="py-2 px-3 text-sm text-gray-500">
+                        No banks available for this client
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -1341,45 +1443,60 @@ const cmfAnalysisData: Transaction[] = [
                 </button>
                 {isAccountsDropdownOpen && (
                   <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm max-h-60">
-                    <div
-                      className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-orange-100"
-                      onClick={() => {
-                        if (selectedAccounts.length === accounts.length) {
-                          setSelectedAccounts([]);
-                        } else {
-                          setSelectedAccounts(accounts);
-                        }
-                      }}
-                    >
-                      <span className="font-normal text-black block truncate">
-                        Select All
-                      </span>
-                    </div>
-                    {accounts.map((account) => (
-                      <div
-                        key={account}
-                        className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-orange-100 flex items-center"
-                        onClick={() => handleAccountSelect(account)}
-                      >
-                        <input
-                          type="radio" // Changed to radio as per image
-                          checked={selectedAccounts.includes(account)}
-                          readOnly // To prevent user from directly interacting with the radio button
-                          className="form-radio h-4 w-4 text-orange-600 transition duration-150 ease-in-out"
-                        />
-                        <span className="ml-2 text-black font-normal block truncate">
-                          {account}
-                        </span>
+                    {isLoadingAccounts && (
+                      <div className="py-2 px-3 text-sm text-gray-500">
+                        Loading accounts...
                       </div>
-                    ))}
-                    <div className="p-2">
-                      <button
-                        onClick={() => setIsAccountsDropdownOpen(false)}
-                        className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-1 px-4 rounded focus:outline-none focus:shadow-outline-orange active:bg-orange-700"
-                      >
-                        Ok
-                      </button>
-                    </div>
+                    )}
+                    {!isLoadingAccounts && clientAccounts.length === 0 && (
+                      <div className="py-2 px-3 text-sm text-gray-500">
+                        No accounts available for this client
+                      </div>
+                    )}
+                    {!isLoadingAccounts && clientAccounts.length > 0 && (
+                      <>
+                        <div
+                          className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-orange-100"
+                          onClick={() => {
+                            const allIds = clientAccounts.map((a) => a.id);
+                            if (selectedAccounts.length === allIds.length) {
+                              setSelectedAccounts([]);
+                            } else {
+                              setSelectedAccounts(allIds);
+                            }
+                          }}
+                        >
+                          <span className="font-normal text-black block truncate">
+                            Select All
+                          </span>
+                        </div>
+                        {clientAccounts.map((account) => (
+                          <div
+                            key={account.id}
+                            className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-orange-100 flex items-center"
+                            onClick={() => handleAccountSelect(account.id)}
+                          >
+                            <input
+                              type="radio"
+                              checked={selectedAccounts.includes(account.id)}
+                              readOnly
+                              className="form-radio h-4 w-4 text-orange-600 transition duration-150 ease-in-out"
+                            />
+                            <span className="ml-2 text-black font-normal block truncate">
+                              {account.accountNumber} - {account.accountName}
+                            </span>
+                          </div>
+                        ))}
+                        <div className="p-2">
+                          <button
+                            onClick={() => setIsAccountsDropdownOpen(false)}
+                            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-1 px-4 rounded focus:outline-none focus:shadow-outline-orange active:bg-orange-700"
+                          >
+                            Ok
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
               </div>

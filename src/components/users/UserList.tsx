@@ -35,7 +35,7 @@ interface AssignedAccount {
 const UserList = () => {
   const router = useRouter();
   const pathname = usePathname();
-  const { getUsers, getStaff, getUserById, updateUser, deleteUser, createUser, deactivateUser, activateUser, checkEmailAvailability, checkUsernameAvailability } = useUsers()
+  const { getUsers, getStaff, getUserById, updateUser, deleteUser, createUser, deactivateUser, activateUser, checkEmailAvailability, checkUsernameAvailability, changePassword } = useUsers()
   const { getStaffAssignmentsByStaff, unassignStaffFromAccount } = useBankAccounts();
   const { user } = useUserAuth()
   // Default to 'all' for Staff Management page
@@ -107,16 +107,33 @@ const UserList = () => {
   const [editFormData, setEditFormData] = useState<{
     firstName: string;
     lastName: string;
+    username: string;
     email: string;
     phone: string;
+    avatarUrl: string;
     role: string;
+    permissions: string[];
+    isActive: boolean;
   }>({
     firstName: "",
     lastName: "",
+    username: "",
     email: "",
     phone: "",
+    avatarUrl: "",
     role: "",
+    permissions: [],
+    isActive: true,
   });
+
+  // Password change state
+  const [passwordData, setPasswordData] = useState({
+    oldPassword: "",
+    newPassword: "",
+  });
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
 
   const fetchUsers = async () => {
     setLoading(true)
@@ -405,12 +422,29 @@ const UserList = () => {
 
   const openEditModal = (user: User) => {
     setEditedUser(user);
+    
+    // Extract permissions from user object (could be array of objects or strings)
+    // The User type doesn't include permissions, but the API response does
+    let permissions: string[] = [];
+    const userWithPermissions = user as any;
+    if (userWithPermissions.permissions) {
+      if (Array.isArray(userWithPermissions.permissions)) {
+        permissions = userWithPermissions.permissions.map((p: any) => 
+          typeof p === 'string' ? p : (p.name || p)
+        );
+      }
+    }
+    
     setEditFormData({
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
+      firstName: user.firstName || "",
+      lastName: user.lastName || "",
+      username: user.username || "",
+      email: user.email || "",
       phone: user.phone || "",
-      role: user.role,
+      avatarUrl: user.avatarUrl || "",
+      role: user.role || "",
+      permissions: permissions,
+      isActive: user.isActive !== undefined ? user.isActive : true,
     });
     setShowEditModal(true);
     closeActionMenu();
@@ -419,11 +453,31 @@ const UserList = () => {
   const closeEditModal = () => {
     setShowEditModal(false);
     setEditedUser(null);
+    setPasswordData({ oldPassword: "", newPassword: "" });
+    setShowOldPassword(false);
+    setShowNewPassword(false);
   };
 
   const handleEditFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setEditFormData({ ...editFormData, [name]: value });
+    const { name, value, type } = e.target;
+    if (type === 'checkbox') {
+      const checked = (e.target as HTMLInputElement).checked;
+      setEditFormData({ ...editFormData, [name]: checked });
+    } else {
+      setEditFormData({ ...editFormData, [name]: value });
+    }
+  };
+
+  const handlePermissionToggle = (permission: string) => {
+    setEditFormData(prev => {
+      const exists = prev.permissions.includes(permission);
+      return {
+        ...prev,
+        permissions: exists 
+          ? prev.permissions.filter(p => p !== permission)
+          : [...prev.permissions, permission]
+      };
+    });
   };
 
   const handleSaveEdit = async () => {
@@ -433,14 +487,15 @@ const UserList = () => {
       const payload: any = {
         firstName: editFormData.firstName,
         lastName: editFormData.lastName,
+        username: editFormData.username,
         email: editFormData.email,
+        phone: editFormData.phone || undefined,
+        avatarUrl: editFormData.avatarUrl || undefined,
+        role: editFormData.role ? editFormData.role.toUpperCase() : undefined,
+        permissions: editFormData.permissions.length > 0 ? editFormData.permissions : undefined,
+        isActive: editFormData.isActive,
       };
-      if (editFormData.role && editFormData.role.trim()) {
-        payload.role = editFormData.role.toUpperCase();
-      }
-      if (typeof editFormData.phone === 'string') {
-        payload.phone = editFormData.phone;
-      }
+      
       const res = await updateUser(editedUser.id, payload);
       if (res) {
         setUsers(users.map(u => u.id === editedUser.id ? { ...u, ...editFormData, role: payload.role || u.role } : u));
@@ -452,6 +507,32 @@ const UserList = () => {
       // Error message already toasted in hook; no success modal on failure
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!passwordData.oldPassword || !passwordData.newPassword) {
+      toast.error('Please fill in both old and new password fields');
+      return;
+    }
+
+    if (passwordData.newPassword.length < 8) {
+      toast.error('New password must be at least 8 characters long');
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      const success = await changePassword(passwordData.oldPassword, passwordData.newPassword);
+      if (success) {
+        setPasswordData({ oldPassword: "", newPassword: "" });
+        setShowOldPassword(false);
+        setShowNewPassword(false);
+      }
+    } catch (error: any) {
+      // Error already handled in hook
+    } finally {
+      setChangingPassword(false);
     }
   };
 
@@ -1099,10 +1180,16 @@ const UserList = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
                     >
                       <option value="">Select a reason</option>
-                      <option value="reason1">Reason One</option>
-                      <option value="reason2">Another Reason</option>
-                      <option value="reason3">A Different Reason</option>
-                      {/* Add more reason options here */}
+                      <option value="resignation">Resignation</option>
+                      <option value="termination">Termination</option>
+                      <option value="end_of_contract">End of Contract</option>
+                      <option value="leave_of_absence">Leave of Absence</option>
+                      <option value="policy_violation">Policy Violation</option>
+                      <option value="performance_issues">Performance Issues</option>
+                      <option value="restructuring">Organizational Restructuring</option>
+                      <option value="retirement">Retirement</option>
+                      <option value="medical_leave">Extended Medical Leave</option>
+                      <option value="other">Other</option>
                     </select>
                   </div>
 
@@ -1334,6 +1421,51 @@ const UserList = () => {
                         <input type="tel" id="phone" name="phone" className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none" value={editFormData.phone} onChange={handleEditFormChange} />
                       </div>
                     </div>
+                    <div className="col-span-2">
+                      <label htmlFor="username" className="block text-xs font-medium text-gray-600 mb-1">Username</label>
+                      <input type="text" id="username" name="username" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" value={editFormData.username} onChange={handleEditFormChange} />
+                    </div>
+                    <div className="col-span-2">
+                      <label htmlFor="avatarUrl" className="block text-xs font-medium text-gray-600 mb-1">Avatar URL</label>
+                      <input type="url" id="avatarUrl" name="avatarUrl" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" value={editFormData.avatarUrl} onChange={handleEditFormChange} />
+                    </div>
+                    <div>
+                      <label htmlFor="role" className="block text-xs font-medium text-gray-600 mb-1">Role</label>
+                      <select id="role" name="role" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" value={editFormData.role} onChange={handleEditFormChange}>
+                        <option value="">Select Role</option>
+                        <option value="STAFF">STAFF</option>
+                        <option value="ADMIN">ADMIN</option>
+                        <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+                      </select>
+                    </div>
+                    <div className="flex items-center">
+                      <label className="flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          name="isActive"
+                          checked={editFormData.isActive}
+                          onChange={handleEditFormChange}
+                          className="mr-2 h-4 w-4 text-orange-500 focus:ring-orange-500 border-gray-300 rounded"
+                        />
+                        <span className="text-xs font-medium text-gray-600">Active</span>
+                      </label>
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-xs font-medium text-gray-600 mb-2">Permissions</label>
+                      <div className="space-y-2">
+                        {["VIEW_CLIENTS", "EDIT_TRANSACTIONS"].map((perm) => (
+                          <label key={perm} className="flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={editFormData.permissions.includes(perm)}
+                              onChange={() => handlePermissionToggle(perm)}
+                              className="mr-2 h-4 w-4 text-orange-500 focus:ring-orange-500 border-gray-300 rounded"
+                            />
+                            <span className="text-xs text-gray-700">{perm}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
                     <div className="col-span-2 flex justify-end">
                       <button onClick={handleSaveEdit} className="bg-orange-500 hover:bg-orange-600 text-white rounded-md py-2 px-4 text-sm font-medium focus:outline-none focus:shadow-outline-orange active:bg-orange-700">
                         Save Changes
@@ -1343,40 +1475,80 @@ const UserList = () => {
                 </div>
 
                 <div className="p-4 bg-white rounded-md border border-gray-200">
-                  <div className="md:grid md:grid-cols-2 md:items-start md:gap-6 mb-4"> {/* Flex layout for label and text */}
+                  <div className="md:grid md:grid-cols-2 md:items-start md:gap-6 mb-4">
                     <div>
                       <h4 className="text-sm font-semibold text-gray-700 mb-4">Password</h4>
                     </div>
-                    <div className="text-xs text-gray-500 md:mt-1">Lorem ipsum dolor sit amet consectetur. Purus odio porttitor dignissim orci non odio porttitor dignissim orci non purus purus. Nunc nisl ut</div>
+                    <div className="text-xs text-gray-500 md:mt-1">
+                      Update your password to keep your account secure. Ensure your new password is at least 8 characters long and contains a mix of letters, numbers, and special characters.
+                    </div>
                   </div>
                   <div className="space-y-4">
                     <div>
                       <label htmlFor="old-password" className="block text-xs font-medium text-gray-600 mb-1">Old Password</label>
                       <div className="relative">
-                        <input type="password" id="old-password" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" value="********" readOnly />
-                        <button className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7 1.274 4.057 1.274 8.057 0 12-1.274 4.057-5.064 7-9.542 7-4.476 0-8.268-2.943-9.542-7 0-4.057 0-8.057 0-12z" />
-                          </svg>
+                        <input 
+                          type={showOldPassword ? "text" : "password"} 
+                          id="old-password" 
+                          className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" 
+                          value={passwordData.oldPassword} 
+                          onChange={(e) => setPasswordData({ ...passwordData, oldPassword: e.target.value })}
+                          placeholder="Enter your current password"
+                        />
+                        <button 
+                          type="button"
+                          onClick={() => setShowOldPassword(!showOldPassword)}
+                          className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                        >
+                          {showOldPassword ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                            </svg>
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7 1.274 4.057 1.274 8.057 0 12-1.274 4.057-5.064 7-9.542 7-4.476 0-8.268-2.943-9.542-7 0-4.057 0-8.057 0-12z" />
+                            </svg>
+                          )}
                         </button>
                       </div>
                     </div>
                     <div>
                       <label htmlFor="new-password" className="block text-xs font-medium text-gray-600 mb-1">New Password</label>
                       <div className="relative">
-                        <input type="password" id="new-password" className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" value="********" readOnly />
-                        <button className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7 1.274 4.057 1.274 8.057 0 12-1.274 4.057-5.064 7-9.542 7-4.476 0-8.268-2.943-9.542-7 0-4.057 0-8.057 0-12z" />
-                          </svg>
+                        <input 
+                          type={showNewPassword ? "text" : "password"} 
+                          id="new-password" 
+                          className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:border-orange-500" 
+                          value={passwordData.newPassword} 
+                          onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                          placeholder="Enter your new password"
+                        />
+                        <button 
+                          type="button"
+                          onClick={() => setShowNewPassword(!showNewPassword)}
+                          className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                        >
+                          {showNewPassword ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                            </svg>
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7 1.274 4.057 1.274 8.057 0 12-1.274 4.057-5.064 7-9.542 7-4.476 0-8.268-2.943-9.542-7 0-4.057 0-8.057 0-12z" />
+                            </svg>
+                          )}
                         </button>
                       </div>
                     </div>
                     <div className="flex justify-end">
-                      <button className="bg-orange-500 hover:bg-orange-600 text-white rounded-md py-2 px-4 text-sm font-medium focus:outline-none focus:shadow-outline-orange active:bg-orange-700">
-                        Change Password
+                      <button 
+                        onClick={handleChangePassword}
+                        disabled={changingPassword || !passwordData.oldPassword || !passwordData.newPassword}
+                        className="bg-orange-500 hover:bg-orange-600 text-white rounded-md py-2 px-4 text-sm font-medium focus:outline-none focus:shadow-outline-orange active:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {changingPassword ? 'Changing...' : 'Change Password'}
                       </button>
                     </div>
                   </div>
