@@ -1164,7 +1164,7 @@ const AccountDetails = () => {
                                                 <li key={user.id || user.userId} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
                                                     <div className="flex items-center text-gray-700">
                                                         <div className="w-8 h-8 rounded-full shadow mr-2 relative overflow-hidden bg-gray-200">
-                                                            {(user.avatarUrl || user.avatar) ? (
+                                                            {/* {(user.avatarUrl || user.avatar) ? (
                                                                 <Image 
                                                                     src={(user.avatarUrl || user.avatar) as string} 
                                                                     alt={user.name || 'User'} 
@@ -1175,7 +1175,12 @@ const AccountDetails = () => {
                                                                 <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs">
                                                                     {(user.firstName?.[0] || user.email?.[0] || 'U').toUpperCase()}
                                                                 </div>
-                                                            )}
+                                                            )} */}
+                                                            
+                                                                <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs">
+                                                                    {(user.firstName?.[0] || user.email?.[0] || 'U').toUpperCase()}
+                                                                </div>
+                                                            
                                                         </div>
                                                         <span>{user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || 'Unknown User'}</span>
                                                     </div>

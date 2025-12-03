@@ -15,8 +15,6 @@ const NewUser = () => {
     username: "",
     email: "",
     phone: "",
-    avatarUrl:
-      "https://gravatar.com/avatar/48c3863a0f03a81d67916d28fdaa0ea6?s=400&d=mp&r=pg",
     password: "",
     role: "staff",
     permissions: ["VIEW_CLIENTS", "EDIT_TRANSACTIONS"] as string[],
@@ -74,7 +72,6 @@ const NewUser = () => {
         role: form.role,
         username: form.username || undefined,
         phone: form.phone || undefined,
-        avatarUrl: form.avatarUrl || undefined,
         password: form.password,
         permissions: form.permissions,
         isActive: form.isActive,
@@ -152,14 +149,6 @@ const NewUser = () => {
               onChange={handleChange}
             />
           </div>
-
-          <input
-            name="avatarUrl"
-            placeholder="Avatar URL (optional)"
-            className="w-full px-4 py-2 rounded-md bg-[#424242] placeholder-gray-300 text-sm text-white outline-none focus:ring-2 focus:ring-[#F36F2E]"
-            value={form.avatarUrl}
-            onChange={handleChange}
-          />
 
           <input
             type="password"

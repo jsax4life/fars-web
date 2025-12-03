@@ -67,8 +67,7 @@ const Login = () => {
       <div className="relative z-20 w-full max-w-md">
         <h1 className="text-3xl sm:text-4xl font-bold text-white">Login</h1>
         <p className="mt-2 text-sm sm:text-base font-light text-[#f3f3f3]">
-          t amet consectetur. tellus pulvinar con sed posuere duis. Velit
-          euismod quis quid ut quis.
+          Sign in to your account to access the dashboard and manage your clients.
         </p>
 
         <form className="mt-8 space-y-4" onSubmit={handleSubmit}>

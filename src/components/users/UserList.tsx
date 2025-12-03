@@ -584,7 +584,6 @@ const UserList = () => {
       // Username will be generated in the hook if not provided
       isActive: newAdmin.isActive,
       permissions: newAdmin.permissions,
-      avatarUrl: newAdmin.avatarUrl,
     })
       .then((res) => {
       if (res) {
@@ -991,17 +990,6 @@ const UserList = () => {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Avatar URL</label>
-                    <input
-                      type="text"
-                      name="avatarUrl"
-                      value={newAdmin.avatarUrl}
-                      onChange={handleInputChange}
-                      placeholder="https://..."
-                      className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-                    />
-                  </div>
-                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
                     <input
                       type="password"
@@ -1272,7 +1260,7 @@ const UserList = () => {
                     <div>
                       <h4 className="text-sm font-semibold text-gray-700">Update Personal Details</h4>
                     </div>
-                    <p className="text-xs text-gray-500 md:mt-1">Lorem ipsum dolor sit amet consectetur. Purus odio porttitor dignissim orci non odio porttitor dignissim orci non purus purus. Nunc nisl ut</p>
+                    <p className="text-xs text-gray-500 md:mt-1">View and manage the staff member's personal information. Contact details can be updated to ensure accurate records.</p>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -1394,7 +1382,7 @@ const UserList = () => {
                     <div>
                       <h4 className="text-sm font-semibold text-gray-700">Update Personal Details</h4>
                     </div>
-                    <p className="text-xs text-gray-500 md:mt-1">Lorem ipsum dolor sit amet consectetur. Purus odio porttitor dignissim orci non odio porttitor dignissim orci non purus purus. Nunc nisl ut</p>
+                    <p className="text-xs text-gray-500 md:mt-1">Update the staff member's personal information. Make changes to their name, contact details, and other profile information as needed.</p>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
