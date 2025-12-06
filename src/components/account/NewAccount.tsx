@@ -59,24 +59,25 @@ const NewAccount = () => {
   const { getBanks } = useBanks();
   const { createBankAccount } = useBankAccounts();
   const { getClients } = useClients();
-  const { getRatesByClientId } = useRates();
+  const { getRatesByClientAndBank } = useRates();
   const [banks, setBanks] = useState<Bank[]>([]);
   const [rates, setRates] = useState<RateSummary[]>([]);
   const [loadingRates, setLoadingRates] = useState(false);
   const [loadingClientName, setLoadingClientName] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [clientId, setClientId] = useState('');
-  const [clientName, setClientName] = useState('');
+  const [clientId, setClientId] = useState("");
+  const [bankId, setBankId] = useState("");
+  const [clientName, setClientName] = useState("");
 
   const [formData, setFormData] = useState<FormData>({
-    accountNumber: '',
-    accountName: '',
-    accountType: 'SAVINGS',
-    currency: 'NGN',
-    bankId: '',
-    clientId: '',
-    rateId: '',
+    accountNumber: "",
+    accountName: "",
+    accountType: "SAVINGS",
+    currency: "NGN",
+    bankId: "",
+    clientId: "",
+    rateId: "",
   });
   const [showModal, setShowModal] = useState(false);
   const [modalFormData, setModalFormData] = useState<ModalFormData>({
@@ -132,17 +133,19 @@ const NewAccount = () => {
   useEffect(() => {
     let isCancelled = false;
     const initializeClient = async () => {
-      const id = searchParams.get('clientId') || '';
-      const name = searchParams.get('clientName') || '';
-      
+      const id = searchParams.get("clientId") || "";
+      const name = searchParams.get("clientName") || "";
+
       if (!id) {
-        toast.error('Client ID is required. Please create account from Client Management page.');
-        router.push('/Clients');
+        toast.error(
+          "Client ID is required. Please create account from Client Management page."
+        );
+        router.push("/Clients");
         return;
       }
 
       setClientId(id);
-      setFormData(prev => ({ ...prev, clientId: id }));
+      setFormData((prev) => ({ ...prev, clientId: id }));
 
       // If name is provided in URL, use it
       if (name) {
@@ -156,18 +159,19 @@ const NewAccount = () => {
           if (!isCancelled && Array.isArray(clients)) {
             const client = clients.find((c: any) => c.id === id);
             if (client) {
-              const name = client.companyName || 
-                [client.firstName, client.lastName].filter(Boolean).join(' ') || 
-                'Unknown Client';
+              const name =
+                client.companyName ||
+                [client.firstName, client.lastName].filter(Boolean).join(" ") ||
+                "Unknown Client";
               setClientName(name);
             } else {
-              setClientName('Client Name Not Found');
+              setClientName("Client Name Not Found");
             }
           }
         } catch (error) {
-          console.error('Failed to fetch client:', error);
+          console.error("Failed to fetch client:", error);
           if (!isCancelled) {
-            setClientName('Client Name Not Found');
+            setClientName("Client Name Not Found");
           }
         } finally {
           if (!isCancelled) {
@@ -178,54 +182,93 @@ const NewAccount = () => {
     };
 
     initializeClient();
-    return () => { isCancelled = true; };
+    return () => {
+      isCancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, router]);
 
-  // Fetch rates for the client
+  // Fetch banks
+  useEffect(() => {
+    let isCancelled = false;
+    const fetchBanks = async () => {
+      // Changed function name for clarity
+      try {
+        setIsLoading(true);
+        const banksData = await getBanks();
+        if (
+          !isCancelled &&
+          banksData &&
+          Array.isArray(banksData) &&
+          banksData.length > 0
+        ) {
+          setBanks(banksData);
+
+          const defaultBankId = banksData[0].id;
+          setBankId(defaultBankId);
+          setFormData((prev) => ({ ...prev, bankId: defaultBankId }));
+        }
+      } catch (error) {
+        console.error("Failed to fetch banks:", error);
+        toast.error("Failed to fetch banks");
+      } finally {
+        if (!isCancelled) setIsLoading(false);
+      }
+    };
+
+    fetchBanks();
+
+    return () => {
+      isCancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Fetch rates for the client/bank selection
   useEffect(() => {
     let isCancelled = false;
     const fetchRates = async () => {
-      if (!clientId) return;
+      // Only fetch if both client ID and a specific bank ID are available
+      if (!clientId || !bankId) {
+        setRates([]);
+        setFormData((prev) => ({ ...prev, rateId: "" })); // Clear rate selection
+        return;
+      }
+
+      // Clear previous rate selection before fetching new rates
+      setFormData((prev) => ({ ...prev, rateId: "" }));
+      setRates([]);
       setLoadingRates(true);
+
       try {
-        const data = await getRatesByClientId(clientId);
+        const data = await getRatesByClientAndBank(clientId, bankId);
         if (!isCancelled && Array.isArray(data)) {
           setRates(data);
+          // Optional: Set the first rate as default if rates are found
+          if (data.length > 0) {
+            setFormData((prev) => ({ ...prev, rateId: data[0].id }));
+          }
         }
       } catch (error) {
-        console.error('Failed to fetch rates:', error);
+        console.error("Failed to fetch rates:", error);
         if (!isCancelled) setRates([]);
       } finally {
         if (!isCancelled) setLoadingRates(false);
       }
     };
-    fetchRates();
-    return () => { isCancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clientId]);
 
-  useEffect(() => {
-    const fetchBanks = async () => {
-      try {
-        setIsLoading(true);
-        const banksData = await getBanks();
-        if (banksData && Array.isArray(banksData)) {
-          setBanks(banksData);
-        }
-      } catch (error) {
-        console.error('Failed to fetch banks:', error);
-        toast.error('Failed to fetch banks');
-      } finally {
-        setIsLoading(false);
-      }
+    fetchRates();
+
+    return () => {
+      isCancelled = true;
     };
 
-    fetchBanks();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [clientId, bankId]);
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setFormData((prevState) => ({
       ...prevState,
@@ -233,25 +276,36 @@ const NewAccount = () => {
     }));
   };
 
+  const handleBankChange = (e: ChangeEvent<HTMLSelectElement>) => {
+    const { value } = e.target;
+    setBankId(value);
+    setFormData((prevState) => ({
+      ...prevState,
+      bankId: value,
+    }));
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    
+
     // Validation
     if (!formData.accountNumber.trim()) {
-      toast.error('Account number is required');
+      toast.error("Account number is required");
       return;
     }
     if (!formData.accountName.trim()) {
-      toast.error('Account name is required');
+      toast.error("Account name is required");
       return;
     }
     if (!formData.bankId) {
-      toast.error('Bank is required');
+      toast.error("Bank is required");
       return;
     }
     if (!formData.clientId || !clientId) {
-      toast.error('Client ID is required. Please create account from Client Management page.');
-      router.push('/Clients');
+      toast.error(
+        "Client ID is required. Please create account from Client Management page."
+      );
+      router.push("/Clients");
       return;
     }
 
@@ -269,7 +323,7 @@ const NewAccount = () => {
 
       const response = await createBankAccount(payload);
       if (response) {
-        router.push('/BankAccounts');
+        router.push("/BankAccounts");
       }
     } finally {
       setIsSubmitting(false);
@@ -381,7 +435,7 @@ const NewAccount = () => {
                     id="bankId"
                     name="bankId"
                     value={formData.bankId}
-                    onChange={handleChange}
+                    onChange={handleBankChange}
                     required
                     className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
                   >
@@ -405,7 +459,11 @@ const NewAccount = () => {
                     type="text"
                     id="clientName"
                     name="clientName"
-                    value={loadingClientName ? 'Loading client name...' : (clientName || 'Client Name Not Found')}
+                    value={
+                      loadingClientName
+                        ? "Loading client name..."
+                        : clientName || "Client Name Not Found"
+                    }
                     readOnly
                     disabled
                     className="mt-1 block w-full border border-gray-300 text-gray-500 bg-gray-100 rounded-md shadow-sm py-2 px-3 focus:outline-none sm:text-sm cursor-not-allowed"
@@ -422,19 +480,24 @@ const NewAccount = () => {
                   <select
                     id="rateId"
                     name="rateId"
-                    value={formData.rateId || ''}
+                    value={formData.rateId || ""}
                     onChange={handleChange}
                     className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
                   >
                     <option value="">Select Rate (Optional)</option>
                     {loadingRates ? (
-                      <option value="" disabled>Loading rates...</option>
+                      <option value="" disabled>
+                        Loading rates...
+                      </option>
                     ) : rates.length > 0 ? (
                       rates.map((rate) => {
-                        const drRate = rate.drRates && rate.drRates.length > 0 
-                          ? rate.drRates[0].rate 
-                          : rate.debitRate || '-';
-                        const displayText = `${rate.code} - ${rate.currency || 'NGN'} (DR: ${drRate})`;
+                        const drRate =
+                          rate.drRates && rate.drRates.length > 0
+                            ? rate.drRates[0].rate
+                            : rate.debitRate || "-";
+                        const displayText = `${rate.code} - ${
+                          rate.currency || "NGN"
+                        } (DR: ${drRate})`;
                         return (
                           <option key={rate.id} value={rate.id}>
                             {displayText}
@@ -442,7 +505,9 @@ const NewAccount = () => {
                         );
                       })
                     ) : (
-                      <option value="" disabled>No rates available</option>
+                      <option value="" disabled>
+                        No rates available
+                      </option>
                     )}
                   </select>
                 </div>
@@ -462,7 +527,7 @@ const NewAccount = () => {
               disabled={isSubmitting || isLoading}
               className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? 'Creating...' : 'Create Account'}
+              {isSubmitting ? "Creating..." : "Create Account"}
             </button>
           </div>
         </form>
