@@ -91,10 +91,11 @@ const RateViewModal: React.FC<RateViewModalProps> = ({ rateId, isOpen, onClose }
             setRate(res);
             // Load documents for this rate
             const assignedDocs = await getRateDocuments(rateId);
-            if (!cancelled && assignedDocs) {
-              setDocuments(assignedDocs);
-              // Load available documents after assigned documents are loaded
-              await loadAvailableDocuments(assignedDocs);
+            if (!cancelled) {
+              // Always set documents (even if empty array or undefined)
+              setDocuments(assignedDocs || []);
+              // Always load available documents, even if there are no assigned documents
+              await loadAvailableDocuments(assignedDocs || []);
             }
           }
         } finally {

@@ -83,7 +83,7 @@ interface Transaction {
 type AnalysisType =
   | "CMF"
   | "ST Loan"
-  | "STIP Loan"
+    | "STIP Loan"
   | "LT Loan"
   | "Interest"
   | "Debit"
@@ -1248,19 +1248,19 @@ const cmfAnalysisData: Transaction[] = [
                     )}
                     {!isLoadingAnalysisTypes &&
                       analysisTypes.map((type) => (
-                        <div
+                      <div
                           key={type.id}
-                          className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-orange-100"
-                          onClick={() => {
+                        className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-orange-100"
+                        onClick={() => {
                             setSelectedAnalysisType(type.name as AnalysisType);
-                            setIsAnalysisTypeDropdownOpen(false);
-                          }}
-                        >
-                          <span className="font-normal text-black block truncate">
+                          setIsAnalysisTypeDropdownOpen(false);
+                        }}
+                      >
+                        <span className="font-normal text-black block truncate">
                             {type.name}
-                          </span>
-                        </div>
-                      ))}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
@@ -1317,27 +1317,27 @@ const cmfAnalysisData: Transaction[] = [
                           "Unnamed client";
 
                         return (
-                          <div
+                      <div
                             key={client.id}
-                            className="cursor-pointer select-none text-black relative py-2 pl-3 pr-9 hover:bg-orange-100 flex items-center"
-                            onClick={() => {
+                        className="cursor-pointer select-none text-black relative py-2 pl-3 pr-9 hover:bg-orange-100 flex items-center"
+                        onClick={() => {
                               setSelectedClient(displayName);
                               setSelectedClientId(client.id);
-                              setIsClientDropdownOpen(false);
-                            }}
-                          >
-                            <img
+                          setIsClientDropdownOpen(false);
+                        }}
+                      >
+                        <img
                               src={
                                 client.avatarUrl ||
                                 "https://gravatar.com/avatar/48c3863a0f03a81d67916d28fdaa0ea6?s=80&d=mp&r=pg"
                               }
-                              alt="Client Avatar"
-                              className="w-6 h-6 rounded-full mr-2"
-                            />
-                            <span className="font-normal block truncate">
+                          alt="Client Avatar"
+                          className="w-6 h-6 rounded-full mr-2"
+                        />
+                        <span className="font-normal block truncate">
                               {displayName}
-                            </span>
-                          </div>
+                        </span>
+                      </div>
                         );
                       })}
                   </div>
@@ -1387,19 +1387,19 @@ const cmfAnalysisData: Transaction[] = [
                             .map((acc) => [acc.bank!.id, acc.bank!])
                         ).values()
                       ).map((bank) => (
-                        <div
+                      <div
                           key={bank.id}
-                          className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-orange-100"
-                          onClick={() => {
+                        className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-orange-100"
+                        onClick={() => {
                             setSelectedBank(bank.name);
-                            setIsBankDropdownOpen(false);
-                          }}
-                        >
-                          <span className="font-normal block truncate">
+                          setIsBankDropdownOpen(false);
+                        }}
+                      >
+                        <span className="font-normal block truncate">
                             {bank.name}
-                          </span>
-                        </div>
-                      ))}
+                        </span>
+                      </div>
+                    ))}
                     {!isLoadingAccounts && clientAccounts.length === 0 && (
                       <div className="py-2 px-3 text-sm text-gray-500">
                         No banks available for this client
@@ -1455,46 +1455,46 @@ const cmfAnalysisData: Transaction[] = [
                     )}
                     {!isLoadingAccounts && clientAccounts.length > 0 && (
                       <>
-                        <div
-                          className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-orange-100"
-                          onClick={() => {
+                    <div
+                      className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-orange-100"
+                      onClick={() => {
                             const allIds = clientAccounts.map((a) => a.id);
                             if (selectedAccounts.length === allIds.length) {
-                              setSelectedAccounts([]);
-                            } else {
+                          setSelectedAccounts([]);
+                        } else {
                               setSelectedAccounts(allIds);
-                            }
-                          }}
-                        >
-                          <span className="font-normal text-black block truncate">
-                            Select All
-                          </span>
-                        </div>
+                        }
+                      }}
+                    >
+                      <span className="font-normal text-black block truncate">
+                        Select All
+                      </span>
+                    </div>
                         {clientAccounts.map((account) => (
-                          <div
+                      <div
                             key={account.id}
-                            className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-orange-100 flex items-center"
+                        className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-orange-100 flex items-center"
                             onClick={() => handleAccountSelect(account.id)}
-                          >
-                            <input
+                      >
+                        <input
                               type="radio"
                               checked={selectedAccounts.includes(account.id)}
                               readOnly
-                              className="form-radio h-4 w-4 text-orange-600 transition duration-150 ease-in-out"
-                            />
-                            <span className="ml-2 text-black font-normal block truncate">
+                          className="form-radio h-4 w-4 text-orange-600 transition duration-150 ease-in-out"
+                        />
+                        <span className="ml-2 text-black font-normal block truncate">
                               {account.accountNumber} - {account.accountName}
-                            </span>
-                          </div>
-                        ))}
-                        <div className="p-2">
-                          <button
-                            onClick={() => setIsAccountsDropdownOpen(false)}
-                            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-1 px-4 rounded focus:outline-none focus:shadow-outline-orange active:bg-orange-700"
-                          >
-                            Ok
-                          </button>
-                        </div>
+                        </span>
+                      </div>
+                    ))}
+                    <div className="p-2">
+                      <button
+                        onClick={() => setIsAccountsDropdownOpen(false)}
+                        className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-1 px-4 rounded focus:outline-none focus:shadow-outline-orange active:bg-orange-700"
+                      >
+                        Ok
+                      </button>
+                    </div>
                       </>
                     )}
                   </div>

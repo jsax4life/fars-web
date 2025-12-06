@@ -1,9 +1,12 @@
 import Account from "@/components/clients/Account";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 export default function Home() {
   return (
-    <div>
-    <Account />
-    </div>
+    <ProtectedRoute>
+      <div>
+        <Account />
+      </div>
+    </ProtectedRoute>
   );
 }

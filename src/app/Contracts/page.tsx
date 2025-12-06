@@ -1,9 +1,12 @@
 import Contracts from "@/components/account/Contracts";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 export default function Home() {
   return (
-    <div>
-    <Contracts />
-    </div>
+    <ProtectedRoute>
+      <div>
+        <Contracts />
+      </div>
+    </ProtectedRoute>
   );
 }

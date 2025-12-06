@@ -1,11 +1,12 @@
-
-
 import BankList from "@/components/banks/BankList";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 export default function Home() {
   return (
-    <div>
-    <BankList />
-    </div>
+    <ProtectedRoute>
+      <div>
+        <BankList />
+      </div>
+    </ProtectedRoute>
   );
 }

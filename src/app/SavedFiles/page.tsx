@@ -1,11 +1,12 @@
-
-
 import SavedFiles from "@/components/files/SavedFiles";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 export default function Home() {
   return (
-    <div>
-    <SavedFiles />
-    </div>
+    <ProtectedRoute>
+      <div>
+        <SavedFiles />
+      </div>
+    </ProtectedRoute>
   );
 }

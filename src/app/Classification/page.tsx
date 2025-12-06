@@ -1,9 +1,12 @@
 import Classification from "@/components/classification/Classification";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 export default function Home() {
   return (
-    <div>
-    <Classification />
-    </div>
+    <ProtectedRoute>
+      <div>
+        <Classification />
+      </div>
+    </ProtectedRoute>
   );
 }

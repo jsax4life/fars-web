@@ -20,6 +20,11 @@ const ApiContext = createContext<ApiContextType | null>(null);
 // API Base URL - use environment variable or fallback to default
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://adegoroyefadareandco.org";
 
+// Log API URL in development for debugging (only once)
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+    console.log('API Base URL:', API_BASE_URL);
+}
+
 
 export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [token, setToken] = useState<Tokens | null>(null);
@@ -79,7 +84,21 @@ export const useApi = () => {
     const { token, updateToken, isFetching, incrementPending, decrementPending } = context;
 
     const request = async (method: string, endpoint: string, data?: any) => {
-        if (token === null) {
+        // List of public endpoints that don't require authentication
+        const publicEndpoints = [
+            '/api/auth/login',
+            '/auth/sign-up',
+            '/api/auth/forgot-password',
+            '/api/auth/reset-password',
+            '/auth/resend-otp',
+            '/auth/verify-account',
+        ];
+        
+        const isPublicEndpoint = publicEndpoints.some(publicEndpoint => 
+            endpoint.startsWith(publicEndpoint)
+        );
+        
+        if (token === null && !isPublicEndpoint) {
             console.warn("Token not available yet. Proceeding without.");
             // return null; // Skip request if token is still being loaded
             //delay for 1 second before making the request
@@ -100,11 +119,24 @@ export const useApi = () => {
 
         try {
             incrementPending();
-            const response = await fetch(url, {
-                method,
-                headers,
-                body: data ? (data instanceof FormData ? data : JSON.stringify(data)) : undefined,
-            });
+            let response: Response;
+            try {
+                response = await fetch(url, {
+                    method,
+                    headers,
+                    body: data ? (data instanceof FormData ? data : JSON.stringify(data)) : undefined,
+                });
+            } catch (networkError: any) {
+                // Handle network errors (DNS resolution, connection refused, etc.)
+                decrementPending();
+                const networkErrorMessage = networkError?.message || 'Network error';
+                if (networkErrorMessage.includes('ERR_NAME_NOT_RESOLVED') || 
+                    networkErrorMessage.includes('Failed to fetch') ||
+                    networkErrorMessage.includes('NetworkError')) {
+                    throw new Error(`Cannot connect to server. Please check your internet connection and verify the API URL is correct. (${API_BASE_URL})`);
+                }
+                throw new Error(`Network error: ${networkErrorMessage}`);
+            }
 
             // Check if response has content before trying to parse JSON
             const contentType = response.headers.get("content-type");
@@ -134,11 +166,14 @@ export const useApi = () => {
             if (!response.ok) {
                 // Handle token expiration or invalidation here
                 if (response.status === 401 || response.statusText === "Unauthorized") {
-                    // Optionally, you can refresh the token here or redirect to login
+                    // Clear all authentication data
                     console.warn("Token expired. Please log in again.");
                     updateToken(null); // Clear token on error
-                    //navigate to /
-                    if (token) window.location.href = "/"; // Redirect to login page
+                    localStorage.removeItem('user'); // Clear user data
+                    // Redirect to login page
+                    if (typeof window !== 'undefined') {
+                        window.location.href = "/";
+                    }
                 }
 
                 // Normalize backend error shapes into a readable message

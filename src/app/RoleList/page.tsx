@@ -1,11 +1,12 @@
-
-
 import RoleList from "@/components/users/RoleList";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 export default function Home() {
   return (
-    <div>
-    <RoleList />
-    </div>
+    <ProtectedRoute>
+      <div>
+        <RoleList />
+      </div>
+    </ProtectedRoute>
   );
 }

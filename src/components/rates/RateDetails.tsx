@@ -93,11 +93,10 @@ const RateDetails = () => {
           setRate(res);
           // Load documents for this rate
           const assignedDocs = await getRateDocuments(id);
-          if (assignedDocs) {
-            setDocuments(assignedDocs);
-            // Load available documents after assigned documents are loaded
-            await loadAvailableDocuments(assignedDocs);
-          }
+          // Always set documents (even if empty array or undefined)
+          setDocuments(assignedDocs || []);
+          // Always load available documents, even if there are no assigned documents
+          await loadAvailableDocuments(assignedDocs || []);
         }
       } finally {
         if (!cancelled) setLoading(false);

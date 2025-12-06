@@ -1,10 +1,13 @@
 import NewUser from "@/components/users/NewUser";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 export default function Page() {
   return (
-    <div>
-      <NewUser />
-    </div>
+    <ProtectedRoute>
+      <div>
+        <NewUser />
+      </div>
+    </ProtectedRoute>
   );
 }
 

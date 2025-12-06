@@ -1,11 +1,12 @@
-
-
 import UserList from "@/components/users/UserList";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 export default function Home() {
   return (
-    <div>
-    <UserList />
-    </div>
+    <ProtectedRoute>
+      <div>
+        <UserList />
+      </div>
+    </ProtectedRoute>
   );
 }
