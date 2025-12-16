@@ -11,6 +11,7 @@ import { useClients } from "@/hooks/useClient";
 import { useRates, type RateSummary } from "@/hooks/useRates";
 import { toast } from "sonner";
 import Navbar from "../nav/Navbar";
+import { FiPlus } from "react-icons/fi";
 
 interface FormData {
   accountNumber: string;
@@ -56,7 +57,7 @@ interface ModalFormData {
 const NewAccount = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { getBanks } = useBanks();
+  const { getBanks, createBank } = useBanks();
   const { createBankAccount } = useBankAccounts();
   const { getClients } = useClients();
   const { getRatesByClientAndBank } = useRates();
@@ -69,6 +70,9 @@ const NewAccount = () => {
   const [clientId, setClientId] = useState("");
   const [bankId, setBankId] = useState("");
   const [clientName, setClientName] = useState("");
+  const [showCreateBankModal, setShowCreateBankModal] = useState(false);
+  const [isCreatingBank, setIsCreatingBank] = useState(false);
+  const [newBank, setNewBank] = useState({ name: "", code: "" });
 
   const [formData, setFormData] = useState<FormData>({
     accountNumber: "",
@@ -285,6 +289,62 @@ const NewAccount = () => {
     }));
   };
 
+  const handleNewBankChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setNewBank((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleCreateBank = async () => {
+    // Prevent multiple submissions
+    if (isCreatingBank) return;
+
+    // Basic validation
+    if (!newBank.name.trim()) {
+      toast.error('Bank name is required');
+      return;
+    }
+    if (!newBank.code.trim()) {
+      toast.error('Bank code is required');
+      return;
+    }
+
+    setIsCreatingBank(true);
+    try {
+      const payload = {
+        name: newBank.name.trim(),
+        code: newBank.code.trim()
+      };
+      
+      const createdBank = await createBank(payload);
+      if (createdBank) {
+        // Refresh banks list
+        const banksData = await getBanks();
+        if (banksData && Array.isArray(banksData)) {
+          setBanks(banksData);
+        }
+        
+        // Select the newly created bank and update bankId state
+        const newBankId = createdBank.id;
+        setBankId(newBankId);
+        setFormData((prev) => ({
+          ...prev,
+          bankId: newBankId,
+        }));
+        
+        // Close modal and reset form
+        setShowCreateBankModal(false);
+        setNewBank({ name: "", code: "" });
+        toast.success('Bank created successfully and selected!');
+      }
+    } catch (error) {
+      console.error('Error creating bank:', error);
+    } finally {
+      setIsCreatingBank(false);
+    }
+  };
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
@@ -431,21 +491,31 @@ const NewAccount = () => {
                   >
                     Bank Name <span className="text-red-500">*</span>
                   </label>
-                  <select
-                    id="bankId"
-                    name="bankId"
-                    value={formData.bankId}
-                    onChange={handleBankChange}
-                    required
-                    className="mt-1 block w-full border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
-                  >
-                    <option value="">Select Bank</option>
-                    {banks.map((bank) => (
-                      <option key={bank.id} value={bank.id}>
-                        {bank.name}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="flex gap-2">
+                    <select
+                      id="bankId"
+                      name="bankId"
+                      value={formData.bankId}
+                      onChange={handleBankChange}
+                      required
+                      className="mt-1 block flex-1 border border-gray-300 text-gray-700 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                    >
+                      <option value="">Select Bank</option>
+                      {banks.map((bank) => (
+                        <option key={bank.id} value={bank.id}>
+                          {bank.name}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => setShowCreateBankModal(true)}
+                      className="mt-1 inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                      title="Create New Bank"
+                    >
+                      <FiPlus className="h-5 w-5" />
+                    </button>
+                  </div>
                 </div>
 
                 <div>
@@ -541,6 +611,94 @@ const NewAccount = () => {
             handleModalChange={handleModalChange}
             handleSave={handleSave}
           />
+        </div>
+      )}
+
+      {/* Create Bank Modal */}
+      {showCreateBankModal && (
+        <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg text-black font-semibold">
+                Create New Bank
+              </h3>
+              <button
+                onClick={() => {
+                  setShowCreateBankModal(false);
+                  setNewBank({ name: "", code: "" });
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Bank Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={newBank.name}
+                  onChange={handleNewBankChange}
+                  placeholder="Enter Bank Name"
+                  className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Bank Code <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="code"
+                  value={newBank.code}
+                  onChange={handleNewBankChange}
+                  placeholder="Enter Bank Code"
+                  className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  required
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCreateBankModal(false);
+                    setNewBank({ name: "", code: "" });
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCreateBank}
+                  disabled={isCreatingBank}
+                  className="flex-1 bg-orange-600 text-white py-2 px-4 rounded-md hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                >
+                  {isCreatingBank ? "Creating..." : "Create Bank"}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -92,6 +92,7 @@ const Account = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const clientId = searchParams.get('clientId');
+  const accountId = searchParams.get('accountId'); // Get accountId from URL if provided
   const clientName = searchParams.get('clientName') || '';
   const { getBankAccountsByClient, deleteBankAccount } = useBankAccounts()
   const { getRatesByClientId } = useRates();
@@ -363,11 +364,15 @@ const Account = () => {
       const fetchRates = async () => {
         setLoadingRates(true);
         try {
+          // API now requires only clientId (no bankId) for this view
           const data = await getRatesByClientId(clientId);
           if (!isCancelled && Array.isArray(data)) {
             setRates(data);
+          } else if (!isCancelled) {
+            setRates([]);
           }
-        } catch (_) {
+        } catch (error) {
+          console.error('Error fetching rates:', error);
           if (!isCancelled) setRates([]);
         } finally {
           if (!isCancelled) setLoadingRates(false);
@@ -375,8 +380,11 @@ const Account = () => {
       };
       fetchRates();
       return () => { isCancelled = true; };
+    } else if (activeAccountTab !== "Rates") {
+      // Clear rates when switching away from Rates tab
+      setRates([]);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks-exhaustive-deps
   }, [activeAccountTab, clientId])
 
   return (

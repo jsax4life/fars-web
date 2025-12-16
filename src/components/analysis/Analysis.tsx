@@ -5,6 +5,7 @@ import Sidebar from "@/components/utility/Sidebar";
 import { CloudArrowUpIcon } from "@heroicons/react/24/outline";
 import Navbar from "../nav/Navbar";
 import { useAnalysis, AnalysisTypeResponse } from "@/hooks/useAnalysis";
+import { toast } from "sonner";
 import { useClients } from "@/hooks/useClient";
 import {
   useBankAccounts,
@@ -81,7 +82,7 @@ interface Transaction {
 }
 
 type AnalysisType =
-  | "CMF"
+  | "CAMF"
   | "ST Loan"
     | "STIP Loan"
   | "LT Loan"
@@ -116,6 +117,30 @@ const AccountDetails = () => {
     ClientBankAccountResponse[]
   >([]);
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(false);
+  const { runAnalysis } = useAnalysis();
+  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
+
+  // Helper to derive a readable month/year label from the data
+  const getMonthLabel = (monthData: any, monthIndex: number): string => {
+    const dateSource =
+      monthData?.camf?.valueDate ||
+      monthData?.camf?.transactionDate ||
+      monthData?.computations?.[0]?.date ||
+      monthData?.vc?.[0]?.valueDate ||
+      monthData?.vc?.[0]?.transactionDate;
+
+    if (!dateSource) {
+      return `Month ${monthIndex + 1}`;
+    }
+
+    const label = new Date(dateSource).toLocaleDateString("en-US", {
+      month: "long",
+      year: "numeric",
+    });
+
+    return label;
+  };
 
   useEffect(() => {
     const fetchAnalysisTypes = async () => {
@@ -197,8 +222,29 @@ const AccountDetails = () => {
     "Account F",
   ];
 
-  const handleAnalyzeClick = () => {
+  const handleAnalyzeClick = async () => {
+    if (!selectedAnalysisType) {
+      toast.error("Please select an analysis type");
+      return;
+    }
+
+    if (selectedAccounts.length === 0) {
+      toast.error("Please select at least one account");
+      return;
+    }
+
+    try {
+      setIsLoadingAnalysis(true);
+      const result = await runAnalysis(selectedAnalysisType, selectedAccounts);
+      setAnalysisResult(result);
     setDisplayAnalysisTable(true);
+      toast.success("Analysis completed successfully");
+    } catch (error: any) {
+      console.error("Failed to run analysis", error);
+      toast.error("Failed to run analysis: " + (error?.message || "Unknown error"));
+    } finally {
+      setIsLoadingAnalysis(false);
+    }
   };
 
   const handleAccountSelect = (account: string) => {
@@ -1197,9 +1243,10 @@ const cmfAnalysisData: Transaction[] = [
               </h2>
               <button
                 onClick={handleAnalyzeClick}
-                className="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-6 rounded-md focus:outline-none focus:shadow-outline-orange active:bg-orange-700"
+                disabled={isLoadingAnalysis}
+                className="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-6 rounded-md focus:outline-none focus:shadow-outline-orange active:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Analyze
+                {isLoadingAnalysis ? "Analyzing..." : "Analyze"}
               </button>
             </div>
 
@@ -1503,7 +1550,358 @@ const cmfAnalysisData: Transaction[] = [
             </div>
           </div>
 
-          {displayAnalysisTable && selectedAnalysisType === "CMF" && (
+          {/* CAMF Analysis Results from API */}
+          {displayAnalysisTable &&
+            analysisResult &&
+            (selectedAnalysisType === "CAMF" || analysisResult.type === "CAMF") &&
+            analysisResult.computation && (
+            <div className="bg-white rounded-md shadow-md p-4 md:p-6 mb-6">
+              <div className="flex flex-col items-center justify-center p-4">
+                <h1
+                  className="text-sm sm:text-md md:text-lg lg:text-xl font-bold text-center mb-0.5 sm:mb-1 rounded-md p-2"
+                  style={{ color: '#e67e22', fontFamily: 'Inter, sans-serif' }}
+                >
+                  CAMF ANALYSIS - {analysisResult.accountName || 'N/A'}
+                </h1>
+                <div
+                  className="w-20 sm:w-24 md:w-28 lg:w-32 h-0.5 sm:h-1 rounded-full"
+                  style={{ backgroundColor: '#e67e22' }}
+                ></div>
+              </div>
+
+              {/* Computation Table - Each month */}
+              {analysisResult.computation.map((monthData: any, monthIndex: number) => (
+                <div key={monthIndex} className="mb-8">
+                  <h3 className="text-lg font-semibold mb-4 text-gray-700">
+                    {getMonthLabel(monthData, monthIndex)}{" "}
+                    <span className="text-sm font-normal text-gray-500">
+                      (Month {monthIndex + 1})
+                    </span>
+                  </h3>
+                
+                  <div className="overflow-x-auto mb-4">
+                    <div className="grid md:grid-cols-2 gap-0 min-w-max">
+                      {/* Left-hand table: CAMF and VC */}
+                      <div>
+                      <table className="min-w-full divide-y divide-gray-200 border border-gray-300">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase border-r border-gray-300">
+                              Category
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase border-r border-gray-300">
+                              Trans Date
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase border-r border-gray-300">
+                              Value Date
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase border-r border-gray-300">
+                              Amount
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase border-r border-gray-300">
+                              Balance
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase border-r border-gray-300">
+                              Type
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase border-r border-gray-300 w-80 max-w-xl">
+                              Description
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase border-r border-gray-300">
+                              Ref
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase border-r border-gray-300">
+                              Cheque No
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase border-r border-gray-300">
+                              Teller No
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase border-r border-gray-300">
+                              Is Reversal
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {/* CAMF row */}
+                          {monthData.camf && (
+                            <tr>
+                              <td className="px-4 py-3 text-sm font-semibold text-orange-600 border-r border-gray-300">
+                                CAMF
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                                {monthData.camf.transactionDate ? new Date(monthData.camf.transactionDate).toLocaleDateString() : 'N/A'}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                                {monthData.camf.valueDate ? new Date(monthData.camf.valueDate).toLocaleDateString() : 'N/A'}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                                {monthData.camf.amount?.toLocaleString() || '0.00'}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                                {monthData.camf.balance?.toLocaleString() || '0.00'}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                                {monthData.camf.type || 'N/A'}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                                {monthData.camf.description || 'N/A'}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                                {monthData.camf.reference || 'N/A'}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                                {monthData.camf.chequeNo || 'N/A'}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                                {monthData.camf.tellerNo || 'N/A'}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                                {monthData.camf.isReversal ? 'Yes' : 'No'}
+                              </td>
+                            </tr>
+                          )}
+                          
+                          {/* VC rows */}
+                          {monthData.vc && Array.isArray(monthData.vc) && monthData.vc.map((vcItem: any, vcIndex: number) => (
+                            <tr key={vcIndex}>
+                              <td className="px-4 py-3 text-sm font-semibold text-blue-600 border-r border-gray-300">
+                                VC
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                                {vcItem.transactionDate ? new Date(vcItem.transactionDate).toLocaleDateString() : 'N/A'}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                                {vcItem.valueDate ? new Date(vcItem.valueDate).toLocaleDateString() : 'N/A'}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                                {vcItem.amount?.toLocaleString() || '0.00'}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                                {vcItem.balance?.toLocaleString() || '0.00'}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                                {vcItem.type || 'N/A'}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                                {vcItem.description || 'N/A'}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                                {vcItem.reference || 'N/A'}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                                {vcItem.chequeNo || 'N/A'}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                                {vcItem.tellerNo || 'N/A'}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                                {vcItem.isReversal ? 'Yes' : 'No'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      </div>
+
+                      {/* Right-hand table: Computations (in red) */}
+                      <div className="border-l-4 border-red-500">
+                      <table className="min-w-full divide-y divide-gray-200 border border-red-300 border-l-0">
+                        <thead className="bg-red-50">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-red-500 uppercase">
+                              Transaction Date
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-red-500 uppercase">
+                              Description
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-red-500 uppercase">
+                              Amount
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-red-500 uppercase">
+                              Turnover
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-red-500 uppercase">
+                              CAMF Rate
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-red-500 uppercase">
+                              CAMF Charge
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-red-500 uppercase">
+                              VAT Rate
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-red-500 uppercase">
+                              VAT Charge
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-red-500 uppercase">
+                              Total Charge
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-red-500 uppercase">
+                              Excess
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {monthData.computations && Array.isArray(monthData.computations) && monthData.computations.map((comp: any, compIndex: number) => (
+                            <tr key={compIndex}>
+                              <td className="px-4 py-3 text-sm text-red-500">
+                                {comp.date ? new Date(comp.date).toLocaleDateString() : 'N/A'}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-red-500">
+                                {comp.description || 'N/A'}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-red-500">
+                                {comp.amount?.toLocaleString() || '0.00'}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-red-500">
+                                {comp.turnover?.toLocaleString() || '0.00'}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-red-500">
+                                {comp.camfRate || '0'}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-red-500">
+                                {comp.camfCharge?.toLocaleString() || '0.00'}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-red-500">
+                                {comp.vatRate || '0'}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-red-500">
+                                {comp.vatCharge?.toLocaleString() || '0.00'}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-red-500">
+                                {comp.totalCharge?.toLocaleString() || '0.00'}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-red-500">
+                                {/* per-row excess not provided */}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        {monthData.totals && (
+                          <tfoot className="bg-red-50">
+                            <tr>
+                              <td colSpan={3} className="px-4 py-3 text-sm font-semibold text-red-600">
+                                Totals:
+                              </td>
+                              <td className="px-4 py-3 text-sm font-semibold text-red-600">
+                                {monthData.totals.totalTurnover?.toLocaleString() || '0.00'}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-red-600"></td>
+                              <td className="px-4 py-3 text-sm font-semibold text-red-600">
+                                {monthData.totals.totalCamfCharge?.toLocaleString() || '0.00'}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-red-600"></td>
+                              <td className="px-4 py-3 text-sm font-semibold text-red-600">
+                                {monthData.totals.totalVatCharge?.toLocaleString() || '0.00'}
+                              </td>
+                              <td className="px-4 py-3 text-sm font-semibold text-red-600">
+                                {(
+                                  (monthData.totals.totalCamfCharge || 0) +
+                                  (monthData.totals.totalVatCharge || 0)
+                                ).toLocaleString()}
+                              </td>
+                              <td className="px-4 py-3 text-sm font-semibold text-red-600">
+                                {monthData.totals.excess?.toLocaleString() || '0.00'}
+                              </td>
+                            </tr>
+                          </tfoot>
+                        )}
+                      </table>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              ))}
+
+              {/* Summary Table */}
+              {analysisResult.summary && (
+                <div className="mt-8">
+                  <h2 className="text-xl font-bold mb-4 text-gray-700">Summary</h2>
+                  
+                  <div className="overflow-x-auto mb-4">
+                    <table className="min-w-full divide-y divide-gray-200 border border-gray-300">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase border-r border-gray-300">
+                            CAMF Amount
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase border-r border-gray-300">
+                            VC Amount
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase border-r border-gray-300">
+                            Bank Total
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase border-r border-gray-300">
+                            Client CAMF
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase border-r border-gray-300">
+                            Client VC
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                            Client Total
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                            Difference
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {analysisResult.summary.camfs && Array.isArray(analysisResult.summary.camfs) && analysisResult.summary.camfs.map((summaryItem: any, index: number) => (
+                          <tr key={index}>
+                            <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                              {summaryItem.camf?.amount?.toLocaleString() || '0.00'}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                              {summaryItem.vc?.amount?.toLocaleString() || '0.00'}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                              {summaryItem.bank?.total?.toLocaleString() || '0.00'}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                              {summaryItem.client?.camf?.toLocaleString() || '0.00'}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                              {summaryItem.client?.vc?.toLocaleString() || '0.00'}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                              {summaryItem.client?.total?.toLocaleString() || '0.00'}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-900">
+                              {summaryItem.difference?.toLocaleString() || '0.00'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      {/* Summary Totals */}
+                      {analysisResult.summary.totals && (
+                        <tfoot className="bg-gray-100">
+                          <tr>
+                            <td colSpan={2} className="px-4 py-3 text-sm font-semibold text-gray-900">
+                              Grand Totals:
+                            </td>
+                            <td className="px-4 py-3 text-sm font-semibold text-gray-900">
+                              {analysisResult.summary.totals.totalBank?.toLocaleString() || '0.00'}
+                            </td>
+                            <td colSpan={2} className="px-4 py-3 text-sm font-semibold text-gray-900">
+                            </td>
+                            <td className="px-4 py-3 text-sm font-semibold text-gray-900">
+                              {analysisResult.summary.totals.totalClient?.toLocaleString() || '0.00'}
+                            </td>
+                            <td className="px-4 py-3 text-sm font-semibold text-gray-900">
+                              {analysisResult.summary.totals.difference?.toLocaleString() || '0.00'}
+                            </td>
+                          </tr>
+                        </tfoot>
+                      )}
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Old static CMF table - kept for reference, will be removed when API is fully working */}
+          {displayAnalysisTable && (selectedAnalysisType === "CMF" || selectedAnalysisType === "CAMF") && !analysisResult && (
             <div className="bg-white rounded-md shadow-md p-4 md:p-6 mb-6">
                 <div className=" flex flex-col items-center justify-center  p-4">
      

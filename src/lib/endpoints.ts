@@ -58,6 +58,11 @@ const Endpoints = {
   getRatesByClientAndBank: "/api/rates/client/",
   assignRateToDocument: "/api/rates/document/",
   unassignRateFromDocument: "/api/rates/document/",
+  getRateComments: "/api/rates/",
+  createRateComment: "/api/rates/",
+  getRateCommentById: "/api/rates/",
+  updateRateComment: "/api/rates/",
+  deleteRateComment: "/api/rates/",
 
   //Bank Endpoints
   createBank: "/api/banks",
@@ -97,6 +102,7 @@ const Endpoints = {
 
   // Analysis Endpoints
   getAnalysisTypes: "/api/analysis/types",
+  runAnalysis: "/api/analysis/perform",
 };
 
 export default Endpoints;

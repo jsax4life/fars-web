@@ -5,13 +5,15 @@ import { useParams, useRouter } from "next/navigation";
 import Sidebar from "@/components/utility/Sidebar";
 import Navbar from "@/components/nav/Navbar";
 import { useRates, type RateSummary } from "@/hooks/useRates";
-import { FiEye, FiDownload, FiLink, FiMinus } from "react-icons/fi";
+import { useUserAuth } from "@/hooks/useUserAuth";
+import { FiEye, FiDownload, FiLink, FiMinus, FiMessageCircle, FiTrash2 } from "react-icons/fi";
 
 const RateDetails = () => {
   const params = useParams();
   const router = useRouter();
   const id = Array.isArray(params?.id) ? params.id[0] : (params?.id as string);
-  const { getRateById, updateRate, getRateDocuments, getAllContractDocuments, assignRateToDocument, unassignRateFromDocument } = useRates();
+  const { getRateById, updateRate, getRateDocuments, getAllContractDocuments, assignRateToDocument, unassignRateFromDocument, getRateComments, createRateComment, getRateCommentById, updateRateComment, deleteRateComment } = useRates();
+  const { user } = useUserAuth();
   const [rate, setRate] = useState<RateSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [showMore, setShowMore] = useState(false);
@@ -22,6 +24,18 @@ const RateDetails = () => {
   const [availableDocuments, setAvailableDocuments] = useState<any[]>([]);
   const [loadingAvailableDocuments, setLoadingAvailableDocuments] = useState(false);
   const [assigningDocumentId, setAssigningDocumentId] = useState<string | null>(null);
+  const [showCommentsModal, setShowCommentsModal] = useState(false);
+  const [comments, setComments] = useState<any[]>([]);
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [newComment, setNewComment] = useState("");
+  const [submittingComment, setSubmittingComment] = useState(false);
+  const [commentCount, setCommentCount] = useState(0);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editingCommentContent, setEditingCommentContent] = useState("");
+  const [expandedCommentId, setExpandedCommentId] = useState<string | null>(null);
+  const [loadingExpandedComment, setLoadingExpandedComment] = useState(false);
+  const [expandedCommentData, setExpandedCommentData] = useState<any | null>(null);
+  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
 
   const loadDocuments = async () => {
     if (!id) return;
@@ -97,6 +111,13 @@ const RateDetails = () => {
           setDocuments(assignedDocs || []);
           // Always load available documents, even if there are no assigned documents
           await loadAvailableDocuments(assignedDocs || []);
+        }
+        // Load comment count to show notification badge
+        if (!cancelled) {
+          const commentsData = await getRateComments(id);
+          if (commentsData && Array.isArray(commentsData)) {
+            setCommentCount(commentsData.length);
+          }
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -214,6 +235,157 @@ const RateDetails = () => {
     }
   };
 
+  const loadComments = async () => {
+    if (!id) return;
+    setLoadingComments(true);
+    try {
+      const commentsData = await getRateComments(id);
+      if (commentsData) {
+        setComments(commentsData);
+        setCommentCount(commentsData.length);
+      }
+    } catch (error) {
+      console.error('Failed to load comments:', error);
+    } finally {
+      setLoadingComments(false);
+    }
+  };
+
+  const handleOpenComments = () => {
+    setShowCommentsModal(true);
+    loadComments();
+  };
+
+  const handleSubmitComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!id || !newComment.trim()) return;
+    
+    setSubmittingComment(true);
+    try {
+      await createRateComment(id, newComment.trim());
+      setNewComment("");
+      // Reload comments to show the new one
+      await loadComments();
+    } catch (error) {
+      console.error('Failed to submit comment:', error);
+    } finally {
+      setSubmittingComment(false);
+    }
+  };
+
+  const handleStartEdit = (comment: any) => {
+    setEditingCommentId(comment.id);
+    setEditingCommentContent(comment.content);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingCommentId(null);
+    setEditingCommentContent("");
+  };
+
+  const handleUpdateComment = async (commentId: string) => {
+    if (!id || !editingCommentContent.trim()) return;
+    
+    try {
+      await updateRateComment(id, commentId, editingCommentContent.trim());
+      setEditingCommentId(null);
+      setEditingCommentContent("");
+      // Reload comments to show the updated one
+      await loadComments();
+    } catch (error) {
+      console.error('Failed to update comment:', error);
+    }
+  };
+
+  const handleExpandComment = async (commentId: string) => {
+    if (!id) return;
+    
+    if (expandedCommentId === commentId) {
+      // Collapse
+      setExpandedCommentId(null);
+      setExpandedCommentData(null);
+      return;
+    }
+
+    setLoadingExpandedComment(true);
+    try {
+      const commentData = await getRateCommentById(id, commentId);
+      if (commentData) {
+        setExpandedCommentId(commentId);
+        setExpandedCommentData(commentData);
+      }
+    } catch (error) {
+      console.error('Failed to load comment details:', error);
+    } finally {
+      setLoadingExpandedComment(false);
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!id) return;
+    
+    if (!window.confirm('Are you sure you want to delete this comment? This action cannot be undone.')) {
+      return;
+    }
+
+    setDeletingCommentId(commentId);
+    try {
+      const success = await deleteRateComment(id, commentId);
+      if (success) {
+        // Reload comments to reflect the deletion
+        await loadComments();
+      }
+    } catch (error) {
+      console.error('Failed to delete comment:', error);
+    } finally {
+      setDeletingCommentId(null);
+    }
+  };
+
+  // Check if current user is the owner of a comment
+  const isCommentOwner = (comment: any): boolean => {
+    if (!user) return false;
+    
+    // Get user ID - the profile API might not return id, so check multiple sources
+    let currentUserId: string | undefined;
+    
+    // Try from user object (might have id property)
+    currentUserId = (user as any).id;
+    
+    // If not found in user object, try localStorage (profile might have stored it)
+    if (!currentUserId && typeof window !== 'undefined') {
+      try {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          const parsedUser = JSON.parse(storedUser);
+          currentUserId = parsedUser?.id;
+        }
+      } catch (e) {
+        // Ignore parse errors
+      }
+    }
+    
+    // Get comment user ID
+    const commentUserId = comment?.userId || comment?.user?.id;
+    
+    // If we have both IDs, compare them
+    if (currentUserId && commentUserId) {
+      return String(currentUserId) === String(commentUserId);
+    }
+    
+    // Fallback: If IDs are not available, match by email or username
+    // This is a fallback in case the profile API doesn't return the id
+    if (user.email && comment.user?.email) {
+      return user.email === comment.user.email;
+    }
+    
+    if (user.username && comment.user?.username) {
+      return user.username === comment.user.username;
+    }
+    
+    return false;
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
@@ -231,15 +403,29 @@ const RateDetails = () => {
               </svg>
             </button>
             <h2 className="text-[#363636] text-lg md:text-xl font-semibold">Rate Details</h2>
-            {!isEditing && (
-              <button onClick={startEdit} className="ml-auto px-3 py-2 text-sm bg-orange-600 text-white rounded-md hover:bg-orange-700">Adjust Rate</button>
-            )}
-            {isEditing && (
-              <div className="ml-auto flex items-center gap-2">
-                <button onClick={() => setIsEditing(false)} className="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700">Cancel</button>
-                <button onClick={saveEdit} className="px-3 py-2 text-sm bg-orange-600 text-white rounded-md hover:bg-orange-700">Save</button>
-              </div>
-            )}
+            <div className="ml-auto flex items-center gap-2">
+              <button
+                onClick={handleOpenComments}
+                className="relative p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-700"
+                title="View Comments"
+              >
+                <FiMessageCircle className="h-5 w-5" />
+                {commentCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-orange-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+                    {commentCount}
+                  </span>
+                )}
+              </button>
+              {!isEditing && (
+                <button onClick={startEdit} className="px-3 py-2 text-sm bg-orange-600 text-white rounded-md hover:bg-orange-700">Adjust Rate</button>
+              )}
+              {isEditing && (
+                <>
+                  <button onClick={() => setIsEditing(false)} className="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700">Cancel</button>
+                  <button onClick={saveEdit} className="px-3 py-2 text-sm bg-orange-600 text-white rounded-md hover:bg-orange-700">Save</button>
+                </>
+              )}
+            </div>
           </div>
 
           {loading ? (
@@ -556,6 +742,196 @@ const RateDetails = () => {
           )}
         </main>
       </div>
+
+      {/* Comments Modal */}
+      {showCommentsModal && (
+        <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div className="flex justify-between items-center p-6 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Comments</h3>
+              <button
+                onClick={() => {
+                  setShowCommentsModal(false);
+                  setNewComment("");
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* Comments List */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {loadingComments ? (
+                <div className="text-center text-gray-500 py-8">Loading comments...</div>
+              ) : comments.length > 0 ? (
+                <div className="space-y-4">
+                  {comments.map((comment) => {
+                    const isOwner = isCommentOwner(comment);
+                    console.log('Rendering comment:', comment.id, 'isOwner:', isOwner, 'user:', user);
+                    return (
+                    <div key={comment.id} className="border-b border-gray-200 pb-4 last:border-b-0">
+                      <div className="flex items-start gap-3">
+                        <img
+                          src={comment.user?.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                            comment.user?.firstName || comment.user?.username || 'User'
+                          )}`}
+                          alt={comment.user?.firstName || 'User'}
+                          className="w-10 h-10 rounded-full"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-gray-900">
+                              {comment.user?.firstName} {comment.user?.lastName}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              @{comment.user?.username}
+                            </span>
+                            <span className="text-xs text-gray-400">
+                              • {new Date(comment.createdAt).toLocaleString()}
+                            </span>
+                            {comment.updatedAt !== comment.createdAt && (
+                              <span className="text-xs text-gray-400">
+                                • (edited)
+                              </span>
+                            )}
+                          </div>
+                          {editingCommentId === comment.id ? (
+                            <div className="space-y-2">
+                              <textarea
+                                value={editingCommentContent}
+                                onChange={(e) => setEditingCommentContent(e.target.value)}
+                                rows={3}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none text-sm"
+                              />
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handleUpdateComment(comment.id)}
+                                  disabled={!editingCommentContent.trim()}
+                                  className="px-3 py-1 text-xs bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  Save
+                                </button>
+                                <button
+                                  onClick={handleCancelEdit}
+                                  className="px-3 py-1 text-xs border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <p className="text-gray-700 text-sm whitespace-pre-wrap">{comment.content}</p>
+                              <div className="flex items-center gap-3 mt-2">
+                                {isOwner && (
+                                  <>
+                                    <button
+                                      onClick={() => handleStartEdit(comment)}
+                                      className="text-xs text-blue-600 hover:text-blue-700"
+                                    >
+                                      Edit
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteComment(comment.id)}
+                                      disabled={deletingCommentId === comment.id}
+                                      className="text-xs text-red-600 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                                    >
+                                      <FiTrash2 className="h-3 w-3" />
+                                      {deletingCommentId === comment.id ? 'Deleting...' : 'Delete'}
+                                    </button>
+                                  </>
+                                )}
+                                {comment.content.length > 200 && (
+                                  <button
+                                    onClick={() => handleExpandComment(comment.id)}
+                                    className="text-xs text-blue-600 hover:text-blue-700"
+                                  >
+                                    {expandedCommentId === comment.id ? 'Show Less' : 'View More'}
+                                  </button>
+                                )}
+                              </div>
+                              {expandedCommentId === comment.id && (
+                                <div className="mt-2 p-3 bg-gray-50 rounded-md">
+                                  {loadingExpandedComment ? (
+                                    <div className="text-sm text-gray-500">Loading...</div>
+                                  ) : expandedCommentData ? (
+                                    <div>
+                                      <p className="text-gray-700 text-sm whitespace-pre-wrap mb-2">
+                                        {expandedCommentData.content}
+                                      </p>
+                                      <div className="text-xs text-gray-500">
+                                        Created: {new Date(expandedCommentData.createdAt).toLocaleString()}
+                                        {expandedCommentData.updatedAt !== expandedCommentData.createdAt && (
+                                          <span className="ml-2">
+                                            • Updated: {new Date(expandedCommentData.updatedAt).toLocaleString()}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ) : null}
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center text-gray-500 py-8">No comments yet. Be the first to comment!</div>
+              )}
+            </div>
+
+            {/* Add Comment Form */}
+            <div className="border-t border-gray-200 p-6">
+              <form onSubmit={handleSubmitComment} className="space-y-3">
+                <textarea
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="Add a comment..."
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none"
+                />
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCommentsModal(false);
+                      setNewComment("");
+                    }}
+                    className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!newComment.trim() || submittingComment}
+                    className="px-4 py-2 text-sm bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {submittingComment ? "Posting..." : "Post Comment"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

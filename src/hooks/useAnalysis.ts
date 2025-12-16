@@ -33,8 +33,21 @@ export const useAnalysis = () => {
     [api]
   );
 
+  const runAnalysis = useCallback(
+    async (type: string, bankAccounts: string[]): Promise<any> => {
+      const response = await api.post(Endpoints.runAnalysis, {
+        type,
+        bankAccounts,
+      });
+
+      return response;
+    },
+    [api]
+  );
+
   return {
     getAnalysisTypes,
+    runAnalysis,
   };
 };
 

@@ -248,13 +248,14 @@ export const useRates = () => {
     }
   };
 
-  const getRatesByClientId = async (
-    clientId: string
-  ): Promise<RateSummary[] | undefined> => {
+  const getRatesByClientId = async (clientId: string, bankId?: string): Promise<RateSummary[] | undefined> => {
     try {
-      const res = await api.get(
-        Endpoints.getRatesByClientId.replace(/\/$/, "") + "/" + clientId
-      );
+      let endpoint = Endpoints.getRatesByClientId.replace(/\/$/, '') + '/' + clientId;
+      // If bankId is provided, use the new endpoint format: /api/rates/client/{clientId}/bank/{bankId}
+      if (bankId) {
+        endpoint = endpoint + '/bank/' + bankId;
+      }
+      const res = await api.get(endpoint);
       if (Array.isArray(res)) return res as RateSummary[];
       return [];
     } catch (error: any) {
@@ -406,6 +407,116 @@ export const useRates = () => {
     }
   };
 
+  const getRateComments = async (
+    rateId: string
+  ): Promise<any[] | undefined> => {
+    try {
+      const endpoint =
+        Endpoints.getRateComments.replace(/\/$/, "") +
+        "/" +
+        rateId +
+        "/comments";
+      const res = await api.get(endpoint);
+      if (Array.isArray(res)) return res;
+      return [];
+    } catch (error: any) {
+      toast.error(
+        "Failed to get comments: " + (error?.message || "Unknown error")
+      );
+      return [];
+    }
+  };
+
+  const createRateComment = async (
+    rateId: string,
+    content: string
+  ): Promise<any | undefined> => {
+    try {
+      const endpoint =
+        Endpoints.createRateComment.replace(/\/$/, "") +
+        "/" +
+        rateId +
+        "/comments";
+      const res = await api.post(endpoint, { content });
+      if (res) {
+        toast.success(res?.message || "Comment added successfully");
+        return res;
+      }
+    } catch (error: any) {
+      toast.error(
+        "Failed to create comment: " + (error?.message || "Unknown error")
+      );
+      throw error;
+    }
+  };
+
+  const getRateCommentById = async (
+    rateId: string,
+    commentId: string
+  ): Promise<any | undefined> => {
+    try {
+      const endpoint =
+        Endpoints.getRateCommentById.replace(/\/$/, "") +
+        "/" +
+        rateId +
+        "/comments/" +
+        commentId;
+      const res = await api.get(endpoint);
+      if (res) return res;
+    } catch (error: any) {
+      toast.error(
+        "Failed to get comment: " + (error?.message || "Unknown error")
+      );
+    }
+  };
+
+  const updateRateComment = async (
+    rateId: string,
+    commentId: string,
+    content: string
+  ): Promise<any | undefined> => {
+    try {
+      const endpoint =
+        Endpoints.updateRateComment.replace(/\/$/, "") +
+        "/" +
+        rateId +
+        "/comments/" +
+        commentId;
+      const res = await api.patch(endpoint, { content });
+      if (res) {
+        toast.success(res?.message || "Comment updated successfully");
+        return res;
+      }
+    } catch (error: any) {
+      toast.error(
+        "Failed to update comment: " + (error?.message || "Unknown error")
+      );
+      throw error;
+    }
+  };
+
+  const deleteRateComment = async (
+    rateId: string,
+    commentId: string
+  ): Promise<boolean> => {
+    try {
+      const endpoint =
+        Endpoints.deleteRateComment.replace(/\/$/, "") +
+        "/" +
+        rateId +
+        "/comments/" +
+        commentId;
+      await api.delete(endpoint);
+      toast.success("Comment deleted successfully");
+      return true;
+    } catch (error: any) {
+      toast.error(
+        "Failed to delete comment: " + (error?.message || "Unknown error")
+      );
+      return false;
+    }
+  };
+
   return {
     getRates,
     getRateById,
@@ -422,5 +533,10 @@ export const useRates = () => {
     getRatesByClientAndBank,
     assignRateToDocument,
     unassignRateFromDocument,
+    getRateComments,
+    createRateComment,
+    getRateCommentById,
+    updateRateComment,
+    deleteRateComment,
   };
 };

@@ -34,7 +34,7 @@ const AssignRate = () => {
           const accountBankId = (account as any).bankId;
           if (accountClientId && accountBankId) {
             setClientId(accountClientId);
-            // Then fetch rates for this client
+            // Then fetch rates for this client and bank
             const res = await getRatesByClientAndBank(
               accountClientId,
               accountBankId
