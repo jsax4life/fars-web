@@ -1,5 +1,7 @@
 'use client'
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef } from "react";
+import { toast } from "sonner";
+import { extractAuthTokens, isAccessTokenExpired } from "@/lib/authTokens";
 
 interface Tokens {
     accessToken: string;
@@ -14,53 +16,89 @@ interface ApiContextType {
     decrementPending: () => void;
 }
 
-// Define API Context
 const ApiContext = createContext<ApiContextType | null>(null);
 
-// API Base URL - use environment variable or fallback to default
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://adegoroyefadareandco.org";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://fars-api-server-production.up.railway.app";
 
-// Log API URL in development for debugging (only once)
+const PUBLIC_API_ENDPOINTS = [
+    '/api/auth/login',
+    '/api/auth/refresh',
+    '/auth/sign-up',
+    '/api/auth/forgot-password',
+    '/api/auth/reset-password',
+    '/auth/resend-otp',
+    '/auth/verify-account',
+];
+
+const isPublicApiEndpoint = (endpoint: string) =>
+    PUBLIC_API_ENDPOINTS.some((publicEndpoint) => endpoint.startsWith(publicEndpoint));
+
+let refreshInFlight: Promise<Tokens | null> | null = null;
+
+async function refreshSessionTokens(current: Tokens): Promise<Tokens | null> {
+    if (refreshInFlight) return refreshInFlight;
+
+    refreshInFlight = (async () => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refreshToken: current.refreshToken }),
+            });
+            const text = await response.text();
+            if (!response.ok || !text) return null;
+            const parsed = JSON.parse(text);
+            return extractAuthTokens(parsed);
+        } catch {
+            return null;
+        } finally {
+            refreshInFlight = null;
+        }
+    })();
+
+    return refreshInFlight;
+}
+
+function endSession(updateToken: (t: Tokens | null) => void) {
+    updateToken(null);
+    localStorage.removeItem('user');
+    toast.error('Your session expired. Please sign in again.');
+}
+
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
     console.log('API Base URL:', API_BASE_URL);
 }
 
-
 export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [token, setToken] = useState<Tokens | null>(null);
-    const [loading, setLoading] = useState(true); // Track loading state
+    const [loading, setLoading] = useState(true);
     const [pendingRequests, setPendingRequests] = useState(0);
 
-    // Load token from storage
     useEffect(() => {
         const storedToken = localStorage.getItem("authTokenFaRs");
         if (storedToken) {
-            // Parse the token if it's in JSON format
             try {
                 const parsedToken = JSON.parse(storedToken) as Tokens;
                 setToken(parsedToken);
-            }
-            catch (error) {
+            } catch (error) {
                 console.error("Failed to parse token from localStorage:", error);
-                setToken(null); // Reset token if parsing fails
+                setToken(null);
             }
         }
-        setLoading(false); // Mark as loaded
+        setLoading(false);
     }, []);
 
     const updateToken = (newToken: Tokens | null) => {
         setToken(newToken);
         if (newToken) {
-            // Store the token in localStorage as a string
             localStorage.setItem("authTokenFaRs", JSON.stringify(newToken));
         } else {
             localStorage.removeItem("authTokenFaRs");
         }
     };
 
-    // Wait for token to load before rendering children
     if (loading) {
-        return null; // Or a loading spinner
+        return null;
     }
 
     const incrementPending = () => setPendingRequests((prev) => prev + 1);
@@ -73,8 +111,6 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
 };
 
-
-// Hook to use the API provider
 export const useApi = () => {
     const context = useContext(ApiContext);
     if (!context) {
@@ -82,43 +118,35 @@ export const useApi = () => {
     }
 
     const { token, updateToken, isFetching, incrementPending, decrementPending } = context;
+    const tokenRef = useRef(token);
+    tokenRef.current = token;
 
-    const request = async (method: string, endpoint: string, data?: any) => {
-        // List of public endpoints that don't require authentication
-        const publicEndpoints = [
-            '/api/auth/login',
-            '/auth/sign-up',
-            '/api/auth/forgot-password',
-            '/api/auth/reset-password',
-            '/auth/resend-otp',
-            '/auth/verify-account',
-        ];
-        
-        const isPublicEndpoint = publicEndpoints.some(publicEndpoint => 
-            endpoint.startsWith(publicEndpoint)
-        );
-        
-        if (token === null && !isPublicEndpoint) {
-            console.warn("Token not available yet. Proceeding without.");
-            // return null; // Skip request if token is still being loaded
-            //delay for 1 second before making the request
-            await new Promise((resolve) => setTimeout(resolve, 500));
+    const performRequest = async (
+        method: string,
+        endpoint: string,
+        data: any,
+        isRetry: boolean,
+    ): Promise<any> => {
+        const isPublicEndpoint = isPublicApiEndpoint(endpoint);
+
+        if (!isPublicEndpoint && !tokenRef.current) {
+            throw new Error('Not authenticated. Please sign in.');
         }
 
         const url = `${API_BASE_URL}${endpoint}`;
         const headers: Record<string, string> = {};
 
-        // Only set Content-Type for non-FormData requests
         if (!(data instanceof FormData)) {
             headers["Content-Type"] = "application/json";
         }
 
-        if (token) {
-            headers["Authorization"] = `Bearer ${token.accessToken}`;
+        const bearerToken = tokenRef.current;
+        if (bearerToken) {
+            headers["Authorization"] = `Bearer ${bearerToken.accessToken}`;
         }
 
+        incrementPending();
         try {
-            incrementPending();
             let response: Response;
             try {
                 response = await fetch(url, {
@@ -126,91 +154,103 @@ export const useApi = () => {
                     headers,
                     body: data ? (data instanceof FormData ? data : JSON.stringify(data)) : undefined,
                 });
-            } catch (networkError: any) {
-                // Handle network errors (DNS resolution, connection refused, etc.)
-                decrementPending();
-                const networkErrorMessage = networkError?.message || 'Network error';
-                if (networkErrorMessage.includes('ERR_NAME_NOT_RESOLVED') || 
+            } catch (networkError: unknown) {
+                const networkErrorMessage =
+                    networkError instanceof Error ? networkError.message : 'Network error';
+                if (
+                    networkErrorMessage.includes('ERR_NAME_NOT_RESOLVED') ||
                     networkErrorMessage.includes('Failed to fetch') ||
-                    networkErrorMessage.includes('NetworkError')) {
-                    throw new Error(`Cannot connect to server. Please check your internet connection and verify the API URL is correct. (${API_BASE_URL})`);
+                    networkErrorMessage.includes('NetworkError')
+                ) {
+                    throw new Error(
+                        `Cannot connect to server. Please check your internet connection and verify the API URL is correct. (${API_BASE_URL})`,
+                    );
                 }
                 throw new Error(`Network error: ${networkErrorMessage}`);
             }
 
-            // Check if response has content before trying to parse JSON
             const contentType = response.headers.get("content-type");
             const hasJsonContent = contentType && contentType.includes("application/json");
-            const hasContent = response.status !== 204 && response.status !== 205; // 204 No Content, 205 Reset Content
+            const hasContent = response.status !== 204 && response.status !== 205;
 
-            let result: any = null;
+            let result: unknown = null;
             if (hasContent) {
                 try {
                     const text = await response.text();
                     if (text && text.trim().length > 0) {
-                        // Try to parse as JSON if Content-Type suggests JSON, or try parsing anyway
                         if (hasJsonContent || text.trim().startsWith('{') || text.trim().startsWith('[')) {
                             result = JSON.parse(text);
                         } else {
-                            // If it's not JSON, return the text as a simple object
                             result = { message: text };
                         }
                     }
-                } catch (parseError) {
-                    // If JSON parsing fails, result stays null
-                    // This is okay - we'll handle errors based on response.ok below
+                } catch {
                     result = null;
                 }
             }
 
             if (!response.ok) {
-                // Handle token expiration or invalidation here
                 if (response.status === 401 || response.statusText === "Unauthorized") {
-                    // Clear all authentication data
-                    console.warn("Token expired. Please log in again.");
-                    updateToken(null); // Clear token on error
-                    localStorage.removeItem('user'); // Clear user data
-                    // Redirect to login page
-                    if (typeof window !== 'undefined') {
-                        window.location.href = "/";
+                    const session = tokenRef.current;
+                    if (!isPublicEndpoint && session) {
+                        const accessExpired = isAccessTokenExpired(session.accessToken);
+
+                        if (!isRetry && endpoint !== '/api/auth/refresh') {
+                            const refreshed = await refreshSessionTokens(session);
+                            if (refreshed) {
+                                updateToken(refreshed);
+                                tokenRef.current = refreshed;
+                                return performRequest(method, endpoint, data, true);
+                            }
+                        }
+
+                        if (accessExpired || isRetry) {
+                            endSession(updateToken);
+                        }
                     }
                 }
 
-                // Normalize backend error shapes into a readable message
                 let errorMessage: string = response.statusText;
                 try {
                     const messages: string[] = [];
-                    if (result) {
-                        if (typeof result.message === 'string') messages.push(result.message);
-                        if (Array.isArray(result.message)) messages.push(result.message.join('\n'));
-                        if (result.response) {
-                            if (typeof result.response.message === 'string') messages.push(result.response.message);
-                            if (Array.isArray(result.response.message)) messages.push(result.response.message.join('\n'));
-                            if (typeof result.response.error === 'string') messages.push(result.response.error);
+                    const resultObj = result as Record<string, unknown> | null;
+                    if (resultObj) {
+                        if (typeof resultObj.message === 'string') messages.push(resultObj.message);
+                        if (Array.isArray(resultObj.message)) messages.push(resultObj.message.join('\n'));
+                        const nested = resultObj.response as Record<string, unknown> | undefined;
+                        if (nested) {
+                            if (typeof nested.message === 'string') messages.push(nested.message);
+                            if (Array.isArray(nested.message)) messages.push(nested.message.join('\n'));
+                            if (typeof nested.error === 'string') messages.push(nested.error);
                         }
-                        if (typeof result.error === 'string') messages.push(result.error);
+                        if (typeof resultObj.error === 'string') messages.push(resultObj.error);
                     }
-                    const chosen = messages.find(m => m && m.trim().length > 0);
+                    const chosen = messages.find((m) => m && m.trim().length > 0);
                     if (chosen) errorMessage = chosen;
-                } catch (_) {
+                } catch {
                     // fallback to statusText
                 }
 
                 const err = new Error(errorMessage) as Error & { status?: number };
-                (err as any).status = response.status;
+                err.status = response.status;
                 throw err;
             }
 
-            // For successful responses without content (like 204), return a success indicator
             if (!hasContent || !result) {
                 return { success: true, message: 'Operation completed successfully' };
             }
 
             return result;
-        } catch (error: any) {
-            throw error;
         } finally {
             decrementPending();
+        }
+    };
+
+    const request = async (method: string, endpoint: string, data?: any) => {
+        try {
+            return await performRequest(method, endpoint, data, false);
+        } catch (error) {
+            throw error;
         }
     };
 
@@ -225,4 +265,3 @@ export const useApi = () => {
         delete: (endpoint: string, data?: any) => request("DELETE", endpoint, data),
     };
 };
-

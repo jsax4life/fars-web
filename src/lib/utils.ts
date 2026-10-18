@@ -85,6 +85,13 @@ export function formatRole(role: string | undefined): string {
     .join(' ');
 }
 
+/** Sort items alphabetically by `name` (case-insensitive). */
+export function sortByNameAsc<T extends { name: string }>(items: T[]): T[] {
+  return [...items].sort((a, b) =>
+    a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
+  );
+}
+
 /**
  * Paginates a list of items.
  *

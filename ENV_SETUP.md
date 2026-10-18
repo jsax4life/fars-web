@@ -31,7 +31,17 @@ Add the environment variable in Vercel Dashboard:
 
 - `.env.local` is already in `.gitignore` and won't be committed
 - `NEXT_PUBLIC_*` prefix is required for client-side access in Next.js
-- The API URL defaults to `https://adegoroyefadareandco.org` if not set
+- The web client fallback API URL is `https://fars-api-server-production.up.railway.app` (see `useApi.tsx`)
+
+## Backend (Railway) — required for sessions to stay logged in
+
+If login succeeds but you are kicked out within a second, the API is almost certainly issuing **access tokens with no lifetime** (`exp` equals `iat` in the JWT). Fix this on the **API service**, not in the web client:
+
+1. In Railway → your API service → **Variables**, set for example:
+   - `JWT_SECRET` — strong random secret
+   - `JWT_EXPIRES_IN` — e.g. `15m` or `1d` (match whatever your Nest auth module reads)
+2. Redeploy the API.
+3. Verify: after login, `GET /api/auth/profile` with the `accessToken` must return **200**, not 401.
 
 
 

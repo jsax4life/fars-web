@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, ChangeEvent, FormEvent, useEffect, useRef } from "react";
+import React, { useState, ChangeEvent, FormEvent, useEffect, useRef, useMemo, useCallback } from "react";
 import Sidebar from "@/components/utility/Sidebar";
 import AccountInformation from "./AccountInformation";
 import TransactionTable from "@/components/account/Table/TransactionTable";
 import QueryForm from "@/components/account/Table/QueryForm";
 import { Transaction } from "@/types/Transaction";
-import { EyeIcon, ArrowDownTrayIcon, TrashIcon, CloudArrowUpIcon } from '@heroicons/react/24/outline';
+import { CloudArrowUpIcon } from '@heroicons/react/24/outline';
 import Modal from "@/components/utility/Modal";
 import { PlusIcon } from "@heroicons/react/20/solid";
 import Image from "next/image";
@@ -15,10 +15,22 @@ import Navbar from "../nav/Navbar";
 import { useParams, useRouter } from "next/navigation";
 import { useBankAccounts } from "@/hooks/useBankAccount";
 import { useUsers } from "@/hooks/useUsers";
-import { useTransactions, TransactionPreview } from "@/hooks/useTransactions";
+import {
+  useTransactions,
+  TransactionPreview,
+  type AccountTransaction,
+} from "@/hooks/useTransactions";
+import { useClassifications } from "@/hooks/useClassification";
 import { toast } from "sonner";
 import TransactionPreviewModal from "./TransactionPreviewModal";
 import AccountTransactions from "./AccountTransactions";
+import {
+  mapToBankStatementRow,
+  mapToCashBookRow,
+  mapToClassifiedStatementRow,
+  mapToQueryRow,
+  mapToTransMatchedRow,
+} from "@/lib/accountTransactionViews";
 
 interface FormData {
     accountNumber?: string;
@@ -122,42 +134,22 @@ const AccountDetails = () => {
     const id = Array.isArray(params?.id) ? params?.id[0] : (params?.id as string | undefined);
     const { getBankAccountById, getStaffAssignmentsByAccount, assignStaffToAccount, unassignStaffFromAccount } = useBankAccounts();
     const { getUsers } = useUsers();
-    const { uploadTransaction } = useTransactions();
+    const { uploadTransaction, getAccountTransactions } = useTransactions();
+    const { getClassifications } = useClassifications();
+    const getAccountTransactionsRef = useRef(getAccountTransactions);
+    const getClassificationsRef = useRef(getClassifications);
+    getAccountTransactionsRef.current = getAccountTransactions;
+    getClassificationsRef.current = getClassifications;
     const [accountHeader, setAccountHeader] = useState<string>("");
     const [activeTab, setActiveTab] = useState("Entry");
     const [allUsers, setAllUsers] = useState<any[]>([]);
     const [loadingUsers, setLoadingUsers] = useState(false);
     const [loadingAssignments, setLoadingAssignments] = useState(false);
     const [showAssignedUsers, setShowAssignedUsers] = useState(true);
-    const [entryTransactions, setEntryTransactions] = useState<Transaction[]>([
-        { sNo: "01", entryDate: "02-04-2023", transactionDate: "02-04-2023", valueDate: "02-04-2023", tellerNumber: "N/A", transactionDescription: "Principal LIQ...", transactionType: "Cash/Cheque", chequeNo: "Nil", originalValue: "44,897,985.89" },
-        { sNo: "02", entryDate: "02-04-2023", transactionDate: "02-04-2023", valueDate: "02-04-2023", tellerNumber: "U000...", transactionDescription: "Debetuje baje...", transactionType: "Cash/Cheque", chequeNo: "Cash", originalValue: "100,000.00" },
-    ]);
-
-    const bankStatementTransactions: Transaction[] = [
-        { no: "1", class: "Debit", transDate: "03-05-2025", valueDate: "03-05-2025", transactionDescription: "ATM Withdrawal", tellerNo: "N/A", chequeNo: "N/A", debit: "5,000.00", credit: "0.00", balance: "10,000.00", remarks: "" },
-        { no: "2", class: "Credit", transDate: "04-05-2025", valueDate: "04-05-2025", transactionDescription: "Salary Deposit", tellerNo: "ABC123", chequeNo: "N/A", debit: "0.00", credit: "20,000.00", balance: "30,000.00", remarks: "" },
-    ];
-
-    const queryTransactions: Transaction[] = [
-        { no: "1", class: "Debit", transDate: "03-05-2025", valueDate: "03-05-2025", transactionDescription: "ATM Withdrawal", tellerNo: "N/A", chequeNo: "N/A", debit: "5,000.00", credit: "0.00", balance: "10,000.00", remarks: "" },
-        { no: "2", class: "Credit", transDate: "04-05-2025", valueDate: "04-05-2025", transactionDescription: "Salary Deposit", tellerNo: "ABC123", chequeNo: "N/A", debit: "0.00", credit: "20,000.00", balance: "30,000.00", remarks: "" },
-    ];
-
-    const reconstructedStatementTransactions: Transaction[] = [
-        { no: "1", entryDate: "02-05-2025", transDate: "03-05-2025", valueDate: "03-05-2025", tellerNo: "N/A", transactionDescription: "Online Transfer", transType: "Debit", chequeNo: "N/A", originalValue: "2,500.00", debit: "2,500.00", credit: "0.00", balance: "7,500.00", currency: "NGN", confirmation: "Yes", cleared: "Yes", exchangeRate: "1.00", clearance: "Completed" },
-        { no: "2", entryDate: "03-05-2025", transDate: "04-05-2025", valueDate: "04-05-2025", tellerNo: "DEF456", transactionDescription: "Mobile Recharge", transType: "Debit", chequeNo: "N/A", originalValue: "1,000.00", debit: "1,000.00", credit: "0.00", balance: "6,500.00", currency: "NGN", confirmation: "Yes", cleared: "Yes", exchangeRate: "1.00", clearance: "Completed" },
-    ];
-
-    const cashBookTransactions: Transaction[] = [
-        { no: "1", class: "Payment", transDate: "05-05-2025", transactionDescription: "Stationery Purchase", tellerNo: "GHI789", chequeNo: "1001", debit: "500.00", credit: "0.00", balance: "6,000.00", remarks: "Invoice #123" },
-        { no: "2", class: "Receipt", transDate: "06-05-2025", transactionDescription: "Client Payment", tellerNo: "JKL012", chequeNo: "N/A", debit: "0.00", credit: "2,000.00", balance: "8,000.00", remarks: "Project Alpha" },
-    ];
-
-    const transMatchedTransactions: Transaction[] = [
-        { no: "1", src: "System A", class: "Match", transDate: "07-05-2025", transactionDescription: "Transaction ID 123", tellerNo: "MNO345", cheque: "N/A", debit: "1,500.00", credit: "1,500.00", balance: "9,500.00" },
-        { no: "2", src: "System B", class: "Mismatch", transDate: "08-05-2025", transactionDescription: "Transaction Ref 456", tellerNo: "PQR678", cheque: "2002", debit: "750.00", credit: "0.00", balance: "8,750.00" },
-    ];
+    const [accountTransactions, setAccountTransactions] = useState<AccountTransaction[]>([]);
+    const [loadingTransactions, setLoadingTransactions] = useState(false);
+    const [transactionTotal, setTransactionTotal] = useState(0);
+    const [classificationLabels, setClassificationLabels] = useState<Record<string, string>>({});
 
     // // Analysis data
     // const cmfAnalysisData = [
@@ -310,6 +302,37 @@ const AccountDetails = () => {
       
     };
 
+    const loadAccountTransactions = useCallback(async () => {
+        if (!id) return;
+        setLoadingTransactions(true);
+        try {
+            const [txnResponse, classifications] = await Promise.all([
+                getAccountTransactionsRef.current(id, { page: 1, limit: 500 }),
+                getClassificationsRef.current(),
+            ]);
+            if (txnResponse?.data) {
+                setAccountTransactions(txnResponse.data);
+                setTransactionTotal(txnResponse.meta?.total ?? txnResponse.data.length);
+            } else {
+                setAccountTransactions([]);
+                setTransactionTotal(0);
+            }
+            if (Array.isArray(classifications)) {
+                const byId: Record<string, string> = {};
+                classifications.forEach((c: { id: string; label?: string; code?: string }) => {
+                    byId[c.id] = c.label || c.code || c.id;
+                });
+                setClassificationLabels(byId);
+            }
+        } finally {
+            setLoadingTransactions(false);
+        }
+    }, [id]);
+
+    useEffect(() => {
+        loadAccountTransactions();
+    }, [id, loadAccountTransactions]);
+
     useEffect(() => {
         if (!id) return;
         getBankAccountById(id).then((a: any) => {
@@ -346,54 +369,45 @@ const AccountDetails = () => {
     let initialInfo: any = {};
     const [initialInfoState, setInitialInfoState] = useState<any>({});
 
-    const getTableDataAndHeaders = () => {
+    const { headers, data, title } = useMemo(() => {
+        const rows = accountTransactions;
         switch (activeTab) {
             case "Bank Statement":
                 return {
                     headers: ["No.", "Class", "Trans Date", "Value Date", "Transaction Description", "Teller No.", "Cheque No.", "Debit", "Credit", "Balance", "Remarks"],
-                    data: bankStatementTransactions,
-                    title: "Bank Statement"
+                    data: rows.map(mapToBankStatementRow),
+                    title: "Bank Statement",
                 };
             case "Classified Statement":
                 return {
                     headers: ["No.", "Entry Date", "Trans Date", "Value Date", "Teller No", "Transaction Description", "Trans Type", "Cheque No", "Original Value", "Debit", "Credit", "Balance", "Curr.", "Conf.", "Clr", "Exch. Rate", "Clearance"],
-                    data: reconstructedStatementTransactions,
-                    title: "Classified Statement"
+                    data: rows.map((t, i) =>
+                        mapToClassifiedStatementRow(t, i, classificationLabels[t.classificationId]),
+                    ),
+                    title: "Classified Statement",
                 };
             case "Cash Book":
                 return {
                     headers: ["No.", "Class", "Trans Date", "Transaction Description", "Teller No.", "Cheque No.", "Debit", "Credit", "Balance", "Remarks"],
-                    data: cashBookTransactions,
-                    title: "Cash Book"
+                    data: rows.map(mapToCashBookRow),
+                    title: "Cash Book",
                 };
             case "Trans Matched":
                 return {
                     headers: ["No.", "Src", "Class", "Trans Date", "Transaction Description", "Teller No.", "Cheque", "Debit", "Credit", "Balance"],
-                    data: transMatchedTransactions,
-                    title: "Transaction Matching"
+                    data: rows.map(mapToTransMatchedRow),
+                    title: "Transaction Matching",
                 };
             case "Query":
                 return {
                     headers: ["No.", "Class", "Trans Date", "Value Date", "Transaction Description", "Teller No.", "Cheque No.", "Debit", "Credit", "Balance", "Remarks"],
-                    data: queryTransactions,
-                    title: "Query Results"
+                    data: rows.map(mapToQueryRow),
+                    title: "Query Results",
                 };
-            // case "Analysis":
-            //     return getAnalysisTableData();
-            // case "Summary":
-            //     return {
-            //         headers: ["No.", "Category", "Amount"],
-            //         data: summarizedTransactions,
-            //         title: "Summary"
-            //     };
-            default: // "Entry"
-                return {
-                    headers: ["S/N", "Date", "Account Name", "Account Number", "Account Type", "Symbol", "Bank Name", "Bank Address"],
-                    data: entryTransactions.map(t => ({ ...t, date: t.entryDate })),
-                    title: "Account Entries"
-                };
+            default:
+                return { headers: [] as string[], data: [] as Transaction[], title: "" };
         }
-    };
+    }, [activeTab, accountTransactions, classificationLabels]);
 
     // const getAnalysisTableData = () => {
     //     if (!analysisType) return { headers: [], data: [], title: "Analysis" };
@@ -464,8 +478,6 @@ const AccountDetails = () => {
     //     }
     // };
 
-    const { headers, data, title } = getTableDataAndHeaders();
-
     const handleUploadButtonClick = () => {
         setIsUploadDropdownOpen(!isUploadDropdownOpen);
     };
@@ -511,9 +523,8 @@ const AccountDetails = () => {
     };
 
     const handleTransactionCreateSuccess = () => {
-        // Refresh transactions or show success message
         toast.success("Transactions created successfully!");
-        // Optionally refresh the entry transactions list
+        loadAccountTransactions();
     };
 
     // const handleAnalyzeOptionClick = (type: AnalysisType) => {
@@ -522,25 +533,9 @@ const AccountDetails = () => {
     //     setActiveTab("Analysis");
     // };
 
-    const handleFilePreview = (filename: string) => {
-        setPreviewDocumentUrl("/pdf-placeholder.pdf");
-        setIsPreviewModalOpen(true);
-    };
-
     const handleClosePreviewModal = () => {
         setIsPreviewModalOpen(false);
         setPreviewDocumentUrl(null);
-    };
-
-    const handleFileDownload = (filename: string) => {
-        alert(`Downloading file: ${filename}`);
-    };
-
-    const handleFileDelete = (filename: string) => {
-        alert(`Deleting file: ${filename}`);
-        setEntryTransactions(prevTransactions =>
-            prevTransactions.filter(transaction => transaction.transactionDescription !== filename)
-        );
     };
 
     const toggleUserList = async () => {
@@ -682,15 +677,12 @@ const AccountDetails = () => {
     };
 
     return (
-        <div className="flex flex-col md:flex-row h-screen bg-gray-100 ">
-            <div className="hidden md:block fixed h-full w-64 z-40">
-                <Sidebar />
-            </div>
-<div className="flex-1  mt-16 md:mt-0 relative z-0">
-        <div className = "md:ml-64 "><Navbar /></div>
-        
+        <div className="flex min-h-screen bg-gray-100">
+            <Sidebar />
+            <div className="flex-1 min-w-0 mt-16 md:mt-0 relative z-0 flex flex-col">
+        <div className="mb-4"><Navbar /></div>
 
-            <div className="flex-1 md:ml-64 overflow-auto mt-16 md:mt-0 relative z-0">
+            <div className="flex-1 overflow-auto relative z-0">
                 <div className="bg-gray-100 min-h-full p-4 md:p-6">
                     <div className="bg-white rounded-md shadow-md p-4 md:p-6">
                         <div className="flex items-center justify-between mb-4">
@@ -943,143 +935,73 @@ const AccountDetails = () => {
                         </div>
 
                         {activeTab === "Entry" && (
-                            <>
-                                <div>
-                                    <h2 className="text-lg font-semibold text-gray-700 mb-2">Bank Statement</h2>
-                                    <div className="bg-white rounded-md shadow-sm mb-3 border border-gray-200 overflow-y-auto max-h-48">
-                                        {entryTransactions.map((transaction, index) => (
-                                            <div
-                                                key={index}
-                                                className={`flex items-center py-3 px-4 ${
-                                                    index < entryTransactions.length - 1
-                                                        ? 'border-b border-gray-200'
-                                                        : ''
-                                                    }`}
-                                            >
-                                                <div className="w-10 h-10 bg-red-100 text-red-500 rounded-md flex items-center justify-center mr-4">
-                                                    <span>PDF</span>
-                                                </div>
-                                                <div className="flex-1">
-                                                    <h6 className="font-semibold text-gray-800">
-                                                        Investment Contracts
-                                                    </h6>
-                                                    <p className="text-gray-500 text-sm">
-                                                        by Kelechi David Eze, 17 days ago at 7:47 AM - 132.73 KB
-                                                    </p>
-                                                </div>
-                                                <div className="text-gray-500 text-sm mr-4 hidden md:block">
-                                                    23 Days left
-                                                </div>
-                                                <div className="flex items-center space-x-2">
-                                                    <button
-
-                                                        onClick={() => handleFilePreview("investment contracts.pdf")}
-                                                        className="text-gray-500 hover:text-orange-500 focus:outline-none"
-                                                    >
-                                                        <EyeIcon className="h-5 w-5" />
-                                                        <span className="sr-only">Preview</span>
-                                                    </button>
-                                                    <button
-
-
-                                                        onClick={() => handleFileDownload("investment contracts.pdf")}
-                                                        className="text-gray-500 hover:text-orange-500 focus:outline-none"
-                                                    >
-                                                        <ArrowDownTrayIcon className="h-5 w-5" />
-                                                        <span className="sr-only">Download</span>
-                                                    </button>
-                                                    <button
-
-
-                                                        onClick={() => handleFileDelete("investment contracts.pdf")}
-                                                        className="text-gray-500 hover:text-red-500 focus:outline-none"
-                                                    >
-                                                        <TrashIcon className="h-5 w-5" />
-                                                        <span className="sr-only">Remove</span>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ))}
+                            <div className="space-y-6">
+                                <div className="rounded-md border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
+                                    <p className="font-medium text-gray-800 mb-1">Import transactions</p>
+                                    <p>
+                                        Use <strong>Upload</strong> (bank statement or cash book) to import files.
+                                        After you confirm the preview, transactions appear on the other tabs from the live API.
+                                    </p>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="rounded-md border border-gray-200 p-4">
+                                        <h2 className="text-lg font-semibold text-gray-700 mb-2">Bank statement data</h2>
+                                        {loadingTransactions ? (
+                                            <p className="text-sm text-gray-500">Loading…</p>
+                                        ) : transactionTotal > 0 ? (
+                                            <p className="text-sm text-gray-600">
+                                                {transactionTotal} transaction{transactionTotal === 1 ? "" : "s"} loaded.
+                                                Open the <button type="button" className="text-orange-600 hover:underline" onClick={() => handleTabChange("Bank Statement")}>Bank Statement</button> tab to view them.
+                                            </p>
+                                        ) : (
+                                            <p className="text-sm text-gray-500">No transactions yet. Upload a bank statement file to get started.</p>
+                                        )}
                                     </div>
-
-                                    <h2 className="text-lg font-semibold text-gray-700 mb-2">Cash Book</h2>
-                                    <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-y-auto max-h-48">
-                                        {entryTransactions.slice(0, 5).map((transaction, index) => (
-                                            <div
-                                                key={`csv-${index}`}
-                                                className={`flex items-center py-3 px-4 ${
-                                                    index < 4 ? 'border-b border-gray-200' : ''
-                                                    }`}
-                                            >
-                                                <div className="w-10 h-10 bg-blue-100 text-blue-500 rounded-md flex items-center justify-center mr-4">
-                                                    <span>CSV</span>
-                                                </div>
-                                                <div className="flex-1">
-                                                    <h6 className="font-semibold text-gray-800">
-                                                        Investment Contracts
-                                                    </h6>
-                                                    <p className="text-gray-500 text-sm">
-                                                        investment contracts.pdf
-                                                    </p>
-                                                    <p className="text-gray-500 text-sm">
-                                                        by Kelechi David Eze, 17 days ago at 7:47 AM - 132.73 KB
-                                                    </p>
-                                                </div>
-                                                <div className="text-gray-500 text-sm mr-4 hidden md:block">
-                                                    23 Days left
-                                                </div>
-                                                <div className="flex items-center space-x-2">
-                                                    <button
-
-                                                        onClick={() => handleFilePreview("investment contracts.pdf")}
-                                                        className="text-gray-500 hover:text-orange-500 focus:outline-none"
-                                                    >
-                                                        <EyeIcon className="h-5 w-5" />
-                                                        <span className="sr-only">Preview</span>
-                                                    </button>
-                                                    <button
-
-
-                                                        onClick={() => handleFileDownload("investment contracts.pdf")}
-                                                        className="text-gray-500 hover:text-orange-500 focus:outline-none"
-                                                    >
-                                                        <ArrowDownTrayIcon className="h-5 w-5" />
-                                                        <span className="sr-only">Download</span>
-                                                    </button>
-                                                    <button
-
-
-                                                        onClick={()=> handleFileDelete("investment contracts.pdf")}
-                                                        className="text-gray-500 hover:text-red-500 focus:outline-none"
-                                                    >
-                                                        <TrashIcon className="h-5 w-5" />
-                                                        <span className="sr-only">Remove</span>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ))}
+                                    <div className="rounded-md border border-gray-200 p-4">
+                                        <h2 className="text-lg font-semibold text-gray-700 mb-2">Cash book data</h2>
+                                        {loadingTransactions ? (
+                                            <p className="text-sm text-gray-500">Loading…</p>
+                                        ) : transactionTotal > 0 ? (
+                                            <p className="text-sm text-gray-600">
+                                                Same live ledger as bank statement ({transactionTotal} rows). View under{" "}
+                                                <button type="button" className="text-orange-600 hover:underline" onClick={() => handleTabChange("Cash Book")}>Cash Book</button>.
+                                            </p>
+                                        ) : (
+                                            <p className="text-sm text-gray-500">No cash book transactions yet. Upload a cash book file to import.</p>
+                                        )}
                                     </div>
                                 </div>
-                            </>
+                            </div>
                         )}
                         {(activeTab === "Query" || activeTab === "Bank Statement" || activeTab === "Classified Statement" || activeTab === "Cash Book" || activeTab === "Trans Matched") && (
                             <div className="overflow-y-auto max-h-[600px] gap-4">
-                                <TransactionTable headers={headers} data={data} />
-                                 <button
-                                      
+                                {title && (
+                                    <h2 className="text-lg font-semibold text-gray-700 mb-3">{title}</h2>
+                                )}
+                                {loadingTransactions ? (
+                                    <p className="text-sm text-gray-500 py-8 text-center">Loading transactions…</p>
+                                ) : data.length === 0 ? (
+                                    <p className="text-sm text-gray-500 py-8 text-center border border-dashed border-gray-300 rounded-md">
+                                        No transactions for this account yet. Use Entry → Upload to import a file, or open the Transactions tab to manage records.
+                                    </p>
+                                ) : (
+                                    <TransactionTable headers={headers} data={data} />
+                                )}
+                                {activeTab === "Query" && data.length > 0 && (
+                                    <button
+                                        type="button"
                                         className="bg-orange-500 mt-4 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded focus:outline-none focus:shadow-outline-orange active:bg-orange-700"
                                     >
                                         Save Query
                                     </button>
+                                )}
                             </div>
                         )}
                         {activeTab === "Transactions" && id && (
-                            <AccountTransactions accountId={id} />
-                        )}
-  {(activeTab === "Analyze" || activeTab === "Bank Statement" || activeTab === "Classified Statement" || activeTab === "Cash Book" || activeTab === "Trans Matched") && (
-                            <div className="overflow-y-auto max-h-[600px]">
-                                <TransactionTable headers={headers} data={data} />
-                            </div>
+                            <AccountTransactions
+                                accountId={id}
+                                onTransactionsChanged={loadAccountTransactions}
+                            />
                         )}
                           {(activeTab === "Summary" || activeTab === "Bank Statement" || activeTab === "Classified Statement" || activeTab === "Cash Book" || activeTab === "Trans Matched") && (
                             <div className="overflow-y-auto max-h-[600px]">

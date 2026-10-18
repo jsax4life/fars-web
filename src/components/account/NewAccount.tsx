@@ -391,15 +391,15 @@ const NewAccount = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      <div className="hidden md:block w-64 bg-gray-200 fixed top-0 left-0 h-full overflow-y-auto">
-        <Sidebar />
-      </div>
+    <div className="flex min-h-screen bg-gray-100 overflow-hidden">
+      <Sidebar />
 
-      <div className="flex-1 p-6 bg-white shadow-md rounded-lg overflow-y-auto md:ml-64">
-        <div className="mb-4">
-          <Navbar />
-        </div>
+      <div className="flex-1 min-w-0 overflow-auto mt-16 md:mt-0 pt-14 md:pt-0">
+        <div className="p-4 md:p-6">
+          <div className="mb-4">
+            <Navbar />
+          </div>
+          <div className="bg-white rounded-md shadow-md p-4 md:p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <h2 className="text-xl font-semibold mb-4 text-gray-800">
@@ -601,6 +601,8 @@ const NewAccount = () => {
             </button>
           </div>
         </form>
+          </div>
+        </div>
       </div>
 
       {showModal && (

@@ -25,18 +25,26 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ headers, data }) =>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {data.map((transaction) => (
-                            <tr key={transaction.sNo || transaction.no}>
-                                {Object.values(transaction).map((value, index) => (
-                                    <td
-                                        key={`<span class="math-inline">\{transaction\.sNo \|\| transaction\.no\}\-</span>{index}`}
-                                        className="px-3 py-4 whitespace-nowrap text-sm text-gray-500"
-                                    >
-                                        {typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value)}
-                                    </td>
-                                ))}
+                        {data.length === 0 ? (
+                            <tr>
+                                <td colSpan={headers.length} className="px-3 py-8 text-center text-sm text-gray-500">
+                                    No records to display.
+                                </td>
                             </tr>
-                        ))}
+                        ) : (
+                            data.map((transaction) => (
+                                <tr key={transaction.sNo || transaction.no}>
+                                    {Object.values(transaction).map((value, index) => (
+                                        <td
+                                            key={`${transaction.sNo || transaction.no}-${index}`}
+                                            className="px-3 py-4 whitespace-nowrap text-sm text-gray-500"
+                                        >
+                                            {typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value)}
+                                        </td>
+                                    ))}
+                                </tr>
+                            ))
+                        )}
                     </tbody>
                 </table>
             </div>

@@ -152,13 +152,39 @@ export const useTransactions = () => {
       
       const endpoint = `${Endpoints.getAccountTransactions}${accountId}/all?${queryParams.toString()}`;
       const response = await api.get(endpoint);
-      
-      if (response && response.data && Array.isArray(response.data)) {
+
+      if (Array.isArray(response)) {
+        return {
+          data: response as AccountTransaction[],
+          meta: {
+            total: response.length,
+            page,
+            limit,
+            pages: 1,
+          },
+        };
+      }
+
+      if (response && Array.isArray(response.data)) {
         return response as TransactionsResponse;
       }
-      
-      toast.error('Unexpected response format from get transactions');
-      return undefined;
+
+      if (response && response.data == null) {
+        return {
+          data: [],
+          meta: {
+            total: 0,
+            page,
+            limit,
+            pages: 0,
+          },
+        };
+      }
+
+      return {
+        data: [],
+        meta: { total: 0, page, limit, pages: 0 },
+      };
     } catch (error: any) {
       toast.error('Failed to get transactions: ' + (error?.message || 'Unknown error'));
       return undefined;

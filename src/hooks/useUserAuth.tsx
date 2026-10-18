@@ -4,6 +4,11 @@ import { useApi } from './useApi';
 import Endpoints from '@/lib/endpoints';
 import { User } from '@/types';
 import { toast } from 'sonner';
+import {
+  accessTokenLifetimeSeconds,
+  extractAuthTokens,
+  isAccessTokenExpired,
+} from '@/lib/authTokens';
 
 
 interface AuthContextType {
@@ -28,8 +33,6 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-
 
 export const UserAuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -81,12 +84,27 @@ export const UserAuthProvider = ({ children }: { children: ReactNode }) => {
         password,
       })
 
-      if (request) {
-        const { id, accessToken, refreshToken } = request;
-        api.updateToken({ accessToken, refreshToken });
+      const tokens = extractAuthTokens(request);
+      if (tokens) {
+        const lifetime = accessTokenLifetimeSeconds(tokens.accessToken);
+        if (lifetime !== null && lifetime <= 0) {
+          toast.error(
+            'Login returned an access token that expires immediately. Set JWT access expiry on the API (e.g. JWT_EXPIRES_IN=15m) and redeploy.',
+            { duration: 10000 },
+          );
+          return 'error';
+        }
+        if (isAccessTokenExpired(tokens.accessToken)) {
+          toast.error('Login returned an expired access token. Check JWT settings on the API server.', {
+            duration: 10000,
+          });
+          return 'error';
+        }
+        api.updateToken(tokens);
         toast.success('Logged in successfully!');
         return 'success';
       }
+      toast.error('Login failed: invalid response from server.');
       return 'error';
     } catch (error: any) {
       toast.error('Login failed: ' + error?.message);
@@ -193,7 +211,10 @@ export const UserAuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = () => {
-    api.get(Endpoints.logout)
+    api.post(Endpoints.logout, {})
+      .catch(() => {
+        // API may reject expired tokens; still clear local session
+      })
       .finally(() => {
         setUser(null);
         localStorage.removeItem('user');

@@ -9,6 +9,7 @@ import Modal from "@/components/utility/Modal";
 
 interface AccountTransactionsProps {
   accountId: string;
+  onTransactionsChanged?: () => void;
 }
 
 interface Classification {
@@ -18,7 +19,10 @@ interface Classification {
   category: string;
 }
 
-const AccountTransactions: React.FC<AccountTransactionsProps> = ({ accountId }) => {
+const AccountTransactions: React.FC<AccountTransactionsProps> = ({
+  accountId,
+  onTransactionsChanged,
+}) => {
   const { getAccountTransactions, getTransactionById, updateTransaction, deleteTransaction, deleteMultipleTransactions } = useTransactions();
   const { getClassifications } = useClassifications();
   const [transactions, setTransactions] = useState<AccountTransaction[]>([]);
@@ -255,8 +259,8 @@ const AccountTransactions: React.FC<AccountTransactionsProps> = ({ accountId }) 
     try {
       const updated = await updateTransaction(selectedTransaction.id, updateFormData);
       if (updated) {
-        // Refresh transactions list
         await loadTransactions();
+        onTransactionsChanged?.();
         setShowUpdateModal(false);
         setSelectedTransaction(null);
         setUpdateFormData({});
@@ -281,8 +285,8 @@ const AccountTransactions: React.FC<AccountTransactionsProps> = ({ accountId }) 
     try {
       const success = await deleteTransaction(deletingTransactionId);
       if (success) {
-        // Refresh transactions list
         await loadTransactions();
+        onTransactionsChanged?.();
         setShowDeleteConfirm(false);
         setDeletingTransactionId(null);
       }
@@ -326,8 +330,8 @@ const AccountTransactions: React.FC<AccountTransactionsProps> = ({ accountId }) 
       const ids = Array.from(selectedTransactionIds);
       const success = await deleteMultipleTransactions(ids);
       if (success) {
-        // Refresh transactions list
         await loadTransactions();
+        onTransactionsChanged?.();
         setSelectedTransactionIds(new Set());
         setShowBulkDeleteConfirm(false);
       }

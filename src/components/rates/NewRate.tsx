@@ -7,35 +7,50 @@ import Navbar from "@/components/nav/Navbar";
 import { useRates } from "@/hooks/useRates";
 import { useClients } from "@/hooks/useClient";
 import { useBanks } from "@/hooks/useBank";
+import RateDecimalInput from "@/components/rates/RateDecimalInput";
+import {
+  LOAN_INTEREST_TYPE_OPTIONS,
+  normalizeLoanInterestTypeForApi,
+  optionalDecimalPayload,
+  parseDecimalInput,
+  RATE_CURRENCIES,
+} from "@/lib/rateFormUtils";
+import { buildFeesPayload, emptyRateFee, type RateFeeEntry } from "@/types/rateFees";
 
 interface RateArrayItem {
-  rate: number;
+  rate: string;
   effectiveFrom: string;
   effectiveTo: string;
+}
+
+interface LoanInterestRateItem extends RateArrayItem {
+  loanType: string;
 }
 
 interface FormData {
   clientId: string;
   bankId: string;
   drRates: RateArrayItem[];
-  loanInterestRates: RateArrayItem[];
+  loanInterestRates: LoanInterestRateItem[];
   lcCommissions: RateArrayItem[];
   preNegotiationRates: RateArrayItem[];
   postNegotiationRates: RateArrayItem[];
   creditInterestRates: RateArrayItem[];
-  returnChargeRate: number;
-  returnChargeLimit: number;
-  cotCovenantRate: number;
-  cotOffCoverRate: number;
-  cotOICRate: number;
-  turnoverLimit: number;
+  camfRate: string;
+  managementFeeRate: string;
+  returnChargeRate: string;
+  returnChargeLimit: string;
+  cotCovenantRate: string;
+  cotOffCoverRate: string;
+  cotOICRate: string;
+  turnoverLimit: string;
   cotCovenantFrequency: string;
   chargeCOTOnShortfall: boolean;
-  debitRate: number;
-  excessRate: number;
+  debitRate: string;
+  excessRate: string;
   excessRateType: string;
-  vatRate: number;
-  whtRate: number;
+  vatRate: string;
+  whtRate: string;
   rateType: string;
   currency: string;
   effectiveFrom: string;
@@ -66,29 +81,40 @@ const NewRate = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fees, setFees] = useState<RateFeeEntry[]>([emptyRateFee()]);
+
+  const emptyRateRow = (): RateArrayItem => ({ rate: "", effectiveFrom: "", effectiveTo: "" });
+  const emptyLoanInterestRow = (): LoanInterestRateItem => ({
+    rate: "",
+    effectiveFrom: "",
+    effectiveTo: "",
+    loanType: "SHORT_TERM",
+  });
 
   const [formData, setFormData] = useState<FormData>({
     clientId: "",
     bankId: "",
-    drRates: [{ rate: 0, effectiveFrom: "", effectiveTo: "" }],
-    loanInterestRates: [{ rate: 0, effectiveFrom: "", effectiveTo: "" }],
-    lcCommissions: [{ rate: 0, effectiveFrom: "", effectiveTo: "" }],
-    preNegotiationRates: [{ rate: 0, effectiveFrom: "", effectiveTo: "" }],
-    postNegotiationRates: [{ rate: 0, effectiveFrom: "", effectiveTo: "" }],
-    creditInterestRates: [{ rate: 0, effectiveFrom: "", effectiveTo: "" }],
-    returnChargeRate: 0,
-    returnChargeLimit: 0,
-    cotCovenantRate: 0,
-    cotOffCoverRate: 0,
-    cotOICRate: 0,
-    turnoverLimit: 0,
+    drRates: [emptyRateRow()],
+    loanInterestRates: [emptyLoanInterestRow()],
+    lcCommissions: [emptyRateRow()],
+    preNegotiationRates: [emptyRateRow()],
+    postNegotiationRates: [emptyRateRow()],
+    creditInterestRates: [emptyRateRow()],
+    camfRate: "",
+    managementFeeRate: "",
+    returnChargeRate: "",
+    returnChargeLimit: "",
+    cotCovenantRate: "",
+    cotOffCoverRate: "",
+    cotOICRate: "",
+    turnoverLimit: "",
     cotCovenantFrequency: "monthly",
     chargeCOTOnShortfall: false,
-    debitRate: 0,
-    excessRate: 0,
+    debitRate: "",
+    excessRate: "",
     excessRateType: "flat",
-    vatRate: 0,
-    whtRate: 0,
+    vatRate: "",
+    whtRate: "",
     rateType: "tiered",
     currency: "NGN",
     effectiveFrom: "",
@@ -143,37 +169,82 @@ const NewRate = () => {
       const [arrayName, index, field] = name.split(".");
       const idx = parseInt(index);
       setFormData((prev) => {
-        const newArray = [
-          ...(prev[arrayName as keyof FormData] as RateArrayItem[]),
-        ];
-        newArray[idx] = {
-          ...newArray[idx],
-          [field]: field === "rate" ? parseFloat(value) || 0 : value,
-        };
+        const key = arrayName as keyof FormData;
+        const current = prev[key];
+        if (!Array.isArray(current)) return prev;
+        const newArray = [...(current as unknown as Record<string, string>[])];
+        newArray[idx] = { ...newArray[idx], [field]: value };
         return { ...prev, [arrayName]: newArray };
       });
     } else {
-      // Exclude fields that end with "Type" or "Frequency" from number parsing
-      const isNumericField =
-        (name.includes("Rate") || name.includes("Limit")) &&
-        !name.endsWith("Type") &&
-        !name.endsWith("Frequency");
       setFormData((prev) => ({
         ...prev,
-        [name]: isNumericField ? parseFloat(value) || 0 : value,
+        [name]: value,
       }));
     }
   };
+
+  const handleFeeChange = (index: number, field: keyof RateFeeEntry, value: string) => {
+    setFees((prev) =>
+      prev.map((fee, i) => (i === index ? { ...fee, [field]: value } : fee)),
+    );
+  };
+
+  const addFeeRow = () => setFees((prev) => [...prev, emptyRateFee()]);
+  const removeFeeRow = (index: number) =>
+    setFees((prev) => (prev.length <= 1 ? prev : prev.filter((_, i) => i !== index)));
+
+  const parseRateArray = (items: RateArrayItem[]) =>
+    items
+      .map((r) => ({
+        rate: parseDecimalInput(r.rate),
+        effectiveFrom: r.effectiveFrom,
+        effectiveTo: r.effectiveTo,
+      }))
+      .filter(
+        (r) =>
+          r.rate !== undefined &&
+          r.rate > 0 &&
+          Boolean(r.effectiveFrom) &&
+          Boolean(r.effectiveTo),
+      )
+      .map((r) => ({
+        rate: r.rate as number,
+        effectiveFrom: r.effectiveFrom,
+        effectiveTo: r.effectiveTo,
+      }));
+
+  const parseLoanInterestArray = (items: LoanInterestRateItem[]) =>
+    items
+      .map((r) => ({
+        rate: parseDecimalInput(r.rate),
+        loanType: normalizeLoanInterestTypeForApi(r.loanType || "SHORT_TERM"),
+        effectiveFrom: r.effectiveFrom,
+        effectiveTo: r.effectiveTo,
+      }))
+      .filter(
+        (r) =>
+          r.rate !== undefined &&
+          r.rate > 0 &&
+          Boolean(r.effectiveFrom) &&
+          Boolean(r.effectiveTo),
+      )
+      .map((r) => ({
+        rate: r.rate as number,
+        loanType: r.loanType,
+        effectiveFrom: r.effectiveFrom,
+        effectiveTo: r.effectiveTo,
+      }));
 
   const addRateItem = (arrayName: keyof FormData) => {
     setFormData((prev) => {
       const currentArray = prev[arrayName] as RateArrayItem[];
       return {
         ...prev,
-        [arrayName]: [
-          ...currentArray,
-          { rate: 0, effectiveFrom: "", effectiveTo: "" },
-        ],
+        [arrayName]:
+          arrayName === "loanInterestRates"
+            ? [...(currentArray as LoanInterestRateItem[]), emptyLoanInterestRow()]
+            : [...(currentArray as RateArrayItem[]), emptyRateRow()],
       };
     });
   };
@@ -198,41 +269,33 @@ const NewRate = () => {
 
     setIsSubmitting(true);
     try {
-      // Filter out empty rate arrays and ensure proper formatting
-      const payload: any = {
+      const loanInterestRates = parseLoanInterestArray(formData.loanInterestRates);
+
+      const payload: Parameters<typeof createRate>[0] = {
         clientId: formData.clientId,
-        bankId: formData.bankId,
-        drRates: formData.drRates.filter(
-          (r) => r.rate > 0 && r.effectiveFrom && r.effectiveTo
-        ),
-        loanInterestRates: formData.loanInterestRates.filter(
-          (r) => r.rate > 0 && r.effectiveFrom && r.effectiveTo
-        ),
-        lcCommissions: formData.lcCommissions.filter(
-          (r) => r.rate > 0 && r.effectiveFrom && r.effectiveTo
-        ),
-        preNegotiationRates: formData.preNegotiationRates.filter(
-          (r) => r.rate > 0 && r.effectiveFrom && r.effectiveTo
-        ),
-        postNegotiationRates: formData.postNegotiationRates.filter(
-          (r) => r.rate > 0 && r.effectiveFrom && r.effectiveTo
-        ),
-        creditInterestRates: formData.creditInterestRates.filter(
-          (r) => r.rate > 0 && r.effectiveFrom && r.effectiveTo
-        ),
-        returnChargeRate: formData.returnChargeRate,
-        returnChargeLimit: formData.returnChargeLimit,
-        cotCovenantRate: formData.cotCovenantRate,
-        cotOffCoverRate: formData.cotOffCoverRate,
-        cotOICRate: formData.cotOICRate,
-        turnoverLimit: formData.turnoverLimit,
+        bankId: formData.bankId || undefined,
+        drRates: parseRateArray(formData.drRates),
+        loanInterestRates: loanInterestRates.length ? loanInterestRates : undefined,
+        lcCommissions: parseRateArray(formData.lcCommissions),
+        preNegotiationRates: parseRateArray(formData.preNegotiationRates),
+        postNegotiationRates: parseRateArray(formData.postNegotiationRates),
+        creditInterestRates: parseRateArray(formData.creditInterestRates),
+        camfRate: optionalDecimalPayload(formData.camfRate),
+        managementFeeRate: optionalDecimalPayload(formData.managementFeeRate),
+        fees: buildFeesPayload(fees),
+        returnChargeRate: optionalDecimalPayload(formData.returnChargeRate),
+        returnChargeLimit: optionalDecimalPayload(formData.returnChargeLimit),
+        cotCovenantRate: optionalDecimalPayload(formData.cotCovenantRate),
+        cotOffCoverRate: optionalDecimalPayload(formData.cotOffCoverRate),
+        cotOICRate: optionalDecimalPayload(formData.cotOICRate),
+        turnoverLimit: optionalDecimalPayload(formData.turnoverLimit),
         cotCovenantFrequency: formData.cotCovenantFrequency,
         chargeCOTOnShortfall: formData.chargeCOTOnShortfall,
-        debitRate: formData.debitRate,
-        excessRate: formData.excessRate,
+        debitRate: optionalDecimalPayload(formData.debitRate),
+        excessRate: optionalDecimalPayload(formData.excessRate),
         excessRateType: formData.excessRateType,
-        vatRate: formData.vatRate,
-        whtRate: formData.whtRate,
+        vatRate: optionalDecimalPayload(formData.vatRate),
+        whtRate: optionalDecimalPayload(formData.whtRate),
         rateType: formData.rateType,
         currency: formData.currency,
         effectiveFrom: formData.effectiveFrom,
@@ -246,6 +309,86 @@ const NewRate = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const renderLoanInterestRates = () => {
+    const array = formData.loanInterestRates;
+    return (
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-gray-700">Loan interest rates</h3>
+          <button
+            type="button"
+            onClick={() => addRateItem("loanInterestRates")}
+            className="text-sm text-orange-600 hover:text-orange-700"
+          >
+            + Add loan interest rate
+          </button>
+        </div>
+        {array.map((item, index) => (
+          <div
+            key={index}
+            className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-3 p-3 bg-gray-50 rounded-md"
+          >
+            <div>
+              <label className="block text-xs text-gray-600 mb-1">Loan type</label>
+              <select
+                name={`loanInterestRates.${index}.loanType`}
+                value={item.loanType}
+                onChange={handleChange}
+                className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm"
+              >
+                {LOAN_INTEREST_TYPE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-600 mb-1">Rate (%)</label>
+              <RateDecimalInput
+                name={`loanInterestRates.${index}.rate`}
+                value={item.rate}
+                onChange={handleChange}
+                placeholder="e.g. 25"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-600 mb-1">Effective from</label>
+              <input
+                type="date"
+                name={`loanInterestRates.${index}.effectiveFrom`}
+                value={item.effectiveFrom}
+                onChange={handleChange}
+                className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-600 mb-1">Effective to</label>
+              <input
+                type="date"
+                name={`loanInterestRates.${index}.effectiveTo`}
+                value={item.effectiveTo}
+                onChange={handleChange}
+                className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm"
+              />
+            </div>
+            <div className="flex items-end">
+              {array.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => removeRateItem("loanInterestRates", index)}
+                  className="text-red-600 hover:text-red-700 text-sm"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   const renderRateArray = (arrayName: keyof FormData, label: string) => {
@@ -268,14 +411,12 @@ const NewRate = () => {
             className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-3 p-3 bg-gray-50 rounded-md"
           >
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Rate</label>
-              <input
-                type="number"
-                step="0.01"
+              <label className="block text-xs text-gray-600 mb-1">Rate (%)</label>
+              <RateDecimalInput
                 name={`${String(arrayName)}.${index}.rate`}
                 value={item.rate}
                 onChange={handleChange}
-                className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm"
+                placeholder="e.g. 25"
               />
             </div>
             <div>
@@ -322,7 +463,7 @@ const NewRate = () => {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-      <div className="flex-1 md:ml-64 md:mt-0">
+      <div className="flex-1 min-w-0 md:mt-0">
         <div className="mb-4">
           <Navbar />
         </div>
@@ -400,7 +541,11 @@ const NewRate = () => {
                       onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     >
-                      <option value="NGN">NGN</option>
+                      {RATE_CURRENCIES.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
@@ -467,13 +612,151 @@ const NewRate = () => {
                 </div>
               </div>
 
+              {/* Standalone CAMF & management fee */}
+              <div className="mb-6">
+                <h3 className="text-md font-semibold text-gray-800 mb-4">
+                  CAMF &amp; Management Fee
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      CAMF Rate (%)
+                    </label>
+                    <RateDecimalInput
+                      name="camfRate"
+                      value={formData.camfRate}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Management Fee Rate (%)
+                    </label>
+                    <RateDecimalInput
+                      name="managementFeeRate"
+                      value={formData.managementFeeRate}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Related fees */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-md font-semibold text-gray-800">
+                    Rate change &amp; related fees
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={addFeeRow}
+                    className="text-sm text-orange-600 hover:text-orange-700"
+                  >
+                    + Add fee
+                  </button>
+                </div>
+                {fees.map((fee, index) => (
+                  <div
+                    key={index}
+                    className="grid grid-cols-1 md:grid-cols-6 gap-3 mb-3 p-3 bg-gray-50 rounded-md"
+                  >
+                    <div className="md:col-span-2">
+                      <label className="block text-xs text-gray-600 mb-1">Name</label>
+                      <input
+                        type="text"
+                        value={fee.name}
+                        onChange={(e) => handleFeeChange(index, "name", e.target.value)}
+                        placeholder="Rate change management fee"
+                        className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Charge type</label>
+                      <select
+                        value={fee.chargeType}
+                        onChange={(e) =>
+                          handleFeeChange(
+                            index,
+                            "chargeType",
+                            e.target.value as RateFeeEntry["chargeType"],
+                          )
+                        }
+                        className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm"
+                      >
+                        <option value="rate">Rate (%)</option>
+                        <option value="amount">Flat amount</option>
+                      </select>
+                    </div>
+                    {fee.chargeType === "rate" ? (
+                      <>
+                        <div>
+                          <label className="block text-xs text-gray-600 mb-1">Rate (%)</label>
+                          <RateDecimalInput
+                            name={`fee.${index}.rate`}
+                            value={fee.rate}
+                            onChange={(e) => handleFeeChange(index, "rate", e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-600 mb-1">Effective from</label>
+                          <input
+                            type="date"
+                            value={fee.effectiveFrom}
+                            onChange={(e) =>
+                              handleFeeChange(index, "effectiveFrom", e.target.value)
+                            }
+                            className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-600 mb-1">Effective to</label>
+                          <input
+                            type="date"
+                            value={fee.effectiveTo}
+                            onChange={(e) =>
+                              handleFeeChange(index, "effectiveTo", e.target.value)
+                            }
+                            className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm"
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <div className="md:col-span-3">
+                        <label className="block text-xs text-gray-600 mb-1">Amount</label>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          value={fee.amount}
+                          onChange={(e) => handleFeeChange(index, "amount", e.target.value)}
+                          placeholder="50000"
+                          className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm"
+                        />
+                      </div>
+                    )}
+                    <div className="flex items-end">
+                      {fees.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeFeeRow(index)}
+                          className="text-red-600 hover:text-red-700 text-sm"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
               {/* Rate Arrays */}
               <div className="mb-6">
                 <h3 className="text-md font-semibold text-gray-800 mb-4">
                   Rate Arrays
                 </h3>
                 {renderRateArray("drRates", "DR Rates")}
-                {renderRateArray("loanInterestRates", "Loan Interest Rates")}
+                {renderLoanInterestRates()}
                 {renderRateArray("lcCommissions", "LC Commissions")}
                 {renderRateArray(
                   "preNegotiationRates",
@@ -499,9 +782,7 @@ const NewRate = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Return Charge Rate
                     </label>
-                    <input
-                      type="number"
-                      step="0.01"
+                    <RateDecimalInput
                       name="returnChargeRate"
                       value={formData.returnChargeRate}
                       onChange={handleChange}
@@ -513,9 +794,7 @@ const NewRate = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Return Charge Limit
                     </label>
-                    <input
-                      type="number"
-                      step="0.01"
+                    <RateDecimalInput
                       name="returnChargeLimit"
                       value={formData.returnChargeLimit}
                       onChange={handleChange}
@@ -527,9 +806,7 @@ const NewRate = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       COT Covenant Rate
                     </label>
-                    <input
-                      type="number"
-                      step="0.01"
+                    <RateDecimalInput
                       name="cotCovenantRate"
                       value={formData.cotCovenantRate}
                       onChange={handleChange}
@@ -541,9 +818,7 @@ const NewRate = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       COT Off Cover Rate
                     </label>
-                    <input
-                      type="number"
-                      step="0.01"
+                    <RateDecimalInput
                       name="cotOffCoverRate"
                       value={formData.cotOffCoverRate}
                       onChange={handleChange}
@@ -555,9 +830,7 @@ const NewRate = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       COT OIC Rate
                     </label>
-                    <input
-                      type="number"
-                      step="0.01"
+                    <RateDecimalInput
                       name="cotOICRate"
                       value={formData.cotOICRate}
                       onChange={handleChange}
@@ -569,9 +842,7 @@ const NewRate = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Turnover Limit
                     </label>
-                    <input
-                      type="number"
-                      step="0.01"
+                    <RateDecimalInput
                       name="turnoverLimit"
                       value={formData.turnoverLimit}
                       onChange={handleChange}
@@ -599,9 +870,7 @@ const NewRate = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Debit Rate
                     </label>
-                    <input
-                      type="number"
-                      step="0.01"
+                    <RateDecimalInput
                       name="debitRate"
                       value={formData.debitRate}
                       onChange={handleChange}
@@ -613,9 +882,7 @@ const NewRate = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Excess Rate
                     </label>
-                    <input
-                      type="number"
-                      step="0.01"
+                    <RateDecimalInput
                       name="excessRate"
                       value={formData.excessRate}
                       onChange={handleChange}
@@ -642,9 +909,7 @@ const NewRate = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       VAT Rate
                     </label>
-                    <input
-                      type="number"
-                      step="0.01"
+                    <RateDecimalInput
                       name="vatRate"
                       value={formData.vatRate}
                       onChange={handleChange}
@@ -656,9 +921,7 @@ const NewRate = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       WHT Rate
                     </label>
-                    <input
-                      type="number"
-                      step="0.01"
+                    <RateDecimalInput
                       name="whtRate"
                       value={formData.whtRate}
                       onChange={handleChange}

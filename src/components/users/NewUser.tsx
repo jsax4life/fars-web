@@ -8,6 +8,7 @@ const NewUser = () => {
   const router = useRouter();
   const { createUser } = useUsers();
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [form, setForm] = useState({
     firstName: "",
@@ -150,14 +151,26 @@ const NewUser = () => {
             />
           </div>
 
-          <input
-            type="password"
-            name="password"
-            placeholder="Temporary Password"
-            className="w-full px-4 py-2 rounded-md bg-[#424242] placeholder-gray-300 text-sm text-white outline-none focus:ring-2 focus:ring-[#F36F2E]"
-            value={form.password}
-            onChange={handleChange}
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              name="password"
+              placeholder="Temporary Password"
+              autoComplete="new-password"
+              aria-label="Password"
+              className="w-full px-4 py-2 pr-16 rounded-md bg-[#424242] placeholder-gray-300 text-sm text-white outline-none focus:ring-2 focus:ring-[#F36F2E]"
+              value={form.password}
+              onChange={handleChange}
+            />
+            <button
+              type="button"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              onClick={() => setShowPassword((s) => !s)}
+              className="absolute inset-y-0 right-0 px-3 text-sm text-gray-300 hover:text-white"
+            >
+              {showPassword ? "Hide" : "Show"}
+            </button>
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <select

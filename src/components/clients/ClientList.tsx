@@ -358,7 +358,7 @@ const ClientList = () => {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-      <div className="flex-1 md:ml-64 mt-16 md:mt-0">
+      <div className="flex-1 min-w-0 mt-16 md:mt-0">
         <div className=" ">
           <Navbar />
         </div>

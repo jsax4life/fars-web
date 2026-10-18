@@ -276,7 +276,7 @@ const Classification = () => {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-      <main className="flex-1 overflow-auto md:ml-64 pt-10 md:pt-10">
+      <main className="flex-1 min-w-0 overflow-auto pt-10 md:pt-10">
         <div className="mb-4">
           <Navbar />
         </div>

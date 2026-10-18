@@ -13,7 +13,7 @@ import Link from "next/link";
 import WordEditor from "../utility/TextEditor";
 import Navbar from "../nav/Navbar";
 import { useBanks } from "@/hooks/useBank";
-import { formatDate } from "@/lib/utils";
+import { formatDate, sortByNameAsc } from "@/lib/utils";
 import { toast } from 'sonner';
 
 interface Bank {
@@ -115,7 +115,7 @@ const BankList = () => {
       const createdBank = await bank.createBank(payload);
       if (createdBank) {
         // Add new bank to the top of the list for immediate visibility
-        setBanks((prevBanks) => [createdBank, ...prevBanks]);
+        setBanks((prevBanks) => sortByNameAsc([...prevBanks, createdBank]));
 
         setShowCreateModal(false);
         setShowSuccessModal(true);
@@ -231,9 +231,11 @@ const BankList = () => {
         if (response) {
           // Update the main banks list
           setBanks(
-            banks.map((bank) =>
-              bank.id === editableBank.id ? editableBank : bank
-            )
+            sortByNameAsc(
+              banks.map((bank) =>
+                bank.id === editableBank.id ? editableBank : bank,
+              ),
+            ),
           );
           // Update the bank being viewed in the modal
           setViewedBank(editableBank);
@@ -272,7 +274,7 @@ const BankList = () => {
       .getBanks()
       .then((response) => {
         if (response && Array.isArray(response)) {
-          setBanks(response);
+          setBanks(sortByNameAsc(response));
         } else {
           console.error("Failed to fetch banks");
           setBanks([]);
@@ -288,14 +290,15 @@ const BankList = () => {
   }, []); // Dependency on `bank` object from the hook
 
   const filteredBanks = useMemo(() => {
-    const query = searchQuery.toLowerCase();
+    const query = searchQuery.toLowerCase().trim();
+    const sorted = sortByNameAsc(banks);
     if (!query) {
-      return banks;
+      return sorted;
     }
-    return banks.filter(
+    return sorted.filter(
       (bank) =>
         bank.name.toLowerCase().includes(query) ||
-        (bank.code && bank.code.toLowerCase().includes(query))
+        (bank.code && bank.code.toLowerCase().includes(query)),
     );
   }, [banks, searchQuery]);
 
@@ -316,7 +319,7 @@ const BankList = () => {
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
 
-      <main className="flex-1 overflow-auto md:ml-64 pt-10 md:pt-10">
+      <main className="flex-1 min-w-0 overflow-auto pt-10 md:pt-10">
         <div className="mb-4">
           <Navbar />
         </div>

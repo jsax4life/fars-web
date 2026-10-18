@@ -1,37 +1,76 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { toast } from "sonner";
 import Sidebar from "../utility/Sidebar";
 import Navbar from "../nav/Navbar";
+import { useUsers } from "@/hooks/useUsers";
+import { formatRole } from "@/lib/utils";
+import {
+  API_PERMISSIONS,
+  extractPermissionNames,
+  getLatestAssignmentForStaff,
+  loadRoleAssignments,
+  permissionsFromToggleState,
+  RoleAssignmentRecord,
+  saveRoleAssignments,
+  SystemRole,
+} from "@/lib/roleManagement";
 
+interface StaffUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  username?: string;
+  email?: string;
+  permissions?: unknown;
+}
+
+function staffLabel(user: StaffUser): string {
+  const name = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || user.email || "Unknown";
+  const meta = [user.username, formatRole(user.role)].filter(Boolean).join(" · ");
+  return meta ? `${name} (${meta})` : name;
+}
 
 const RoleList = () => {
-  // Removed useRouter as it's Next.js specific
-  // const router = useRouter(); 
+  const { getStaff, updateUser } = useUsers();
+  const getStaffRef = useRef(getStaff);
+  getStaffRef.current = getStaff;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentRole, setCurrentRole] = useState("");
   const [roleTitle, setRoleTitle] = useState("");
-  // State for selected and available account codes
+  const [systemRole, setSystemRole] = useState<SystemRole>("STAFF");
+  const [staffUsers, setStaffUsers] = useState<StaffUser[]>([]);
+  const [assignments, setAssignments] = useState<RoleAssignmentRecord[]>([]);
+  const [loadingStaff, setLoadingStaff] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [selectedAccountCodes, setSelectedAccountCodes] = useState<string[]>([]);
-  const [availableAccountCodes, setAvailableAccountCodes] = useState([
-    { code: "ACC001", name: "Main Account" },
-    { code: "ACC002", name: "Savings Account" },
-    { code: "ACC003", name: "Investment Account" },
-    { code: "ACC004", name: "Business Account" },
-    { code: "ACC005", name: "Personal Account" },
-  ]);
-
-  // New states for staff assignment
   const [selectedStaffs, setSelectedStaffs] = useState<string[]>([]);
-  const [availableStaffs, setAvailableStaffs] = useState([
-    { id: "STAFF001", name: "John Doe" },
-    { id: "STAFF002", name: "Jane Smith" },
-    { id: "STAFF003", name: "Peter Jones" },
-    { id: "STAFF004", name: "Alice Brown" },
-    { id: "STAFF005", name: "Robert Green" },
-  ]);
+
+  const refreshStaff = useCallback(async () => {
+    setLoadingStaff(true);
+    try {
+      const data = await getStaffRef.current();
+      if (Array.isArray(data)) {
+        setStaffUsers(data as StaffUser[]);
+      }
+    } finally {
+      setLoadingStaff(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshStaff();
+    setAssignments(loadRoleAssignments());
+  }, [refreshStaff]);
+
+  const openCreateRoleModal = () => {
+    refreshStaff();
+    setIsModalOpen(true);
+  };
 
   const [permissions, setPermissions] = useState({
     accessOwnerInformation: false,
@@ -78,16 +117,65 @@ const RoleList = () => {
   // Ref for the staff dropdown
   const staffDropdownRef = useRef<HTMLSelectElement>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Handle form submission here, now including selectedStaffs
-    console.log({ roleTitle, selectedStaffs, selectedAccountCodes, permissions });
-    setIsModalOpen(false);
-    // Reset form states after submission
+  const resetCreateForm = () => {
     setRoleTitle("");
+    setSystemRole("STAFF");
     setSelectedStaffs([]);
     setSelectedAccountCodes([]);
-    setPermissions(Object.fromEntries(Object.keys(permissions).map(key => [key, false])) as typeof permissions); // Reset all permissions to false
+    setPermissions(
+      Object.fromEntries(Object.keys(permissions).map((key) => [key, false])) as typeof permissions,
+    );
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const title = roleTitle.trim();
+    if (!title) {
+      toast.error("Role title is required.");
+      return;
+    }
+    if (selectedStaffs.length === 0) {
+      toast.error("Select at least one staff member to assign this role.");
+      return;
+    }
+
+    const apiPermissions = permissionsFromToggleState(permissions);
+    if (apiPermissions.length === 0) {
+      toast.error("Turn on at least one permission for this role.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      for (const staffId of selectedStaffs) {
+        await updateUser(staffId, {
+          role: systemRole,
+          permissions: apiPermissions,
+        });
+      }
+
+      const record: RoleAssignmentRecord = {
+        id: crypto.randomUUID(),
+        roleTitle: title,
+        systemRole,
+        staffIds: [...selectedStaffs],
+        permissions: apiPermissions,
+        createdAt: new Date().toISOString(),
+      };
+      const nextAssignments = [...assignments, record];
+      setAssignments(nextAssignments);
+      saveRoleAssignments(nextAssignments);
+
+      await refreshStaff();
+      toast.success(`Role "${title}" assigned successfully.`);
+      setIsModalOpen(false);
+      resetCreateForm();
+    } catch {
+      toast.error("Could not assign role. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleEditSubmit = (e: React.FormEvent) => {
@@ -106,10 +194,7 @@ const RoleList = () => {
 
   const handleRoleClick = (role: string) => {
     setCurrentRole(role);
-    // For demo purposes, pre-select some account codes when editing
-    setSelectedAccountCodes(["ACC001", "ACC003"]);
-    // Also pre-select some staff for demo when editing, if needed
-    // setSelectedStaffs(["STAFF001"]);
+    setSelectedAccountCodes([]);
     setIsEditModalOpen(true);
   };
 
@@ -166,7 +251,7 @@ const RoleList = () => {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-  <div className="flex-1 md:mt-0">
+  <div className="flex-1 min-w-0 md:mt-0 pt-14 md:pt-0">
               <div className = "mb-4"><Navbar /></div>
               
       <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
@@ -175,15 +260,90 @@ const RoleList = () => {
         {/* Admin Section */}
         <div className="mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-700">Admin</h2>
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-700">Role Management</h2>
 
             <button
-              onClick={() => setIsModalOpen(true)}
+              type="button"
+              onClick={openCreateRoleModal}
               className="w-full sm:w-auto bg-[#F36F2E] hover:bg-[#E05C2B] text-white py-2 px-4 rounded-md text-sm transition-colors"
             >
               Create New Role
             </button>
           </div>
+
+          <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-100">
+              <h3 className="text-sm font-semibold text-gray-800">Staff & assigned roles</h3>
+              <p className="text-xs text-gray-500 mt-1">
+                Staff are loaded from the API. Custom role titles appear after you create a role assignment.
+              </p>
+            </div>
+            {loadingStaff ? (
+              <div className="p-6 text-center text-sm text-gray-500">Loading staff…</div>
+            ) : staffUsers.length === 0 ? (
+              <div className="p-6 text-center text-sm text-gray-500">
+                No staff found. Add staff in User Management first.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">Staff name</th>
+                      <th className="px-4 py-3 font-medium">Custom role</th>
+                      <th className="px-4 py-3 font-medium">System role</th>
+                      <th className="px-4 py-3 font-medium">Permissions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {staffUsers.map((user) => {
+                      const assignment = getLatestAssignmentForStaff(assignments, user.id);
+                      const permissionList = extractPermissionNames(user);
+                      const displayPermissions =
+                        permissionList.length > 0
+                          ? permissionList.join(", ")
+                          : assignment?.permissions.join(", ") ?? "—";
+
+                      return (
+                        <tr key={user.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 text-gray-900 font-medium">
+                            {user.firstName} {user.lastName}
+                          </td>
+                          <td className="px-4 py-3 text-gray-700">
+                            {assignment?.roleTitle ?? "—"}
+                          </td>
+                          <td className="px-4 py-3 text-gray-700">
+                            {formatRole(assignment?.systemRole ?? user.role)}
+                          </td>
+                          <td className="px-4 py-3 text-gray-600 text-xs">{displayPermissions}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {assignments.length > 0 && (
+            <div className="mt-4 bg-orange-50 border border-orange-100 rounded-lg p-4">
+              <h4 className="text-sm font-semibold text-gray-800 mb-2">Recently created roles</h4>
+              <ul className="space-y-1 text-sm text-gray-700">
+                {[...assignments].reverse().slice(0, 5).map((record) => (
+                  <li key={record.id}>
+                    <span className="font-medium">{record.roleTitle}</span>
+                    {" — "}
+                    {record.staffIds
+                      .map((id) => {
+                        const user = staffUsers.find((s) => s.id === id);
+                        return user ? staffLabel(user) : id;
+                      })
+                      .join(", ")}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         {/* Navigation Sections */}
@@ -242,28 +402,34 @@ const RoleList = () => {
                     <select
                       ref={staffDropdownRef}
                       onChange={handleStaffChange}
-                      className="w-full px-3 py-2 border text-gray-700 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F36F2E] focus:border-transparent h-auto min-h-[42px]"
-                      value={""} // Controlled component, reset value after selection
+                      disabled={loadingStaff || staffUsers.length === 0}
+                      className="w-full px-3 py-2 border text-gray-700 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F36F2E] focus:border-transparent h-auto min-h-[42px] disabled:bg-gray-100"
+                      value=""
                     >
-                      <option value="" disabled hidden>None</option>
-                      {availableStaffs.map((staff) => (
-                        // Only show staff not yet selected
-                        !selectedStaffs.includes(staff.id) && (
-                          <option key={staff.id} value={staff.id}>
-                            {staff.name}
+                      <option value="" disabled>
+                        {loadingStaff
+                          ? "Loading staff from system…"
+                          : staffUsers.length === 0
+                            ? "No staff in system — add users in User Management"
+                            : "Select a staff member"}
+                      </option>
+                      {staffUsers
+                        .filter((user) => !selectedStaffs.includes(user.id))
+                        .map((user) => (
+                          <option key={user.id} value={user.id}>
+                            {staffLabel(user)}
                           </option>
-                        )
-                      ))}
+                        ))}
                     </select>
                     {selectedStaffs.length > 0 && (
                       <div className="mt-2">
                         <p className="text-xs font-medium text-gray-700">Selected Staff:</p>
                         <div className="flex flex-wrap gap-1 mt-1">
                           {selectedStaffs.map((id) => {
-                            const staff = availableStaffs.find((s) => s.id === id);
+                            const user = staffUsers.find((s) => s.id === id);
                             return (
                               <span key={id} className="inline-flex items-center text-xs text-gray-700 bg-gray-100 px-2 py-1 rounded">
-                                {staff ? staff.name : id}
+                                {user ? staffLabel(user) : id}
                                 <button
                                   type="button"
                                   onClick={() => removeSelectedStaff(id)}
@@ -293,6 +459,61 @@ const RoleList = () => {
                       onChange={(e) => setRoleTitle(e.target.value)}
                       required
                     />
+                  </div>
+
+                  <div className="mb-4 sm:mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      System role (API) <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={systemRole}
+                      onChange={(e) => setSystemRole(e.target.value as SystemRole)}
+                      className="w-full px-3 py-2 border text-gray-700 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F36F2E] focus:border-transparent"
+                    >
+                      <option value="STAFF">Staff</option>
+                      <option value="ADMIN">Admin</option>
+                      <option value="SUPER_ADMIN">Super Admin</option>
+                    </select>
+                  </div>
+
+                  <div className="mb-4 sm:mb-6">
+                    <p className="text-xs font-medium text-gray-700 mb-2">Quick permissions (saved to API)</p>
+                    <div className="flex flex-wrap gap-2">
+                      {API_PERMISSIONS.map((perm) => {
+                        const on =
+                          perm === "VIEW_CLIENTS"
+                            ? permissions.createClient || permissions.editClientInformation
+                            : permissions.allTansactions || permissions.transactionMatched;
+                        return (
+                          <button
+                            key={perm}
+                            type="button"
+                            onClick={() => {
+                              if (perm === "VIEW_CLIENTS") {
+                                setPermissions((prev) => ({
+                                  ...prev,
+                                  createClient: !on,
+                                  editClientInformation: !on,
+                                }));
+                              } else {
+                                setPermissions((prev) => ({
+                                  ...prev,
+                                  allTansactions: !on,
+                                  transactionMatched: !on,
+                                }));
+                              }
+                            }}
+                            className={`px-3 py-1 rounded-full border text-xs ${
+                              on
+                                ? "bg-[#F36F2E] text-white border-[#F36F2E]"
+                                : "bg-white text-gray-700 border-gray-300"
+                            }`}
+                          >
+                            {perm}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
 
                   {/* Account Codes dropdown (commented out in original, kept as is) */}
@@ -372,9 +593,10 @@ const RoleList = () => {
                     </button>
                     <button
                       type="submit"
-                      className="px-3 py-2 sm:px-4 sm:py-2 bg-[#F36F2E] text-white rounded-md hover:bg-[#E05C2B] transition-colors text-sm"
+                      disabled={submitting}
+                      className="px-3 py-2 sm:px-4 sm:py-2 bg-[#F36F2E] text-white rounded-md hover:bg-[#E05C2B] transition-colors text-sm disabled:opacity-60"
                     >
-                      Create Role
+                      {submitting ? "Saving…" : "Create Role"}
                     </button>
                   </div>
                 </form>

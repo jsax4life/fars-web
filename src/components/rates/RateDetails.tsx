@@ -1,11 +1,21 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Sidebar from "@/components/utility/Sidebar";
 import Navbar from "@/components/nav/Navbar";
 import { useRates, type RateSummary } from "@/hooks/useRates";
 import { useUserAuth } from "@/hooks/useUserAuth";
+import { useBanks } from "@/hooks/useBank";
+import RateDecimalInput from "@/components/rates/RateDecimalInput";
+import {
+  formatDecimalField,
+  formatLoanInterestTypeLabel,
+  mergedLoanInterestRates,
+  RATE_CURRENCIES,
+  resolveBankName,
+  resolveDocumentBankName,
+} from "@/lib/rateFormUtils";
 import { FiEye, FiDownload, FiLink, FiMinus, FiMessageCircle, FiTrash2 } from "react-icons/fi";
 
 const RateDetails = () => {
@@ -14,6 +24,8 @@ const RateDetails = () => {
   const id = Array.isArray(params?.id) ? params.id[0] : (params?.id as string);
   const { getRateById, updateRate, getRateDocuments, getAllContractDocuments, assignRateToDocument, unassignRateFromDocument, getRateComments, createRateComment, getRateCommentById, updateRateComment, deleteRateComment } = useRates();
   const { user } = useUserAuth();
+  const { getBanks } = useBanks();
+  const [banks, setBanks] = useState<{ id: string; name: string; code?: string }[]>([]);
   const [rate, setRate] = useState<RateSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [showMore, setShowMore] = useState(false);
@@ -95,6 +107,13 @@ const RateDetails = () => {
       setLoadingAvailableDocuments(false);
     }
   };
+
+  useEffect(() => {
+    getBanks().then((data) => {
+      if (Array.isArray(data)) setBanks(data);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -179,23 +198,24 @@ const RateDetails = () => {
     if (!rate) return;
     setForm({
       rateType: rate.rateType || '',
-      currency: rate.currency || '',
+      currency: rate.currency || 'NGN',
       effectiveFrom: rate.effectiveFrom ? rate.effectiveFrom.substring(0, 10) : '',
       effectiveTo: rate.effectiveTo ? rate.effectiveTo.substring(0, 10) : '',
-      camfRate: rate.camfRate ?? '',
-      returnChargeRate: rate.returnChargeRate ?? '',
-      returnChargeLimit: rate.returnChargeLimit ?? '',
-      cotCovenantRate: rate.cotCovenantRate ?? '',
-      cotOffCoverRate: rate.cotOffCoverRate ?? '',
-      cotOICRate: rate.cotOICRate ?? '',
-      turnoverLimit: rate.turnoverLimit ?? '',
+      camfRate: formatDecimalField(rate.camfRate),
+      managementFeeRate: formatDecimalField(rate.managementFeeRate),
+      returnChargeRate: formatDecimalField(rate.returnChargeRate),
+      returnChargeLimit: formatDecimalField(rate.returnChargeLimit),
+      cotCovenantRate: formatDecimalField(rate.cotCovenantRate),
+      cotOffCoverRate: formatDecimalField(rate.cotOffCoverRate),
+      cotOICRate: formatDecimalField(rate.cotOICRate),
+      turnoverLimit: formatDecimalField(rate.turnoverLimit),
       cotCovenantFrequency: rate.cotCovenantFrequency ?? '',
       chargeCOTOnShortfall: rate.chargeCOTOnShortfall ?? false,
-      debitRate: rate.debitRate ?? '',
-      excessRate: rate.excessRate ?? '',
+      debitRate: formatDecimalField(rate.debitRate),
+      excessRate: formatDecimalField(rate.excessRate),
       excessRateType: rate.excessRateType ?? '',
-      vatRate: rate.vatRate ?? '',
-      whtRate: rate.whtRate ?? '',
+      vatRate: formatDecimalField(rate.vatRate),
+      whtRate: formatDecimalField(rate.whtRate),
     });
     setIsEditing(true);
     setShowMore(true);
@@ -214,6 +234,7 @@ const RateDetails = () => {
       effectiveFrom: form.effectiveFrom ? new Date(form.effectiveFrom).toISOString() : undefined,
       effectiveTo: form.effectiveTo ? new Date(form.effectiveTo).toISOString() : undefined,
       camfRate: form.camfRate === '' ? undefined : Number(form.camfRate),
+      managementFeeRate: form.managementFeeRate === '' ? undefined : Number(form.managementFeeRate),
       returnChargeRate: form.returnChargeRate === '' ? undefined : Number(form.returnChargeRate),
       returnChargeLimit: form.returnChargeLimit === '' ? undefined : Number(form.returnChargeLimit),
       cotCovenantRate: form.cotCovenantRate === '' ? undefined : Number(form.cotCovenantRate),
@@ -343,6 +364,25 @@ const RateDetails = () => {
   };
 
   // Check if current user is the owner of a comment
+  const ratesById = useMemo(() => {
+    const map = new Map<string, RateSummary>();
+    if (rate) map.set(rate.id, rate);
+    return map;
+  }, [rate]);
+
+  const rateBankName =
+    rate?.bank?.name ||
+    resolveBankName(rate?.bankId, banks) ||
+    "-";
+
+  const documentBankLabel = (doc: {
+    bank?: { name?: string };
+    bankName?: string;
+    bankId?: string;
+    bankCode?: string;
+    rates?: Array<{ id?: string } | string>;
+  }) => resolveDocumentBankName(doc, banks, ratesById);
+
   const isCommentOwner = (comment: any): boolean => {
     if (!user) return false;
     
@@ -389,7 +429,7 @@ const RateDetails = () => {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-      <div className="flex-1 md:ml-64 md:mt-0">
+      <div className="flex-1 min-w-0 md:mt-0">
         <div className="mb-4"><Navbar /></div>
         <main className="p-4 sm:p-6 lg:p-8 pt-32 md:pt-32">
           <div className="flex items-center gap-3 mb-6">
@@ -403,10 +443,18 @@ const RateDetails = () => {
               </svg>
             </button>
             <h2 className="text-[#363636] text-lg md:text-xl font-semibold">Rate Details</h2>
-            <div className="ml-auto flex items-center gap-2">
+            <div className="ml-auto flex items-center gap-3">
+              {!isEditing && (
+                <button
+                  onClick={startEdit}
+                  className="px-3 py-2 text-sm bg-orange-600 text-white rounded-md hover:bg-orange-700"
+                >
+                  Adjust Rate
+                </button>
+              )}
               <button
                 onClick={handleOpenComments}
-                className="relative p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-700"
+                className="relative p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-700 ml-1"
                 title="View Comments"
               >
                 <FiMessageCircle className="h-5 w-5" />
@@ -416,9 +464,6 @@ const RateDetails = () => {
                   </span>
                 )}
               </button>
-              {!isEditing && (
-                <button onClick={startEdit} className="px-3 py-2 text-sm bg-orange-600 text-white rounded-md hover:bg-orange-700">Adjust Rate</button>
-              )}
               {isEditing && (
                 <>
                   <button onClick={() => setIsEditing(false)} className="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700">Cancel</button>
@@ -436,6 +481,7 @@ const RateDetails = () => {
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-8 text-sm text-gray-700">
                 <div className="flex items-start gap-2"><dt className="min-w-[140px] text-gray-500">Code</dt><dd className="font-medium text-gray-800">{rate.code}</dd></div>
                 <div className="flex items-start gap-2"><dt className="min-w-[140px] text-gray-500">Client</dt><dd className="font-medium text-gray-800">{rate.client?.companyName || [rate.client?.firstName, rate.client?.lastName].filter(Boolean).join(' ') || '-'}</dd></div>
+                <div className="flex items-start gap-2"><dt className="min-w-[140px] text-gray-500">Bank</dt><dd className="font-medium text-gray-800">{rateBankName}</dd></div>
                 {!isEditing ? (
                   <>
                     <div className="flex items-start gap-2"><dt className="min-w-[140px] text-gray-500">Currency</dt><dd className="font-medium text-gray-800">{rate.currency || '-'}</dd></div>
@@ -448,7 +494,11 @@ const RateDetails = () => {
                     <div className="flex items-center gap-2">
                       <dt className="min-w-[140px] text-gray-500">Currency</dt>
                       <dd>
-                        <input name="currency" value={form.currency} onChange={onChange} className="px-2 py-1 border border-gray-300 rounded-md text-sm" />
+                        <select name="currency" value={form.currency} onChange={onChange} className="px-2 py-1 border border-gray-300 rounded-md text-sm">
+                          {RATE_CURRENCIES.map((c) => (
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                        </select>
                       </dd>
                     </div>
                     <div className="flex items-center gap-2">
@@ -475,6 +525,53 @@ const RateDetails = () => {
                 <div className="flex items-start gap-2"><dt className="min-w-[140px] text-gray-500">Updated</dt><dd className="font-medium text-gray-800">{rate.updatedAt ? new Date(rate.updatedAt).toLocaleString() : '-'}</dd></div>
               </dl>
 
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div className="p-4 rounded-md border border-gray-200 bg-gray-50">
+                  <h3 className="font-semibold text-gray-800 mb-2">CAMF Rate</h3>
+                  {isEditing ? (
+                    <RateDecimalInput name="camfRate" value={String(form.camfRate ?? '')} onChange={onChange} className="w-full px-2 py-1 border rounded-md bg-white" />
+                  ) : (
+                    <p className="text-gray-800 font-medium">{rate.camfRate ?? '-'}{rate.camfRate != null ? '%' : ''}</p>
+                  )}
+                </div>
+                <div className="p-4 rounded-md border border-gray-200 bg-gray-50">
+                  <h3 className="font-semibold text-gray-800 mb-2">Management Fee Rate</h3>
+                  {isEditing ? (
+                    <RateDecimalInput name="managementFeeRate" value={String(form.managementFeeRate ?? '')} onChange={onChange} className="w-full px-2 py-1 border rounded-md bg-white" />
+                  ) : (
+                    <p className="text-gray-800 font-medium">{rate.managementFeeRate ?? '-'}{rate.managementFeeRate != null ? '%' : ''}</p>
+                  )}
+                </div>
+              </div>
+
+              {(rate.fees?.length ?? 0) > 0 && (
+                <div className="mt-6">
+                  <h3 className="font-semibold text-gray-800 mb-3">Related fees</h3>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Rate / amount</th>
+                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Effective from</th>
+                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Effective to</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {(rate.fees || []).map((fee, i) => (
+                          <tr key={i}>
+                            <td className="px-3 py-2 text-sm">{fee.name}</td>
+                            <td className="px-3 py-2 text-sm">{fee.rate != null ? `${fee.rate}%` : fee.amount != null ? fee.amount : '-'}</td>
+                            <td className="px-3 py-2 text-sm">{fee.effectiveFrom ? new Date(fee.effectiveFrom).toLocaleDateString() : '-'}</td>
+                            <td className="px-3 py-2 text-sm">{fee.effectiveTo ? new Date(fee.effectiveTo).toLocaleDateString() : '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
               <div className="mt-6">
                 <button
                   onClick={() => setShowMore(v => !v)}
@@ -491,24 +588,22 @@ const RateDetails = () => {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-700 mt-6">
                     {isEditing ? (
                       <>
-                        <div><label className="block text-gray-500 text-xs mb-1">CAMF Rate</label><input name="camfRate" value={form.camfRate} onChange={onChange} className="w-full px-2 py-1 border rounded-md" /></div>
-                        <div><label className="block text-gray-500 text-xs mb-1">Return Charge Rate</label><input name="returnChargeRate" value={form.returnChargeRate} onChange={onChange} className="w-full px-2 py-1 border rounded-md" /></div>
-                        <div><label className="block text-gray-500 text-xs mb-1">Return Charge Limit</label><input name="returnChargeLimit" value={form.returnChargeLimit} onChange={onChange} className="w-full px-2 py-1 border rounded-md" /></div>
-                        <div><label className="block text-gray-500 text-xs mb-1">COT Covenant Rate</label><input name="cotCovenantRate" value={form.cotCovenantRate} onChange={onChange} className="w-full px-2 py-1 border rounded-md" /></div>
-                        <div><label className="block text-gray-500 text-xs mb-1">COT Off Cover Rate</label><input name="cotOffCoverRate" value={form.cotOffCoverRate} onChange={onChange} className="w-full px-2 py-1 border rounded-md" /></div>
-                        <div><label className="block text-gray-500 text-xs mb-1">COT OIC Rate</label><input name="cotOICRate" value={form.cotOICRate} onChange={onChange} className="w-full px-2 py-1 border rounded-md" /></div>
-                        <div><label className="block text-gray-500 text-xs mb-1">Turnover Limit</label><input name="turnoverLimit" value={form.turnoverLimit} onChange={onChange} className="w-full px-2 py-1 border rounded-md" /></div>
+                        <div><label className="block text-gray-500 text-xs mb-1">Return Charge Rate</label><RateDecimalInput name="returnChargeRate" value={String(form.returnChargeRate ?? '')} onChange={onChange} className="w-full px-2 py-1 border rounded-md" /></div>
+                        <div><label className="block text-gray-500 text-xs mb-1">Return Charge Limit</label><RateDecimalInput name="returnChargeLimit" value={String(form.returnChargeLimit ?? '')} onChange={onChange} className="w-full px-2 py-1 border rounded-md" /></div>
+                        <div><label className="block text-gray-500 text-xs mb-1">COT Covenant Rate</label><RateDecimalInput name="cotCovenantRate" value={String(form.cotCovenantRate ?? '')} onChange={onChange} className="w-full px-2 py-1 border rounded-md" /></div>
+                        <div><label className="block text-gray-500 text-xs mb-1">COT Off Cover Rate</label><RateDecimalInput name="cotOffCoverRate" value={String(form.cotOffCoverRate ?? '')} onChange={onChange} className="w-full px-2 py-1 border rounded-md" /></div>
+                        <div><label className="block text-gray-500 text-xs mb-1">COT OIC Rate</label><RateDecimalInput name="cotOICRate" value={String(form.cotOICRate ?? '')} onChange={onChange} className="w-full px-2 py-1 border rounded-md" /></div>
+                        <div><label className="block text-gray-500 text-xs mb-1">Turnover Limit</label><RateDecimalInput name="turnoverLimit" value={String(form.turnoverLimit ?? '')} onChange={onChange} className="w-full px-2 py-1 border rounded-md" /></div>
                         <div><label className="block text-gray-500 text-xs mb-1">COT Covenant Frequency</label><input name="cotCovenantFrequency" value={form.cotCovenantFrequency} onChange={onChange} className="w-full px-2 py-1 border rounded-md" /></div>
                         <div className="flex items-center gap-2 mt-5"><input type="checkbox" name="chargeCOTOnShortfall" checked={!!form.chargeCOTOnShortfall} onChange={onChange} /><span>Charge COT On Shortfall</span></div>
-                        <div><label className="block text-gray-500 text-xs mb-1">Debit Rate</label><input name="debitRate" value={form.debitRate} onChange={onChange} className="w-full px-2 py-1 border rounded-md" /></div>
-                        <div><label className="block text-gray-500 text-xs mb-1">Excess Rate</label><input name="excessRate" value={form.excessRate} onChange={onChange} className="w-full px-2 py-1 border rounded-md" /></div>
+                        <div><label className="block text-gray-500 text-xs mb-1">Debit Rate</label><RateDecimalInput name="debitRate" value={String(form.debitRate ?? '')} onChange={onChange} className="w-full px-2 py-1 border rounded-md" /></div>
+                        <div><label className="block text-gray-500 text-xs mb-1">Excess Rate</label><RateDecimalInput name="excessRate" value={String(form.excessRate ?? '')} onChange={onChange} className="w-full px-2 py-1 border rounded-md" /></div>
                         <div><label className="block text-gray-500 text-xs mb-1">Excess Rate Type</label><input name="excessRateType" value={form.excessRateType} onChange={onChange} className="w-full px-2 py-1 border rounded-md" /></div>
-                        <div><label className="block text-gray-500 text-xs mb-1">VAT Rate</label><input name="vatRate" value={form.vatRate} onChange={onChange} className="w-full px-2 py-1 border rounded-md" /></div>
-                        <div><label className="block text-gray-500 text-xs mb-1">WHT Rate</label><input name="whtRate" value={form.whtRate} onChange={onChange} className="w-full px-2 py-1 border rounded-md" /></div>
+                        <div><label className="block text-gray-500 text-xs mb-1">VAT Rate</label><RateDecimalInput name="vatRate" value={String(form.vatRate ?? '')} onChange={onChange} className="w-full px-2 py-1 border rounded-md" /></div>
+                        <div><label className="block text-gray-500 text-xs mb-1">WHT Rate</label><RateDecimalInput name="whtRate" value={String(form.whtRate ?? '')} onChange={onChange} className="w-full px-2 py-1 border rounded-md" /></div>
                       </>
                     ) : (
                       <>
-                        <div><span className="font-medium">CAMF Rate:</span> {rate.camfRate ?? '-'}</div>
                         <div><span className="font-medium">Return Charge Rate:</span> {rate.returnChargeRate ?? '-'}</div>
                         <div><span className="font-medium">Return Charge Limit:</span> {rate.returnChargeLimit ?? '-'}</div>
                         <div><span className="font-medium">COT Covenant Rate:</span> {rate.cotCovenantRate ?? '-'}</div>
@@ -528,12 +623,12 @@ const RateDetails = () => {
 
                   {/* Arrays */}
                   {[
-                    { title: 'Debit Rates', data: rate.drRates },
-                    { title: 'Loan Interest Rates', data: rate.loanInterestRates },
-                    { title: 'LC Commissions', data: rate.lcCommissions },
-                    { title: 'Pre-Negotiation Rates', data: rate.preNegotiationRates },
-                    { title: 'Post-Negotiation Rates', data: rate.postNegotiationRates },
-                    { title: 'Credit Interest Rates', data: rate.creditInterestRates },
+                    { title: 'Debit Rates', data: rate.drRates, showLoanType: false },
+                    { title: 'Loan Interest Rates', data: mergedLoanInterestRates(rate), showLoanType: true },
+                    { title: 'LC Commissions', data: rate.lcCommissions, showLoanType: false },
+                    { title: 'Pre-Negotiation Rates', data: rate.preNegotiationRates, showLoanType: false },
+                    { title: 'Post-Negotiation Rates', data: rate.postNegotiationRates, showLoanType: false },
+                    { title: 'Credit Interest Rates', data: rate.creditInterestRates, showLoanType: false },
                   ].map((section, idx) => (
                     <div key={idx} className="mt-8">
                       <h3 className="font-semibold text-gray-800 mb-3">{section.title}</h3>
@@ -541,6 +636,9 @@ const RateDetails = () => {
                         <table className="min-w-full divide-y divide-gray-200">
                           <thead className="bg-gray-50">
                             <tr>
+                              {section.showLoanType && (
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loan type</th>
+                              )}
                               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rate</th>
                               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Effective From</th>
                               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Effective To</th>
@@ -549,6 +647,11 @@ const RateDetails = () => {
                           <tbody className="bg-white divide-y divide-gray-200">
                             {(section.data || []).map((r, i) => (
                               <tr key={i}>
+                                {section.showLoanType && (
+                                  <td className="px-3 py-2 text-sm text-gray-700">
+                                    {formatLoanInterestTypeLabel((r as { loanType?: string }).loanType)}
+                                  </td>
+                                )}
                                 <td className="px-3 py-2 text-sm text-gray-700">{r.rate}</td>
                                 <td className="px-3 py-2 text-sm text-gray-700">{new Date(r.effectiveFrom).toLocaleDateString()}</td>
                                 <td className="px-3 py-2 text-sm text-gray-700">{new Date(r.effectiveTo).toLocaleDateString()}</td>
@@ -556,7 +659,7 @@ const RateDetails = () => {
                             ))}
                             {(!section.data || section.data.length === 0) && (
                               <tr>
-                                <td colSpan={3} className="px-3 py-4 text-center text-gray-500 text-sm">No entries</td>
+                                <td colSpan={section.showLoanType ? 4 : 3} className="px-3 py-4 text-center text-gray-500 text-sm">No entries</td>
                               </tr>
                             )}
                           </tbody>
@@ -577,7 +680,7 @@ const RateDetails = () => {
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bank</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uploaded</th>
@@ -585,9 +688,11 @@ const RateDetails = () => {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {documents.map((doc) => (
+                        {documents.map((doc) => {
+                          const docBank = documentBankLabel(doc);
+                          return (
                           <tr key={doc.id}>
-                            <td className="px-4 py-3 text-sm text-gray-700">{doc.code || '-'}</td>
+                            <td className="px-4 py-3 text-sm text-gray-700">{docBank !== '-' ? docBank : rateBankName}</td>
                             <td className="px-4 py-3 text-sm text-gray-700">{doc.title || '-'}</td>
                             <td className="px-4 py-3 text-sm text-gray-700">{doc.type || '-'}</td>
                             <td className="px-4 py-3 text-sm text-gray-700">
@@ -643,7 +748,8 @@ const RateDetails = () => {
                               </div>
                             </td>
                           </tr>
-                        ))}
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -662,7 +768,7 @@ const RateDetails = () => {
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bank</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uploaded</th>
@@ -672,7 +778,7 @@ const RateDetails = () => {
                       <tbody className="bg-white divide-y divide-gray-200">
                         {availableDocuments.map((doc) => (
                           <tr key={doc.id}>
-                            <td className="px-4 py-3 text-sm text-gray-700">{doc.code || '-'}</td>
+                            <td className="px-4 py-3 text-sm text-gray-700">{documentBankLabel(doc)}</td>
                             <td className="px-4 py-3 text-sm text-gray-700">{doc.title || '-'}</td>
                             <td className="px-4 py-3 text-sm text-gray-700">{doc.type || '-'}</td>
                             <td className="px-4 py-3 text-sm text-gray-700">

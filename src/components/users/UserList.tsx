@@ -67,6 +67,7 @@ const UserList = () => {
   const [usernameAvailable, setUsernameAvailable] = useState<null | boolean>(null);
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [checkingUsername, setCheckingUsername] = useState(false);
+  const [showCreatePassword, setShowCreatePassword] = useState(false);
   const [newAdmin, setNewAdmin] = useState<NewAdmin>({
     fullName: "",
     email: "",
@@ -571,6 +572,7 @@ const UserList = () => {
     }
 
     setShowCreateModal(false);
+    setShowCreatePassword(false);
     setLoading(true);
 
     createUser({
@@ -660,7 +662,7 @@ const UserList = () => {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-        <div className="flex-1 md:ml-64 md:mt-0">
+        <div className="flex-1 min-w-0 md:mt-0">
                     <div className = "mb-4"><Navbar /></div>
                     
       {loading && (
@@ -925,7 +927,10 @@ const UserList = () => {
                 <div className="flex justify-between items-center mb-4 sticky top-0 bg-white py-2">
                   <h3 className="text-lg text-black font-semibold">Create New User</h3>
                   <button
-                    onClick={() => setShowCreateModal(false)}
+                    onClick={() => {
+                      setShowCreateModal(false);
+                      setShowCreatePassword(false);
+                    }}
                     className="text-black hover:text-gray-700"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -991,14 +996,26 @@ const UserList = () => {
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                    <input
-                      type="password"
-                      name="password"
-                      value={newAdmin.password}
-                      onChange={handleInputChange}
-                      placeholder="Enter Password"
-                      className="w-full px-3 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
-                    />
+                    <div className="relative">
+                      <input
+                        type={showCreatePassword ? "text" : "password"}
+                        name="password"
+                        value={newAdmin.password}
+                        onChange={handleInputChange}
+                        placeholder="Enter Password"
+                        autoComplete="new-password"
+                        aria-label="Password"
+                        className="w-full px-3 pr-16 text-black py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#F36F2E]"
+                      />
+                      <button
+                        type="button"
+                        aria-label={showCreatePassword ? "Hide password" : "Show password"}
+                        onClick={() => setShowCreatePassword((s) => !s)}
+                        className="absolute inset-y-0 right-0 px-3 text-sm text-gray-600 hover:text-gray-900"
+                      >
+                        {showCreatePassword ? "Hide" : "Show"}
+                      </button>
+                    </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>

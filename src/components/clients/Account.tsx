@@ -388,12 +388,10 @@ const Account = () => {
   }, [activeAccountTab, clientId])
 
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-gray-100 overflow-hidden">
-      <div className="hidden md:block fixed h-full w-64">
-        <Sidebar />
-      </div>
+    <div className="flex min-h-screen bg-gray-100 overflow-hidden">
+      <Sidebar />
 
-      <div className="flex-1 md:ml-64 overflow-auto mt-16 md:mt-0">
+      <div className="flex-1 min-w-0 overflow-auto mt-16 md:mt-0 pt-14 md:pt-0">
         <div className="bg-gray-100 min-h-full p-4 md:p-6">
           <div className="bg-white rounded-md shadow-md p-4 md:p-6">
               <div className="flex flex-col items-start gap-4 mb-4">

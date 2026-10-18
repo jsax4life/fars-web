@@ -11,6 +11,7 @@ export interface RateSummary {
     rate: number;
     effectiveFrom: string;
     effectiveTo: string;
+    loanType?: string;
   }[];
   lcCommissions?: {
     rate: number;
@@ -33,6 +34,27 @@ export interface RateSummary {
     effectiveTo: string;
   }[];
   camfRate?: number | null;
+  managementFeeRate?: number | null;
+  loanInterestLoanType?: 'shortTerm' | 'termLoan' | string;
+  shortTermLoanInterestRates?: {
+    rate: number;
+    effectiveFrom: string;
+    effectiveTo: string;
+  }[];
+  termLoanInterestRates?: {
+    rate: number;
+    effectiveFrom: string;
+    effectiveTo: string;
+  }[];
+  fees?: Array<{
+    name: string;
+    rate?: number;
+    amount?: number;
+    effectiveFrom?: string;
+    effectiveTo?: string;
+  }>;
+  bankId?: string;
+  bank?: { id: string; name: string; code?: string };
   returnChargeRate?: number;
   returnChargeLimit?: number;
   cotCovenantRate?: number;
@@ -110,6 +132,7 @@ export const useRates = () => {
 
   const createRate = async (payload: {
     clientId: string;
+    bankId?: string;
     drRates?: { rate: number; effectiveFrom: string; effectiveTo: string }[];
     loanInterestRates?: {
       rate: number;
@@ -136,6 +159,31 @@ export const useRates = () => {
       effectiveFrom: string;
       effectiveTo: string;
     }[];
+    camfRate?: number;
+    managementFeeRate?: number;
+    shortTermLoanInterestRates?: {
+      rate: number;
+      effectiveFrom: string;
+      effectiveTo: string;
+    }[];
+    termLoanInterestRates?: {
+      rate: number;
+      effectiveFrom: string;
+      effectiveTo: string;
+    }[];
+    loanInterestRates?: {
+      rate: number;
+      effectiveFrom: string;
+      effectiveTo: string;
+      loanType?: string;
+    }[];
+    fees?: Array<{
+      name: string;
+      rate?: number;
+      amount?: number;
+      effectiveFrom?: string;
+      effectiveTo?: string;
+    }>;
     returnChargeRate?: number;
     returnChargeLimit?: number;
     cotCovenantRate?: number;

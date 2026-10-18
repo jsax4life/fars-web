@@ -79,7 +79,7 @@ const SavedFiles = () => {
     <Sidebar />
 
     {/* Main Content */}
-    <div className="flex-1 p-6 bg-white shadow-md rounded-lg overflow-y-auto">
+    <div className="flex-1 min-w-0 p-6 pt-14 md:pt-6 bg-white shadow-md rounded-lg overflow-y-auto">
       <div className="flex justify-between items-center mb-6">
         <button className="flex items-center gap-2 text-gray-600">
           <FaArrowLeft />

@@ -162,7 +162,7 @@ const RateViewModal: React.FC<RateViewModalProps> = ({ rateId, isOpen, onClose }
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center md:ml-64 z-[9999] p-4 overflow-y-auto">
+    <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] flex items-center justify-center z-[9999] p-4 overflow-y-auto">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center p-6 border-b border-gray-200 sticky top-0 bg-white">
           <h3 className="text-lg font-bold text-gray-900">Rate Details</h3>

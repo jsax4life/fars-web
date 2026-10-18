@@ -1,14 +1,18 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import Sidebar from "@/components/utility/Sidebar";
 import Navbar from "@/components/nav/Navbar";
 import { useRates, type RateSummary } from "@/hooks/useRates";
+import { useBanks } from "@/hooks/useBank";
+import { resolveBankName, resolveDocumentBankName } from "@/lib/rateFormUtils";
 import Link from "next/link";
 import { FiX, FiUpload, FiEye, FiDownload, FiEdit, FiTrash2, FiMoreVertical } from "react-icons/fi";
 
 const RatesList = () => {
   const { getRates, deleteRate, uploadRateDocument, getAllContractDocuments, getDocumentById, updateRateDocument, deleteRateDocument } = useRates();
+  const { getBanks } = useBanks();
+  const [banks, setBanks] = useState<{ id: string; name: string; code?: string }[]>([]);
   const [activeTab, setActiveTab] = useState<'rates' | 'documents'>('rates');
   const [rates, setRates] = useState<RateSummary[]>([]);
   const [loading, setLoading] = useState(false);
@@ -54,8 +58,18 @@ const RatesList = () => {
       }
     };
     load();
+    getBanks().then((data) => {
+      if (!cancelled && Array.isArray(data)) setBanks(data);
+    });
     return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const ratesById = useMemo(() => {
+    const map = new Map<string, RateSummary>();
+    rates.forEach((r) => map.set(r.id, r));
+    return map;
+  }, [rates]);
 
   useEffect(() => {
     if (activeTab === 'documents') {
@@ -315,7 +329,7 @@ const RatesList = () => {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-      <div className="flex-1 md:ml-64 md:mt-0">
+      <div className="flex-1 min-w-0 md:mt-0">
         <div className="mb-4"><Navbar /></div>
         <main className="p-4 sm:p-6 lg:p-8 pt-32 md:pt-32">
           <div className="mb-6 flex items-center justify-between">
@@ -377,6 +391,7 @@ const RatesList = () => {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bank</th>
                       <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
                       <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Currency</th>
                       <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DR Rate</th>
@@ -389,9 +404,11 @@ const RatesList = () => {
                     {rates.map((rate) => {
                       const dr = minimalRate(rate.drRates);
                       const clientName = rate.client?.companyName || [rate.client?.firstName, rate.client?.lastName].filter(Boolean).join(' ') || '-';
+                      const bankName = rate.bank?.name || resolveBankName(rate.bankId, banks);
                       return (
                         <tr key={rate.id}>
                           <td className="px-3 py-3 text-sm text-gray-700">{rate.code}</td>
+                          <td className="px-3 py-3 text-sm text-gray-700">{bankName}</td>
                           <td className="px-3 py-3 text-sm text-gray-700">{clientName}</td>
                           <td className="px-3 py-3 text-sm text-gray-700">{rate.currency || '-'}</td>
                           <td className="px-3 py-3 text-sm text-gray-700">{dr.rate}</td>
@@ -413,7 +430,7 @@ const RatesList = () => {
                     })}
                     {rates.length === 0 && (
                       <tr>
-                        <td colSpan={7} className="px-3 py-6 text-center text-gray-500 text-sm">No rates found.</td>
+                        <td colSpan={8} className="px-3 py-6 text-center text-gray-500 text-sm">No rates found.</td>
                       </tr>
                     )}
                   </tbody>
@@ -434,7 +451,7 @@ const RatesList = () => {
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bank</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uploaded</th>
@@ -445,7 +462,7 @@ const RatesList = () => {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {documents.map((doc) => (
                         <tr key={doc.id}>
-                          <td className="px-4 py-3 text-sm text-gray-700">{doc.code || '-'}</td>
+                          <td className="px-4 py-3 text-sm text-gray-700">{resolveDocumentBankName(doc, banks, ratesById)}</td>
                           <td className="px-4 py-3 text-sm text-gray-700">{doc.title || '-'}</td>
                           <td className="px-4 py-3 text-sm text-gray-700">{doc.type || '-'}</td>
                           <td className="px-4 py-3 text-sm text-gray-700">

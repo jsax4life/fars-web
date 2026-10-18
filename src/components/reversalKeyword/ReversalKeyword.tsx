@@ -358,7 +358,7 @@ const ReversalKeyword = () => {
   return (
     <div className="flex h-screen bg-gray-100">
       <Sidebar />
-      <main className="flex-1 md:ml-64 pt-10 md:pt-10 overflow-y-auto">
+      <main className="flex-1 min-w-0 pt-10 md:pt-10 overflow-y-auto">
         <Navbar />
         <div className="p-6">
           <div className="bg-white rounded-lg shadow-md p-6">

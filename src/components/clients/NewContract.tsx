@@ -275,7 +275,7 @@ const NewAccount = () => {
                 <Sidebar />
             </div>
 
-            <div className="flex-1 p-6 bg-white shadow-md rounded-lg overflow-y-auto md:ml-64">
+            <div className="flex-1 min-w-0 p-6 bg-white shadow-md rounded-lg overflow-y-auto pt-14 md:pt-6">
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
                         <h2 className="text-xl font-semibold mb-4 text-gray-800">Contract Information</h2>

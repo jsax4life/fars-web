@@ -1,10 +1,15 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Sidebar from "@/components/utility/Sidebar";
 import { CloudArrowUpIcon } from "@heroicons/react/24/outline";
 import Navbar from "../nav/Navbar";
-import { useAnalysis, AnalysisTypeResponse } from "@/hooks/useAnalysis";
+import { useAnalysis } from "@/hooks/useAnalysis";
+import {
+  normalizeAnalysisTypesForUi,
+  resolvePerformType,
+  type AnalysisTypeOption,
+} from "@/lib/analysisTypes";
 import { toast } from "sonner";
 import { useClients } from "@/hooks/useClient";
 import {
@@ -81,21 +86,9 @@ interface Transaction {
   periods?: string;
 }
 
-type AnalysisType =
-  | "CAMF"
-  | "ST Loan"
-    | "STIP Loan"
-  | "LT Loan"
-  | "Interest"
-  | "Debit"
-  | "Credit"
-  | "Collateral"
-  | "Fees"
-  | null;
-
 const AccountDetails = () => {
   const [selectedAnalysisType, setSelectedAnalysisType] =
-    useState<AnalysisType | null>(null);
+    useState<string | null>(null);
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [selectedBank, setSelectedBank] = useState<string | null>(null);
@@ -106,7 +99,7 @@ const AccountDetails = () => {
   const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false);
   const [isBankDropdownOpen, setIsBankDropdownOpen] = useState(false);
   const [isAccountsDropdownOpen, setIsAccountsDropdownOpen] = useState(false);
-  const [analysisTypes, setAnalysisTypes] = useState<AnalysisTypeResponse[]>([]);
+  const [analysisTypeOptions, setAnalysisTypeOptions] = useState<AnalysisTypeOption[]>([]);
   const [isLoadingAnalysisTypes, setIsLoadingAnalysisTypes] = useState(false);
   const { getAnalysisTypes } = useAnalysis();
   const { getClients } = useClients();
@@ -147,7 +140,7 @@ const AccountDetails = () => {
       try {
         setIsLoadingAnalysisTypes(true);
         const types = await getAnalysisTypes();
-        setAnalysisTypes(types);
+        setAnalysisTypeOptions(normalizeAnalysisTypesForUi(types));
       } catch (error) {
         console.error("Failed to load analysis types", error);
       } finally {
@@ -205,6 +198,23 @@ const AccountDetails = () => {
     fetchAccounts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedClientId]);
+
+  const accountsForSelection = useMemo(() => {
+    if (!selectedBank) return clientAccounts;
+    return clientAccounts.filter((acc) => acc.bank?.name === selectedBank);
+  }, [clientAccounts, selectedBank]);
+
+  const selectedAccountsLabel = useMemo(() => {
+    if (selectedAccounts.length === 0) return "Select Accounts";
+    const labels = selectedAccounts
+      .map((accountId) => {
+        const acc = clientAccounts.find((a) => a.id === accountId);
+        return acc?.accountNumber || acc?.accountName || accountId;
+      })
+      .filter(Boolean);
+    return labels.join(", ");
+  }, [selectedAccounts, clientAccounts]);
+
   const banks = [
     "UBA",
     "First Bank",
@@ -233,9 +243,15 @@ const AccountDetails = () => {
       return;
     }
 
+    const performType = resolvePerformType(analysisTypeOptions, selectedAnalysisType);
+    if (!performType) {
+      toast.error("Please select a valid analysis type");
+      return;
+    }
+
     try {
       setIsLoadingAnalysis(true);
-      const result = await runAnalysis(selectedAnalysisType, selectedAccounts);
+      const result = await runAnalysis(performType, selectedAccounts);
       setAnalysisResult(result);
     setDisplayAnalysisTable(true);
       toast.success("Analysis completed successfully");
@@ -1228,14 +1244,13 @@ const cmfAnalysisData: Transaction[] = [
   ];
 
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-gray-100 ">
-      <div className="hidden md:block fixed h-full w-64">
-        <Sidebar />
-      </div>
-
-      <div className="flex-1 md:ml-64 overflow-auto mt-16 md:mt-0">
-        <Navbar />
-        <div className="flex-1  p-4 md:p-6">
+    <div className="flex min-h-screen bg-gray-100">
+      <Sidebar />
+      <div className="flex-1 min-w-0 md:mt-0">
+        <div className="mb-4">
+          <Navbar />
+        </div>
+        <main className="p-4 sm:p-6 lg:p-8 pt-32 md:pt-32">
           <div className="bg-white rounded-md shadow-md p-4 md:p-6 mb-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-gray-700 text-xl font-semibold">
@@ -1288,24 +1303,29 @@ const cmfAnalysisData: Transaction[] = [
                         Loading analysis types...
                       </div>
                     )}
-                    {!isLoadingAnalysisTypes && analysisTypes.length === 0 && (
+                    {!isLoadingAnalysisTypes && analysisTypeOptions.length === 0 && (
                       <div className="py-2 px-3 text-sm text-gray-500">
                         No analysis types available
                       </div>
                     )}
                     {!isLoadingAnalysisTypes &&
-                      analysisTypes.map((type) => (
+                      analysisTypeOptions.map((type) => (
                       <div
                           key={type.id}
                         className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-orange-100"
                         onClick={() => {
-                            setSelectedAnalysisType(type.name as AnalysisType);
+                            setSelectedAnalysisType(type.name);
                           setIsAnalysisTypeDropdownOpen(false);
                         }}
                       >
                         <span className="font-normal text-black block truncate">
                             {type.name}
                         </span>
+                        {type.description && (
+                          <span className="text-xs text-gray-500 block truncate">
+                            {type.description}
+                          </span>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -1439,6 +1459,7 @@ const cmfAnalysisData: Transaction[] = [
                         className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-orange-100"
                         onClick={() => {
                             setSelectedBank(bank.name);
+                            setSelectedAccounts([]);
                           setIsBankDropdownOpen(false);
                         }}
                       >
@@ -1471,11 +1492,14 @@ const cmfAnalysisData: Transaction[] = [
                     setIsAccountsDropdownOpen(!isAccountsDropdownOpen)
                   }
                 >
-                  {selectedAccounts.length > 0
-                    ? `${selectedAccounts.length} selected`
-                    : "Select Accounts"}
+                  <span
+                    className="truncate flex-1 min-w-0 text-left"
+                    title={selectedAccountsLabel}
+                  >
+                    {selectedAccountsLabel}
+                  </span>
                   <svg
-                    className="-mr-0.5 ml-2 h-4 w-4"
+                    className="-mr-0.5 ml-2 h-4 w-4 shrink-0"
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 20 20"
                     fill="currentColor"
@@ -1495,42 +1519,53 @@ const cmfAnalysisData: Transaction[] = [
                         Loading accounts...
                       </div>
                     )}
-                    {!isLoadingAccounts && clientAccounts.length === 0 && (
+                    {!isLoadingAccounts && accountsForSelection.length === 0 && (
                       <div className="py-2 px-3 text-sm text-gray-500">
-                        No accounts available for this client
+                        {selectedBank
+                          ? "No accounts for this bank"
+                          : "No accounts available for this client"}
                       </div>
                     )}
-                    {!isLoadingAccounts && clientAccounts.length > 0 && (
+                    {!isLoadingAccounts && accountsForSelection.length > 0 && (
                       <>
                     <div
                       className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-orange-100"
                       onClick={() => {
-                            const allIds = clientAccounts.map((a) => a.id);
-                            if (selectedAccounts.length === allIds.length) {
-                          setSelectedAccounts([]);
+                            const allIds = accountsForSelection.map((a) => a.id);
+                            const allSelected = allIds.every((id) =>
+                              selectedAccounts.includes(id),
+                            );
+                            if (allSelected) {
+                              setSelectedAccounts((prev) =>
+                                prev.filter((id) => !allIds.includes(id)),
+                              );
                         } else {
-                              setSelectedAccounts(allIds);
+                              setSelectedAccounts((prev) => [
+                                ...new Set([...prev, ...allIds]),
+                              ]);
                         }
                       }}
                     >
                       <span className="font-normal text-black block truncate">
-                        Select All
+                        Select all{selectedBank ? ` (${selectedBank})` : ""}
                       </span>
                     </div>
-                        {clientAccounts.map((account) => (
+                        {accountsForSelection.map((account) => (
                       <div
                             key={account.id}
                         className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-orange-100 flex items-center"
                             onClick={() => handleAccountSelect(account.id)}
                       >
                         <input
-                              type="radio"
+                              type="checkbox"
                               checked={selectedAccounts.includes(account.id)}
                               readOnly
-                          className="form-radio h-4 w-4 text-orange-600 transition duration-150 ease-in-out"
+                          className="form-checkbox h-4 w-4 text-orange-600 rounded border-gray-300"
                         />
                         <span className="ml-2 text-black font-normal block truncate">
-                              {account.accountNumber} - {account.accountName}
+                              {account.accountNumber}
+                              {account.accountName ? ` — ${account.accountName}` : ""}
+                              {account.bank?.name ? ` (${account.bank.name})` : ""}
                         </span>
                       </div>
                     ))}
@@ -1622,6 +1657,51 @@ const cmfAnalysisData: Transaction[] = [
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
+                          {/* VC rows (should appear before CAMF) */}
+                          {monthData.vc &&
+                            Array.isArray(monthData.vc) &&
+                            monthData.vc.map((vcItem: any, vcIndex: number) => (
+                              <tr key={vcIndex}>
+                                <td className="px-4 py-3 text-sm font-semibold text-blue-600 border-r border-gray-300">
+                                  VC
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                                  {vcItem.transactionDate
+                                    ? new Date(vcItem.transactionDate).toLocaleDateString()
+                                    : "N/A"}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                                  {vcItem.valueDate
+                                    ? new Date(vcItem.valueDate).toLocaleDateString()
+                                    : "N/A"}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                                  {vcItem.amount?.toLocaleString() || "0.00"}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                                  {vcItem.balance?.toLocaleString() || "0.00"}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                                  {vcItem.type || "N/A"}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                                  {vcItem.description || "N/A"}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                                  {vcItem.reference || "N/A"}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                                  {vcItem.chequeNo || "N/A"}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                                  {vcItem.tellerNo || "N/A"}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                                  {vcItem.isReversal ? "Yes" : "No"}
+                                </td>
+                              </tr>
+                            ))}
+
                           {/* CAMF row */}
                           {monthData.camf && (
                             <tr>
@@ -1629,76 +1709,41 @@ const cmfAnalysisData: Transaction[] = [
                                 CAMF
                               </td>
                               <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
-                                {monthData.camf.transactionDate ? new Date(monthData.camf.transactionDate).toLocaleDateString() : 'N/A'}
+                                {monthData.camf.transactionDate
+                                  ? new Date(monthData.camf.transactionDate).toLocaleDateString()
+                                  : "N/A"}
                               </td>
                               <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
-                                {monthData.camf.valueDate ? new Date(monthData.camf.valueDate).toLocaleDateString() : 'N/A'}
+                                {monthData.camf.valueDate
+                                  ? new Date(monthData.camf.valueDate).toLocaleDateString()
+                                  : "N/A"}
                               </td>
                               <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
-                                {monthData.camf.amount?.toLocaleString() || '0.00'}
+                                {monthData.camf.amount?.toLocaleString() || "0.00"}
                               </td>
                               <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
-                                {monthData.camf.balance?.toLocaleString() || '0.00'}
+                                {monthData.camf.balance?.toLocaleString() || "0.00"}
                               </td>
                               <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
-                                {monthData.camf.type || 'N/A'}
+                                {monthData.camf.type || "N/A"}
                               </td>
                               <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
-                                {monthData.camf.description || 'N/A'}
+                                {monthData.camf.description || "N/A"}
                               </td>
                               <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
-                                {monthData.camf.reference || 'N/A'}
+                                {monthData.camf.reference || "N/A"}
                               </td>
                               <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
-                                {monthData.camf.chequeNo || 'N/A'}
+                                {monthData.camf.chequeNo || "N/A"}
                               </td>
                               <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
-                                {monthData.camf.tellerNo || 'N/A'}
+                                {monthData.camf.tellerNo || "N/A"}
                               </td>
                               <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
-                                {monthData.camf.isReversal ? 'Yes' : 'No'}
+                                {monthData.camf.isReversal ? "Yes" : "No"}
                               </td>
                             </tr>
                           )}
-                          
-                          {/* VC rows */}
-                          {monthData.vc && Array.isArray(monthData.vc) && monthData.vc.map((vcItem: any, vcIndex: number) => (
-                            <tr key={vcIndex}>
-                              <td className="px-4 py-3 text-sm font-semibold text-blue-600 border-r border-gray-300">
-                                VC
-                              </td>
-                              <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
-                                {vcItem.transactionDate ? new Date(vcItem.transactionDate).toLocaleDateString() : 'N/A'}
-                              </td>
-                              <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
-                                {vcItem.valueDate ? new Date(vcItem.valueDate).toLocaleDateString() : 'N/A'}
-                              </td>
-                              <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
-                                {vcItem.amount?.toLocaleString() || '0.00'}
-                              </td>
-                              <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
-                                {vcItem.balance?.toLocaleString() || '0.00'}
-                              </td>
-                              <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
-                                {vcItem.type || 'N/A'}
-                              </td>
-                              <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
-                                {vcItem.description || 'N/A'}
-                              </td>
-                              <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
-                                {vcItem.reference || 'N/A'}
-                              </td>
-                              <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
-                                {vcItem.chequeNo || 'N/A'}
-                              </td>
-                              <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
-                                {vcItem.tellerNo || 'N/A'}
-                              </td>
-                              <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
-                                {vcItem.isReversal ? 'Yes' : 'No'}
-                              </td>
-                            </tr>
-                          ))}
                         </tbody>
                       </table>
                       </div>
@@ -1857,16 +1902,16 @@ const cmfAnalysisData: Transaction[] = [
                             <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
                               {summaryItem.bank?.total?.toLocaleString() || '0.00'}
                             </td>
-                            <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                            <td className="px-4 py-3 text-sm text-blue-700 border-r border-gray-300">
                               {summaryItem.client?.camf?.toLocaleString() || '0.00'}
                             </td>
-                            <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                            <td className="px-4 py-3 text-sm text-blue-700 border-r border-gray-300">
                               {summaryItem.client?.vc?.toLocaleString() || '0.00'}
                             </td>
-                            <td className="px-4 py-3 text-sm text-gray-900 border-r border-gray-300">
+                            <td className="px-4 py-3 text-sm text-blue-700 border-r border-gray-300">
                               {summaryItem.client?.total?.toLocaleString() || '0.00'}
                             </td>
-                            <td className="px-4 py-3 text-sm text-gray-900">
+                            <td className="px-4 py-3 text-sm text-red-600">
                               {summaryItem.difference?.toLocaleString() || '0.00'}
                             </td>
                           </tr>
@@ -3007,7 +3052,7 @@ const cmfAnalysisData: Transaction[] = [
                 </div>
               </div>
             )}
-        </div>
+        </main>
       </div>
     </div>
   );

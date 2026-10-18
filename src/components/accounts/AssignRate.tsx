@@ -12,12 +12,16 @@ const AssignRate = () => {
   const router = useRouter();
   const accountId = searchParams.get("accountId");
   const accountName = searchParams.get("accountName") || "";
-  const { getRatesByClientAndBank } = useRates();
-  const { assignRateToAccount, getBankAccountById } = useBankAccounts();
+  const { getRatesByClientAndBank, getRatesByClientId } = useRates();
+  const { assignRateToAccount, unassignRateFromAccount, getBankAccountById } =
+    useBankAccounts();
   const [rates, setRates] = useState<RateSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedRateId, setSelectedRateId] = useState<string>("");
+  const [currentRateId, setCurrentRateId] = useState<string | null>(null);
+  const [currentRateCode, setCurrentRateCode] = useState<string | null>(null);
   const [isAssigning, setIsAssigning] = useState(false);
+  const [isUnassigning, setIsUnassigning] = useState(false);
   const [clientId, setClientId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -30,16 +34,36 @@ const AssignRate = () => {
         // First, fetch the account to get the clientId
         const account = await getBankAccountById(accountId);
         if (!cancelled && account) {
-          const accountClientId = (account as any).clientId;
-          const accountBankId = (account as any).bankId;
+          const acct = account as {
+            clientId?: string;
+            bankId?: string;
+            rateId?: string | null;
+            rate?: { id?: string; code?: string };
+          };
+          const accountClientId = acct.clientId;
+          const accountBankId = acct.bankId;
+          const assignedRateId = acct.rateId ?? acct.rate?.id ?? null;
+          if (assignedRateId) {
+            setCurrentRateId(assignedRateId);
+            setSelectedRateId(assignedRateId);
+            setCurrentRateCode(acct.rate?.code ?? null);
+          }
           if (accountClientId && accountBankId) {
             setClientId(accountClientId);
-            // Then fetch rates for this client and bank
-            const res = await getRatesByClientAndBank(
+            let res = await getRatesByClientAndBank(
               accountClientId,
-              accountBankId
+              accountBankId,
             );
-            if (!cancelled && Array.isArray(res)) setRates(res);
+            if ((!res || res.length === 0) && accountClientId) {
+              res = await getRatesByClientId(accountClientId);
+            }
+            if (!cancelled && Array.isArray(res)) {
+              setRates(res);
+              if (assignedRateId) {
+                const match = res.find((r) => r.id === assignedRateId);
+                if (match?.code) setCurrentRateCode(match.code);
+              }
+            }
           }
         }
       } finally {
@@ -52,6 +76,26 @@ const AssignRate = () => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accountId]);
+
+  const handleUnassignRate = async () => {
+    if (!accountId || !currentRateId) return;
+    if (
+      !window.confirm(
+        "Unassign the rate from this account? Analysis will fail until a new rate is assigned.",
+      )
+    ) {
+      return;
+    }
+    setIsUnassigning(true);
+    try {
+      await unassignRateFromAccount(accountId);
+      setCurrentRateId(null);
+      setCurrentRateCode(null);
+      setSelectedRateId("");
+    } finally {
+      setIsUnassigning(false);
+    }
+  };
 
   const handleAssignRate = async () => {
     if (!accountId) {
@@ -66,7 +110,9 @@ const AssignRate = () => {
     setIsAssigning(true);
     try {
       await assignRateToAccount(accountId, selectedRateId);
-      // Navigate back to client accounts page
+      setCurrentRateId(selectedRateId);
+      const assigned = rates.find((r) => r.id === selectedRateId);
+      if (assigned?.code) setCurrentRateCode(assigned.code);
       router.back();
     } catch (error) {
       console.error("Error assigning rate:", error);
@@ -86,7 +132,7 @@ const AssignRate = () => {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-      <div className="flex-1 md:ml-64 md:mt-0">
+      <div className="flex-1 min-w-0 md:mt-0">
         <div className="mb-4">
           <Navbar />
         </div>
@@ -116,6 +162,29 @@ const AssignRate = () => {
           </div>
 
           <div className="bg-white rounded-lg shadow p-6">
+            <div
+              className={`mb-6 rounded-md border p-4 text-sm ${
+                currentRateId
+                  ? "border-green-200 bg-green-50 text-green-900"
+                  : "border-amber-200 bg-amber-50 text-amber-900"
+              }`}
+            >
+              {currentRateId ? (
+                <p>
+                  Current rate:{" "}
+                  <span className="font-semibold">
+                    {currentRateCode || currentRateId}
+                  </span>
+                  . Choose another rate below to replace it, or unassign.
+                </p>
+              ) : (
+                <p>
+                  No rate is assigned to this account. Analysis requires a rate
+                  config — select a rate below and assign it.
+                </p>
+              )}
+            </div>
+
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Select Rate <span className="text-red-500">*</span>
@@ -174,20 +243,41 @@ const AssignRate = () => {
               )}
             </div>
 
-            <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+            <div className="flex flex-wrap justify-end gap-3 pt-4 border-t border-gray-200">
+              {currentRateId && (
+                <button
+                  type="button"
+                  onClick={handleUnassignRate}
+                  disabled={isUnassigning || isAssigning}
+                  className="px-4 py-2 border border-red-300 text-red-700 rounded-md text-sm font-medium hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed mr-auto"
+                >
+                  {isUnassigning ? "Unassigning..." : "Unassign rate"}
+                </button>
+              )}
               <button
+                type="button"
                 onClick={() => router.back()}
-                disabled={isAssigning}
+                disabled={isAssigning || isUnassigning}
                 className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleAssignRate}
-                disabled={isAssigning || !selectedRateId}
+                disabled={
+                  isAssigning ||
+                  isUnassigning ||
+                  !selectedRateId ||
+                  (!!currentRateId && selectedRateId === currentRateId)
+                }
                 className="px-4 py-2 bg-orange-600 text-white rounded-md text-sm font-medium hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isAssigning ? "Assigning..." : "Assign Rate"}
+                {isAssigning
+                  ? "Saving..."
+                  : currentRateId
+                    ? "Update rate"
+                    : "Assign rate"}
               </button>
             </div>
           </div>

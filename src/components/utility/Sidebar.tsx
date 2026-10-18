@@ -207,6 +207,9 @@ const Sidebar = () => {
         </div>
       </div>
 
+      {/* Reserves horizontal space for the fixed sidebar on desktop */}
+      <div className="hidden md:block w-64 shrink-0" aria-hidden="true" />
+
       {/* Overlay for mobile */}
       {isOpen && (
         <div

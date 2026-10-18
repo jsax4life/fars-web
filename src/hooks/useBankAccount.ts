@@ -55,6 +55,10 @@ export interface ClientBankAccountResponse {
     name: string;
     code: string;
   };
+  rate?: {
+    id: string;
+    code?: string;
+  };
 }
 
 export const useBankAccounts = () => {
@@ -379,6 +383,32 @@ export const useBankAccounts = () => {
     }
   };
 
+  /**
+   * Unassign the rate from a bank account
+   * PATCH /api/bank-accounts/rate/{accountId}/unassign
+   */
+  const unassignRateFromAccount = async (
+    accountId: string
+  ): Promise<any | undefined> => {
+    try {
+      const endpoint =
+        Endpoints.assignRateToAccount.replace(/\/$/, "") +
+        "/" +
+        accountId +
+        "/unassign";
+      const request = await api.patch(endpoint, {});
+      if (request) {
+        toast.success(request?.message || "Rate unassigned successfully");
+        return request;
+      }
+    } catch (error: any) {
+      toast.error(
+        "Failed to unassign rate: " + (error?.message || "Unknown error")
+      );
+      throw error;
+    }
+  };
+
   return {
     getBankAccounts,
     getBankAccountsByClient,
@@ -391,5 +421,6 @@ export const useBankAccounts = () => {
     assignStaffToAccount,
     unassignStaffFromAccount,
     assignRateToAccount,
+    unassignRateFromAccount,
   };
 };
