@@ -134,11 +134,6 @@ export const useRates = () => {
     clientId: string;
     bankId?: string;
     drRates?: { rate: number; effectiveFrom: string; effectiveTo: string }[];
-    loanInterestRates?: {
-      rate: number;
-      effectiveFrom: string;
-      effectiveTo: string;
-    }[];
     lcCommissions?: {
       rate: number;
       effectiveFrom: string;
